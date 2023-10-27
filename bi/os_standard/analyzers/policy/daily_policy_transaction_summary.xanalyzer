@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-06-13T13:58:46" created="2011-03-28T06:44:25" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Policy Transaction/Daily Policy Transaction Summary.xanalyzer" name="Daily Policy Transaction Summary"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="POLICYTRANSACTION" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Transaction Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Premium]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="true" formula="[Policy Transaction Type].[Transaction Type]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="true" formula="[Producer].[Agency]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Policy Transaction Type].[Transaction Type]">
+                <predicates>
+                    <predicate operatorEnum="NOT_EQUAL" ordinal="1">
+                        <member pos="0" caption="Not Available" formula="[Policy Transaction Type].[#null]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-06-19T03:59:11.516-04:00" update="2023-06-19T04:04:15.601-04:00">
+        <path name="BINonConvertedQuotebyReason" folder="/home/OneShieldBI/analyzers/policy/BINonConvertedQuotebyReason.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="NON-CONVERTED_QUOTES" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="false" totalsOnTopLeft="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="14" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_NonConverted_Quotes]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Total_NonConverted_Premium]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="measures" gembarOrdinal="1"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[expired_reasons].[Non-Converted Reason]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+            <attribute formula="[Status].[Application Status]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="1"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" excelMergePivotCells="true" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Broker].[Broker Status]</drillColumn>
+            <drillColumn>[Broker].[Broker]</drillColumn>
+            <drillColumn>[Creation Date].[Date]</drillColumn>
+            <drillColumn>[Customer].[Customer]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Measures].[Total_NonConverted_Premium]</drillColumn>
+            <drillColumn>[expired_reasons].[Non-Converted Reason]</drillColumn>
+            <drillColumn>[Quote].[Quote Name]</drillColumn>
+            <drillColumn>[Quote].[Quote Number]</drillColumn>
+            <drillColumn>[Status].[Application Status]</drillColumn>
+            <drillColumn>[Submission_Jurisdiction].[Jurisdiction]</drillColumn>
+            <drillColumn>[Underwriter].[Underwriter]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="207,337">
+            <labelWidth index="0">
+                <width>-127</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>-127</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="9">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="10">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="11">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="12">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="13">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="14">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="15">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"labelsOption":"inside"}]</pluginData>
+    </uiAttributes>
+</reportRecord>

@@ -1,0 +1,409 @@
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 July 2020  $
+-->
+
+<!--
+
+    $Workfile:   partner_management_cubes.xml  $
+    $Revision:   1.4  $
+      $Author:   pmedapati  $
+        $Date:   30 Jan 2014 15:17:42  $
+
+-->
+
+<Schema name="Partner Management Cubes">
+
+  <Dimension highCardinality="false" name="Producer">
+    <Hierarchy hasAll="true" allMemberName="All Producers" primaryKey="PP_PRODUCER_ID">
+      <Table name="BI_DIM_PRODUCER_PARTNER">
+      </Table>
+      <Level name="Ultimate Parent Agency" ordinalColumn="PP_PARTNER_UPARENT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Ultimate Parent Agency Name">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN PP_PARTNER_UPARENT_ID IS NULL THEN 'None' ELSE PP_PARTNER_UPARENT_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_UPARENT_CODE" type="Numeric" caption="Ultimate Parent Partner Number">
+        </Property>
+      </Level>
+      <Level name="Parent Agency" ordinalColumn="PP_PARTNER_PARENT_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the parent of Agency">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN PP_PARTNER_PARENT_ID IS NULL THEN 'None' ELSE PP_PARTNER_PARENT_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_PARENT_CODE" type="Numeric" caption="Parent Partner Number">
+        </Property>
+      </Level>
+      <Level name="Agency" ordinalColumn="PP_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the Agency">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN BI_DIM_PRODUCER_PARTNER.PE_PARTNER_ID IS NULL THEN 'None' ELSE PP_PARTNER_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_CODE" type="Numeric" caption="Partner Number">
+        </Property>
+      </Level>
+      <Level name="Producer" column="PP_PRODUCER_ID" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Producer">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Changed By" caption="Changed By">
+    <Hierarchy hasAll="true" allMemberName="All Changed By" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Changed By">
+      </Table>
+      <Level name="Changed By User Role" caption="Changed By User Role" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  description="Creator role name">
+      </Level>
+      <Level name="Changed By User" caption="Changed By User" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  description="Name of the Creator">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+ 
+  <Dimension highCardinality="false" name="Agency" caption="Agency">
+    <Hierarchy hasAll="true" allMemberName="All Agencies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Agency_Dim">
+      </Table>
+      <Level name="Agency Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Agency Name">
+	<Property name="Agency Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Agency Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="Agency Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Agency Status">
+</Level>
+<Level name="Agency Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Agency Effective Date">
+</Level>
+<Level name="Agency Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Agency Expiry Date">
+</Level>
+    </Hierarchy>
+  </Dimension>
+ 
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (License Effective Date)" caption="License Effective Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="LICENSE_EFF_TIME">
+      </Table>
+      <Level name="License Effective Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="License Effective Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Effective Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="License Effective Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Effective Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="License Effective Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Effective Day" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="License Effective Day" description="License Effective Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (License Expiration Date)" caption="License Expiration Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="LICENSE_EXP_TIME">
+      </Table>
+      <Level name="License Expiration Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="License Expiration Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Expiration Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="License Expiration Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Expiration Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="License Expiration Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Expiration Day" column="TD_DAY" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="License Expiration Day" description="License Expiration Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (License Entry Date)" caption="License Entry Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="LICENSE_ENTRY_TIME">
+      </Table>
+      <Level name="License Entry Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="License Entry Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Entry Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="License Entry Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Entry Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="License Entry Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="License Entry Day" column="TD_DATE" ordinalColumn="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="License Entry Day" description="License Entry Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (Activity Change Date)" caption="Activity Change Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="ACTIVITY_CHG_DATE">
+      </Table>
+      <Level name="Activity Change Year" caption="Activity Change Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never"  description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Activity Change Quarter" caption="Activity Change Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never"  description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Activity Change Month" caption="Activity Change Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never"  description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Activity Change Day"  caption="Activity Change Day" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="License Entry Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+   <Dimension type="TimeDimension" highCardinality="false" name="Time (Agreement Effective Date)" caption="Agreement Effective Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="AGREEMENT_EFF_TIME">
+      </Table>
+      <Level name="Agreement Effective Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Agreement Effective Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Effective Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Agreement Effective Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Effective Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Agreement Effective Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Effective Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Agreement Effective Day" description="Agreement Effective Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (Agreement Expiration Date)" caption="Agreement Expiration Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="AGREEMENT_EXP_TIME">
+      </Table>
+      <Level name="Agreement Expiration Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Agreement Expiration Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Expiration Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Agreement Expiration Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Expiration Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Agreement Expiration Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Expiration Day" column="TD_DAY" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Agreement Expiration Day" description="Agreement Expiration Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension type="TimeDimension" highCardinality="false" name="Time (Agreement Creation Date)" caption="Agreement Creation Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="AGREEMENT_CREATION_TIME">
+      </Table>
+      <Level name="Agreement Creation Year" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Agreement Creation Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Creation Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Agreement Creation Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Creation Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Agreement Creation Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Agreement Creation Day" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Agreement Creation Day" description="Agreement Creation Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+<Cube name="PARTNER_ACTIVITY_CUBE" caption="Partner Activity Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_PARTNER_MGT_ACTIVITY">
+    </Table>
+    <DimensionUsage source="Agency" name="Agency" foreignKey="PMA_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Changed By" name="Changed By" foreignKey="PMA_USER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Activity Change Date)" name="Time (Activity Change Date)" foreignKey="PMA_CHG_DATE" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Activity_Change_Type" caption="Activity Change Type">
+      <Hierarchy hasAll="true">
+        <Level name="Activity Change Type" column="PMA_CHG_TYPE" nameColumn="PMA_CHG_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The type of Change">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Change_Acted_On" caption="Change Acted On">
+      <Hierarchy hasAll="true">
+        <Level name="Change Acted On" column="PMA_CHG_ACTED_ON" nameColumn="PMA_CHG_ACTED_ON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The object that was changed">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Activity_Change_Count" column="PMA_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="Activity Change Count" description="Total number of changes">
+    </Measure>
+
+</Cube>  
+
+<Cube name="PARTNER_LICENSE_CUBE" caption="Partner License Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_PARTNER_MGT_LICENSE">
+    </Table>
+    <DimensionUsage source="Agency" name="Agency" foreignKey="PML_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (License Effective Date)" name="Time (License Effective Date)" foreignKey="PML_EFF_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (License Expiration Date)" name="Time (License Expiration Date)" foreignKey="PML_EXP_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (License Entry Date)" name="Time (License Entry Date)" foreignKey="PML_ENTRY_DATE" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Agency_Jurisdiction" caption="Agency Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="Agency Jurisdiction" column="PML_AGENCY_JURISDICTION" nameColumn="PML_AGENCY_JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Jurisdiction where the Agency is registered">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="License_Jurisdiction" caption="License Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="License Jurisdiction" column="PML_LICENSE_JURISDICTION" nameColumn="PML_LICENSE_JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Jurisdiction where the license was registered">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="License_LOB" caption="Line of Business">
+      <Hierarchy hasAll="true">
+        <Level name="License LOB" caption="Line of Business" column="PML_LINE_OF_BUSINESS" nameColumn="PML_LINE_OF_BUSINESS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Line of Business where the license was registered">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="License_Type" caption="License Type">
+      <Hierarchy hasAll="true">
+        <Level name="License Type" column="PML_LICENSE_TYPE" nameColumn="PML_LICENSE_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="A license can be registed with the Agent or the Agency">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="License_Status" caption="License Status">
+      <Hierarchy hasAll="true">
+        <Level name="License Status" column="PML_LICENSE_STATUS" nameColumn="PML_LICENSE_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current status of the license">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="License_Category" caption="License Category">
+      <Hierarchy hasAll="true">
+        <Level name="License Category" column="PML_LICENSE_CATEGORY" nameColumn="PML_LICENSE_CATEGORY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Category of the license">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+        
+    <Measure name="License_Count" column="PML_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="License Count" description="Total number of Licences">
+    </Measure>
+    
+</Cube>
+
+<Cube name="PARTNER_AGREEMENT_CUBE" caption="Partner Agreement Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_PARTNER_MGT_AGREEMENT">
+    </Table>
+    <DimensionUsage source="Agency" name="Agency" foreignKey="PMP_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <DimensionUsage source="Time (Agreement Effective Date)" name="Time (Agreement Effective Date)" foreignKey="PMP_AGR_EFF_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Agreement Expiration Date)" name="Time (Agreement Expiration Date)" foreignKey="PMP_AGR_EXP_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Agreement Creation Date)" name="Time (Agreement Creation Date)" foreignKey="PMP_AGR_CREATE_DATE" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Agency_Jurisdiction" caption="Agency Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="Agency Jurisdiction" column="PMP_AGENCY_JURISDICTION" nameColumn="PMP_AGENCY_JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Jurisdiction where the Agency is registered">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Agreement_Jurisdiction" caption="Agreement Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="Agreement Jurisdiction" column="PMP_AGR_JURISDICTION" nameColumn="PMP_AGR_JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Jurisdiction where the agreement was registered for">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Agreement_LOB" caption="Line of Business">
+      <Hierarchy hasAll="true">
+        <Level name="Agreement LOB" caption="Line of Business" column="PMP_LINE_OF_BUSINESS" nameColumn="PMP_LINE_OF_BUSINESS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Line of Business for which the agreement was registered">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" highCardinality="false" name="Agreement_Status" caption="Agreement Status">
+      <Hierarchy hasAll="true">
+        <Level name="Agreement Status" column="PMP_AGR_STATUS" nameColumn="PMP_AGR_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current status of the agreement">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+
+    <Measure name="Agreement_Count" column="PMP_AGREEMENT_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="Agreements Count" description="Total number of Agency Agreements">
+    </Measure>
+    
+  </Cube>
+
+</Schema>

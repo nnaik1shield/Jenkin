@@ -1,0 +1,18 @@
+  <Cube name="<CUBE_NAME>" caption="<Cube Label>" visible="true" cache="true" enabled="true">
+    <Table name="< BI table)">
+    </Table>
+	<Dimension type="StandardDimension" highCardinality="false" name="Attributes" caption="Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="<name>" column="<fact table column>" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="LOB">
+        </Level>
+      </Hierarchy>
+    </Dimension>    
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Associated_Policy_Dim" name="Associated_Policy_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Measure name="Trans Count" column="PK" datatype="Numeric" formatString="#,###" aggregator="count" caption="Transaction Count" description="Total number of Transactions">
+    </Measure>
+    <Measure name="<fact table number column>" column="<fact table number column>" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Gross Premium">
+    </Measure>
+  </Cube>

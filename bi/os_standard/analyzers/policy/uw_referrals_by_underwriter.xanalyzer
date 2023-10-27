@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2013-07-13T22:30:54" created="2013-07-13T22:30:54" updatedBy="joe" createdBy="joe">
+        <path name="UW Referrals by Underwriter"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="7" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="UNDERWRITING_SUMMARY_CUBE" catalog="Dragon Policy Admin Cubes">
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Total_Referral_Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Accepted_Count]"/>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Rejected_Count]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Underwriter].[Underwriter]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions legendFontFamily="Default" labelFontFamily="Default" legendStyle="PLAIN" legendColor="#000000" legendSize="12" legendBackgroundColor="#ffffff" labelStyle="PLAIN" backgroundColorEnd="#ffffff" maxChartsPerRow="3" backgroundFill="NONE" labelSize="12" labelColor="#000000" backgroundColor="#ffffff" maxValues="100" lineShape="CIRCLE" lineWidth="2" displayUnitsSecondary="UNITS_0" autoRangeSecondary="true" displayUnits="UNITS_0" autoRange="true" showLegend="true" legendPosition="RIGHT" customChartType="ccc_bar" chartType="CUSTOM"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelScalingPageTall="1" excelScalingPageWide="1" excelScalingPercent="100" excelScalingType="PERCENT" pdfOrientation="LANDSCAPE" excelOrientation="LANDSCAPE" pdfPageSize="LETTER" excelPageSize="LETTER"/>
+    </report>
+    <uiAttributes showFilterPanel="false" showFieldLayout="false" showFieldList="true">
+        <rowFieldWidths actualWidths="132"/>
+        <columnDataFieldWidths actualWidths="120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

@@ -1,0 +1,131 @@
+create or replace package pkg_db_adhoc_journal
+
+-------------
+-- $Workfile:   pkg_db_adhoc_billing.PSK  $
+-- $Revision:   1.0  $
+--   $Author:   rmishra  $
+--     $Date:   May 05 2015 14:19:36  $
+-------------
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+pkg_name constant   system_log.program_name%type  := 'pkg_db_adhoc_journal.';
+gbv_BillAccTrxSet_CurrTrx     constant business_variable.business_variable_id%type        :=   29743646;
+gbv_FITrx_RefAssociatedFitem  constant business_variable.business_variable_id%type        :=   31689946;
+gbv_FITrx_RefAssociatedPloicy constant business_variable.business_variable_id%type        :=   29721146;
+gbv_FItem_Debit_Credit        constant business_variable.business_variable_id%type        :=   29710046;
+gbv_FItem_Category            constant business_variable.business_variable_id%type        :=   29710146;
+gbv_FItem_Subcategory         constant business_variable.business_variable_id%type        :=   29710246;
+gbv_FItem_Effective_Date      constant  business_variable.business_variable_id%type       :=   29710446;
+gbv_FItem_Processing_Status   constant business_variable.business_variable_id%type        :=   29711146;
+gbv_FITrxSetDatePosted        constant business_variable.business_variable_id%type        :=   29707646;
+gbv_FItem_Bill_Status_Date    constant business_variable.business_variable_id%type        :=   29711046;
+gbv_FItem_Earning_Status      constant business_variable.business_variable_id%type        :=   31709146;
+gbv_FItem_Earned_Amount       constant business_variable.business_variable_id%type        :=   31706446;
+gbv_FItem_Unearned_Amount     constant business_variable.business_variable_id%type        :=   31706546;
+gbv_FItem_RefPolicy           constant business_variable.business_variable_id%type        :=   29721246;
+gbv_FItem_RefCustomer         constant business_variable.business_variable_id%type        :=   31694846;
+gbv_FItem_RefAssWithFItrx     constant business_variable.business_variable_id%type        :=   31758346;
+gbv_Fitem_BillingStatus       constant business_variable.business_variable_id%type        :=   29710946;
+dbv_Fitem_RefAssocPolicyTerm  constant business_variable.business_variable_id%type        :=   32080346;
+gbv_Fitem_RefPartOfInst       constant business_variable.business_variable_id%type        :=   29704446;
+gFitem_ExtCredit_CatId        constant lookup_list_value.lookup_enum%type                 :=       5346;
+gFitem_Category_Dividents     constant lookup_list_value.lookup_enum%type                 :=       5546;
+gFitem_ExtCredit_SubCatId     constant lookup_list_value.lookup_enum%type                 :=      61346;
+gFitem_GrpDivdnds_SubCatId    constant lookup_list_value.lookup_enum%type                 :=      61546;
+gFItem_EarnSts_NotApplicable  constant lookup_list_value.lookup_enum%type                 :=          4;
+gbv_WritingCompany            constant business_variable.business_variable_id%type        :=   29789401;
+gObjType_BillingAccount       constant object_type.object_type_id%type                    :=   2365346;
+gbv_BillingAccountParent      constant business_variable.business_variable_id%type        :=   29704546;
+gbv_FITrxSet_BatchType        constant business_variable.business_variable_id%type        :=   29707346;
+gbv_FITrxSet_TotalAmount      constant business_variable.business_variable_id%type        :=   29707746;
+gbv_BillAccTrxSet_ScrtyStatus constant business_variable.business_variable_id%type        :=   31755646;
+gbv_FITrxSet_ExternalBatchId  constant business_variable.business_variable_id%type        :=   29707446;
+gbv_FITrxSetEnteredby         constant business_variable.business_variable_id%type        :=   32264940;
+gbv_FITrxSet_EntryType        constant business_variable.business_variable_id%type        :=   29707546;
+gbv_FITrx_EffectiveDate       constant business_variable.business_variable_id%type        :=   29709246;
+gbv_FITrx_TotalControlItems   constant business_variable.business_variable_id%type        :=   29707846;
+gbv_FITrx_Type                constant business_variable.business_variable_id%type        :=   29708346;
+gbv_FITrx_RefActionPolicy     constant business_variable.business_variable_id%type        :=   29974046;
+gBatchStatus_Discarded        constant lookup_list_value.lookup_enum%type                 :=   61546;
+gBatchStatus_Created          constant lookup_list_value.lookup_enum%type                 :=   23;
+gBatch_Adhoc_Journal          constant lookup_list_value.lookup_enum%type                 :=   7001;
+gBatch_AdhocJournal_ConvAdj   constant lookup_list_value.lookup_enum%type                 :=   10002;
+gFITrx_Exteranl_Credit        constant lookup_list_value.lookup_enum%type                 :=   6002;
+gFITrx_PLR_Retro              constant lookup_list_value.lookup_enum%type                 :=   6003;
+gFITrx_EntryMode_Manual       constant lookup_list_value.lookup_enum%type                 :=   101;
+gBillAccTrxSetScrtyStatus_New constant lookup_list_value.lookup_enum%type                 :=   1;
+gbv_BillAccTrxSet_DisplayPrint constant business_variable.business_variable_id%type       :=   32627046;
+bv_FITrxSet_AcctPeriod        constant business_variable.business_variable_id%type        :=   32133240;
+gbv_BillAccTrxSet_Origin      constant business_variable.business_variable_id%type        :=   27926602;
+
+gbv_MasterPolicyId_Path       constant varchar2(100)                                      :=   '29743646.299740462365946.2365046';
+gbv_UserSession_UserName_Path constant varchar2(100)                                      :=   '210086.211882';
+-- 2017-04-06 Cheryl osbilling-3956 add sub category
+gFitem_Category_Dishfee       constant lookup_list_value.lookup_enum%type                 :=       5040;
+gFitem_SubCategory_Dishfee    constant lookup_list_value.lookup_enum%type                 :=       53140;
+gFitem_Category_Bankcharge    constant lookup_list_value.lookup_enum%type                 :=       5246;
+gFitem_SubCategory_Bankcharge constant lookup_list_value.lookup_enum%type                 :=       63246;
+gFitem_Category_Commission    constant lookup_list_value.lookup_enum%type                 :=       946;  -- end OSPRODUCT-26025
+
+gFitem_Category_ContComsn     constant lookup_list_value.lookup_enum%type                 :=       5248; -- LXPRODUCT-447
+gFitem_Category_ServiceFee     constant lookup_list_value.lookup_enum%type                :=       6646; -- start OSPRODUCT-26025
+gFitem_Category_ConvAdjustment constant lookup_list_value.lookup_enum%type                :=       6546; 
+gFitem_SubCategory_ServiceFee  constant lookup_list_value.lookup_enum%type                :=       55548;
+gFitem_SubCategory_ConvAdjustment    constant lookup_list_value.lookup_enum%type          :=       68746;
+gFitem_SubCategory_ContComsn    constant lookup_list_value.lookup_enum%type               :=       55648;
+gFitem_SubCategory_Commission   constant lookup_list_value.lookup_enum%type               :=       45646; -- end OSPRODUCT-26025
+gActorType_AgencyController     constant business_variable.business_variable_id%type      :=       45848;  --OSPRODUCT-34737
+gActorType_CashAndAccountClerk     constant business_variable.business_variable_id%type   :=       45948;  --OSPRODUCT-34737
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+
+procedure sp_create_adhoc_journal
+(
+     in_session_id         in               object.object_id%type,
+     in_transaction_id     in               object.object_id%type,
+     in_object_cache       in  out          pkg_os_object_cache.t_object_cache,
+     in_action_object_id   in               object.object_id%type ,
+     in_current_date_time  in               date default null,
+     io_action_outcome_id  in out nocopy    outcome.outcome_id%type
+);
+
+procedure sp_create_adhoc_reprocess
+(
+     in_session_id         in               object.object_id%type,
+     in_transaction_id     in               object.object_id%type,
+     in_object_cache       in  out          pkg_os_object_cache.t_object_cache,
+     in_action_object_id   in               object.object_id%type ,
+     in_current_date_time  in               date default null,
+     io_action_outcome_id  in out nocopy    outcome.outcome_id%type
+);
+
+procedure sp_create_journal_conv_adj
+(
+     in_session_id            in               object.object_id%type,
+     in_transaction_id        in               object.object_id%type,
+     in_billingacc_id         in               object.object_id%type,
+     in_policy_id             in               object.object_id%type,
+     in_FiTrx_Amount          in               float,
+     io_action_outcome_id     in out nocopy    outcome.outcome_id%type,
+     o_billingacctrxset_id    out              object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-16699
+procedure sp_adhoc_journal_cleanup
+(
+     in_session_id            in              object.object_id%type,
+     in_transaction_id        in              object.object_id%type,
+     in_billingacctrx_id      in              object.object_id%type
+);
+---------------------------------------------------------------------------------------------------------
+
+end pkg_db_adhoc_journal;
+/

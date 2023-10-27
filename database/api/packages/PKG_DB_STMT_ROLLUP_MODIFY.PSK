@@ -1,0 +1,98 @@
+create or replace package pkg_db_stmt_rollup_modify
+-------------
+-- $Workfile:   BASE_API.PKG_DB_STMT_ROLLUP.PSK  $
+-- $Revision:   1.7  $
+--   $Author:   vgujral  $
+--     $Date:   Aug 5 2016 16:41:58  $
+-------------
+as
+
+
+pkg_name constant   system_log.program_name%type  := 'pkg_db_stmt_rollup_modify.';
+PastDue                 constant number(12) := 3; -- OSPRODUCT-34650
+
+-- Arun - OSBILLING-5872 - Start
+gAllocationType_Prorata       constant lookup_list_value.lookup_enum%type            :=   1;
+gAllocationType_Sequence      constant lookup_list_value.lookup_enum%type            :=   2;
+gbv_Recon_AllocationType      constant business_variable.business_variable_id%type   :=   29755846 ;
+-- Arun - OSBILLING-5872 - End
+gbv_Recon_TermEffDate         constant business_variable.business_variable_id%type   :=   32534748;  --OSBILLING-5982
+gBatch_PCAS_PolicyTrx         constant object_bv_value.business_variable_value%type  :=   1201;  --osproduct5996 20200901 Cheryl
+gBatch_Agency_Statement       constant object_bv_value.business_variable_value%type  :=   801;   --osproduct5996 20200901 Cheryl
+----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_generic_rollup_create
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_billing_account_id              in        object.object_id%type,
+     in_billing_trx_set_id              in        object.object_id%type,
+     in_recon_type                      in        db_reconciliation.db_reconciliation_id%type,
+     io_fitem_list                      in out    pkg_db_stmt.t_fitem_list,
+     in_trx_type                        in        db_transaction_set_type.db_trxset_enum%type default null,
+     in_rollup_type                     in        number default 1,
+     in_start_date                         in          object_bv_value.business_variable_value%type,
+     in_end_date                         in          object_bv_value.business_variable_value%type
+
+
+);
+procedure sp_fitem_rollup_create
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_billing_trx_set_id    in             object.object_id%type,
+     in_fitem_row              in             dragon_fitem%rowtype,
+     in_recon_object_type     in             db_reconciliation.rollup_object_type_id%type default null,
+     in_rollup_type           in             integer,
+     in_amount                   in             integer  DEFAULT NULL ,
+     in_due_date                 in             object_bv_value.business_variable_value%type  DEFAULT NULL
+
+);
+
+function  fn_get_total_premium
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,--VAULTDEV-6627
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float;
+----------------------------------------------------
+function  fn_get_total_lux_premium
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,--VAULTDEV-6627
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float;
+------------------------------------------------------
+function  fn_get_lux_remaining_bal
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,
+     in_pol_trx_id						in         	object.object_id%type,--VAULTDEV-7854
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float;
+function  fn_get_remaining_bal
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id                        in                object.object_id%type,
+     in_asset_id                                 in              object.object_id%type,
+     in_pol_trx_id                              in              object.object_id%type,--VAULTDEV-7854
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float;
+-------------------------------------------------------
+end pkg_db_stmt_rollup_modify;
+/
+

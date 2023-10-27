@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-01-24T14:14:42.802+05:30" update="2023-05-09T18:46:03.935+05:30">
+        <path name="BISubmissionsUWReferralbyStatus" folder="/home/OneShieldBI/analyzers/policy/BISubmissionsUWReferralbyStatus.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="UW_REFERRAL_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Referral_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[UW_Referral_Outcome].[UW_Referral_Outcome]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[UW_Referral_Outcome].[UW_Referral_Outcome]</drillColumn>
+            <drillColumn>[Last Updated Date].[Last Updated Date]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Measures].[Avg_Resolution_Time]</drillColumn>
+            <drillColumn>[Measures].[Accepted_Count]</drillColumn>
+            <drillColumn>[Measures].[Rejected_Count]</drillColumn>
+            <drillColumn>[Measures].[Resolution_Time]</drillColumn>
+            <drillColumn>[Policy Transaction].[Policy Transaction]</drillColumn>
+            <drillColumn>[Quote].[Quote Number]</drillColumn>
+            <drillColumn>[Quote].[Quote Name]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Year]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Quarter]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Month]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Week]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Day]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Date]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Year]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Quarter]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Month]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Week]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Day]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Date]</drillColumn>
+            <drillColumn>[UW Policy].[Policy Billing Method]</drillColumn>
+            <drillColumn>[UW Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Underwriter].[Underwriter]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="100"/>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"inside"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

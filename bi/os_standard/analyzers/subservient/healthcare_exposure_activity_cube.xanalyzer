@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2014-06-12T09:49:25" created="2014-06-11T09:47:09" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Healthcare/Healthcare Exposure Activity Cube.xanalyzer" name="Healthcare Exposure Activity Cube"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="7" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="HCPL_EXPOSURE_CUBE" catalog="Dragon Policy Healthcare Cubes">
+        <measures>
+            <measure id="[MEASURE:3]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Premium]"/>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[No. of Freestanding]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[No. of Inpatient In Service]"/>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[No. of Outpatient]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Customer].[Customer]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Healthcare Activity Type].[Healthcare Activity]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Healthcare Exposure Type].[Healthcare  Exposure]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Exposure Type Desc].[Exposure Type Desc]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Policy Eff Date].[Effective Date]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions legendFontFamily="Default" labelFontFamily="Default" legendStyle="PLAIN" legendColor="#000000" legendSize="12" legendBackgroundColor="#ffffff" labelStyle="PLAIN" backgroundColorEnd="#ffffff" maxChartsPerRow="3" backgroundFill="NONE" labelSize="12" labelColor="#000000" backgroundColor="#ffffff" maxValues="100" lineShape="CIRCLE" lineWidth="2" displayUnitsSecondary="UNITS_0" autoRangeSecondary="true" displayUnits="UNITS_0" autoRange="true" showLegend="true" legendPosition="RIGHT" customChartType="ccc_bar" chartType="CUSTOM"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelScalingPageTall="1" excelScalingPageWide="1" excelScalingPercent="100" excelScalingType="PERCENT" pdfOrientation="LANDSCAPE" excelOrientation="LANDSCAPE" pdfPageSize="LETTER" excelPageSize="LETTER"/>
+    </report>
+    <uiAttributes showFilterPanel="false" showFieldLayout="false" showFieldList="true">
+        <rowFieldWidths actualWidths="144,80,149,210,80"/>
+        <columnDataFieldWidths actualWidths="120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

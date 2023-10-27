@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project name="releasedefs" default="ShowVersion">
+	
+	
+	
+	
+	
+  	<path id="path.release.root">
+  		<pathelement location="."/>
+  	</path>
+  	
+  	<pathconvert property="release.root" refid="path.release.root"/>
+  	
+  	<path id="path.release.root.db">
+  		<pathelement location="${release.root}\database"/>
+	</path>
+  	  
+  	<path id="path.release.root.app">  
+  		<pathelement location="${release.root}\appserver"/>
+	</path>
+  	
+  	<path id="path.release.root.http">
+  		<pathelement location="${release.root}\httpserver"/>
+	</path>
+  	
+  	<path id="path.release.root.print">
+  		<pathelement location="${release.root}\printserver\templates"/>
+	</path>
+  	
+  	<path id="path.release.root.shell">
+  		<pathelement location="${release.root}\shellscripts"/>
+	</path>
+  	
+  	<path id="path.release.root.logs">
+		<pathelement location="${release.root}\deploylogs"/>
+	</path>
+  	
+  	<path id="path.release.root.sharedlib">
+		<pathelement location="${release.root}\sharedlib"/>
+	</path>
+
+  	<path id="path.root.drive">
+		<pathelement location="/"/>
+	</path>
+
+  	
+  	<property name="release.label"  value="PROD_7_2.01.01"/>
+  	<property name="release.date"  value="20231020"/>
+  	<property name="release.time"  value="2023-10-20 09:07:34"/>
+	<property name="release.builder"  value="jenkinsadmin"/>  
+  	<property name="release.PredecessorLabel"  value="PROD_6_2.03.02"/>
+  	
+	<property name = "db.response.skeleton" value = "dbResponseSkeleton.sql"/>
+  	
+	<pathconvert property="release.root.db" refid="path.release.root.db"/>
+	<pathconvert property="release.root.app" refid="path.release.root.app"/>
+	<pathconvert property="release.root.http" refid="path.release.root.http"/>
+	<pathconvert property="release.root.print" refid="path.release.root.print"/>
+	<pathconvert property="release.root.shell" refid="path.release.root.shell"/>
+	<pathconvert property="release.root.logs" refid="path.release.root.logs"/>
+  
+  	<pathconvert property="root.drive" refid="path.root.drive"/>
+  
+    <pathconvert property="release.root.sharedlib" refid="path.release.root.sharedlib"/>
+
+    <property name="deployed_forms.path_element" value = "DocGeneration_FS_IFS" />
+  	
+  	<target name="ShowVersion"
+        description="To allow ANT to show the release info for this file">
+	    <echo>ANT basedir     = ${basedir} </echo>
+	    <echo>Release RootDir = ${release.root} </echo>
+	    <echo>Label      = ${release.label}</echo>
+	    <echo>Generated Date: = ${release.date} </echo>
+		<echo></echo>
+	    <echo>Built by:       = ${release.builder}</echo>
+	    <echo>Ant Version:    = ${ant.version}</echo>
+	    <echo>Java Version:   = ${java.fullversion}</echo>
+	    <echo>Build file:     = ${ant.file}</echo>
+
+		
+  </target>
+
+</project>

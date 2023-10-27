@@ -1,0 +1,62 @@
+CREATE OR REPLACE PACKAGE PKG_PC_ADMIN
+-------------
+-- $Workfile:   PKG_PC_ADMIN.PSK  $
+-- $Revision:   1.0  $
+--   $Author:   ajacob $
+--     $Date:   20th July 2021
+-- OSPRODUCT-11742
+-------------
+AS
+
+--
+-- Global Variable Declaration
+--
+gbv_exchange_id  constant business_variable.business_variable_id%type := 210090;
+gbv_sponsor_partner_id     constant business_variable.business_variable_id%type := 21814301;
+gbv_writing_company_id constant object_state.object_state_id%type := 29789301;
+gbv_approved_state constant object_state.object_state_id%type := 32905;
+gbv_terminated_state constant object_state.object_state_id%type := 31805;
+--OSPRODUCT-29500
+gbv_partner_type              constant business_variable.business_variable_id%type := 200909;
+gbv_entity_type               constant business_variable.business_variable_id%type := 29235814;
+gbv_business_name             constant business_variable.business_variable_id%type := 29238814;   
+gbv_individual_first_name     constant business_variable.business_variable_id%type := 29240914;
+gbv_individual_last_name      constant business_variable.business_variable_id%type := 29241114;
+gbv_agency_code               constant business_variable.business_variable_id%type := 200900;
+gbv_partner_status            constant business_variable.business_variable_id%type := 210153;
+
+--
+-- Global Enum Declaration
+--
+gPartnerType_Carrier          constant lookup_list_value.lookup_enum%type := 4;
+gEntityType_Business          constant lookup_list_value.lookup_enum%type := 2;
+gEntityType_Individual        constant lookup_list_value.lookup_enum%type := 1;
+gPartnerStatus_Approved       constant lookup_list_value.lookup_enum%type := 32905;
+gBAStatus_Active		     constant lookup_list_value.lookup_enum%type := 37246;
+gBAType_WritingCompany        constant lookup_list_value.lookup_enum%type := 1501;
+gPartnerStatus_Prospect       constant lookup_list_value.lookup_enum%type := 33405;
+gExchange_sponsor_partner     constant lookup_list_value.lookup_enum%type := 118;
+-----------------------------------------------------------------------------------------------
+procedure sp_writing_company_sync
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type
+);
+----------------------------------------------------------------------------------------------
+--OSPRODUCT-29500
+procedure sp_new_writing_company_setup
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type,
+     in_action_object_id      in object.object_id%type
+);
+-----------------------------------------------------------------------------------------------
+function fn_get_bi_profit_center_code 
+(
+     in_session_id           	  in	object.object_id%type,
+     in_transaction_id       	  in	object.object_id%type
+)
+return    varchar2;
+-----------------------------------------------------------------------------------------------
+end PKG_PC_ADMIN;
+/

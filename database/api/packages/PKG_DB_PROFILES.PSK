@@ -1,0 +1,1006 @@
+create or replace package PKG_DB_PROFILES is
+
+  -- Author  : RRASHMI
+  -- Created : 26-12-2019 08:44:38
+  -- Purpose : Managing profiles for Billing
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package - Constants
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-3351
+g_profile_validation_attr_name constant varchar2(500) := 'Allow profile validation - T/F';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package - Cursors
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+cursor c_customer_billing_account(in_customer_id in object.object_id%type) is
+
+     select
+          p2.customer_id, p2.responsible_billing_account, p2.policy_id
+     from
+          dragon_policy p1, dragon_policy p2
+     where
+          p1.customer_id = in_customer_id
+     and
+          pkg_os_object_io.fn_object_bv_get(0, 0, p1.policy_id, pkg_db_bor.gRef_BORd_Policy) = p2.policy_id
+	and 
+          p2.policy_id  > p1.policy_id -- OSPRODUCT-11829 KR 05/10
+     and
+          exists
+          (
+               Select 1
+               from
+                    (
+                         Select
+                              row_number() over (order by pt.policy_trx_id ) sort_order,
+                              pt.policy_trx_type_id
+                         from
+                              dragon_policy_trx pt
+                         where
+                              pt.policy_id = p2.policy_id
+                    ) a
+               where
+                    sort_order = 1
+               and
+                    a.policy_trx_type_id = pkg_os_policy_transaction.gPolicyTrxType_Renewal
+          );
+
+cursor c_pay_profile_with_same_ctf (in_ctf_id in object.object_id%type) is
+
+     select
+          ppu.pay_profile_id
+     from
+          dragon_pay_profile ppu
+     where
+          ppu.ctf_object_id = in_ctf_id
+     and
+          ppu.pay_profile_state_id = 75;
+
+
+cursor c_customer_active_policies (in_customer_id in object.object_id%type) is
+
+          select
+              policy_id
+          from
+              dragon_policy  dp
+          where
+              dp.customer_id = in_customer_id
+          and
+              dp.policy_object_state_id not in (36746); -- Cancelled, Expired
+
+cursor c_policy_pay_profile_to_stop
+       (
+            in_billing_acc_id       in  object.object_id%type,
+            in_policy_id            in  object.object_id%type,
+            in_policy_cur_term_id   in  object.object_id%type,
+            in_policy_next_term_id  in  object.object_id%type,
+            in_policy_prior_term_id in  object.object_id%type,
+            in_profile_start_date   in  date,
+            in_exclude_profile_id   in  object.object_id%type
+       )
+is
+     select
+          pay.pay_profile_id
+       from
+          dragon_pay_profile pay
+      where
+          pay.billing_account_id = in_billing_acc_id
+        and
+          pay.policy_id = in_policy_id
+        and
+          (
+               pay.policy_term_id = in_policy_cur_term_id
+               or
+               in_policy_next_term_id is not null and pay.policy_term_id = in_policy_next_term_id
+               or
+               in_policy_prior_term_id is not null and pay.policy_term_id = in_policy_prior_term_id
+          )
+        and
+          pay.pay_profile_id <> in_exclude_profile_id
+        and
+          -- OSPRODUCT-2992  Start
+          (
+               pay.profile_end_date is null
+               or
+               trunc(pay.profile_end_date) >= trunc(in_profile_start_date)
+          )
+          -- OSPRODUCT-2992  End
+        and
+          pay.preferred_prof_id = 1
+        and
+          pay.recur_mode_id = 1;
+
+cursor c_policy_disb_profile_to_stop
+       (
+            in_billing_acc_id       in  object.object_id%type,
+            in_policy_id            in  object.object_id%type,
+            in_policy_cur_term_id   in  object.object_id%type,
+            in_policy_next_term_id  in  object.object_id%type,
+            in_policy_prior_term_id in  object.object_id%type,
+            in_profile_start_date   in  date,
+            in_exclude_profile_id   in  object.object_id%type
+       )
+is
+     select
+          disb.disb_profile_id
+       from
+          dragon_disb_profile disb
+      where
+          disb.billing_account_id = in_billing_acc_id
+        and
+          disb.policy_id = in_policy_id
+        and
+          (
+               disb.policy_term_id = in_policy_cur_term_id
+               or
+               in_policy_next_term_id is not null and disb.policy_term_id = in_policy_next_term_id
+               or
+               in_policy_prior_term_id is not null and disb.policy_term_id = in_policy_prior_term_id
+          )
+        and
+          disb.disb_profile_id <> in_exclude_profile_id
+        and
+          -- OSPRODUCT-2992 Start
+          (
+               disb.profile_end_date is null
+               or
+               trunc(disb.profile_end_date) >= trunc(in_profile_start_date)
+          )
+          -- OSPRODUCT-2992 end
+        and
+          disb.preferred_prof_id = 1
+        and
+          disb.recur_mode_id = 1;
+
+--OSPRODUCT-2558
+--OSPRODUCT-2992 Start |  Added ExcludeId and start date as cursor parameters
+cursor c_ba_pay_profile_to_stop
+       (
+            in_billing_acc_id       in  object.object_id%type,
+            in_exclude_profile_id   in  object.object_id%type,
+            in_profile_start_date   in  date
+       )
+is
+     select
+          pay.pay_profile_id
+       from
+          dragon_pay_profile pay
+      where
+          pay.billing_account_id = in_billing_acc_id
+        and
+          pay.policy_id is null -- not associated with a policy
+        and
+          -- OSPRODUCT-2992 Start
+          pay.pay_profile_id <> in_exclude_profile_id
+        and
+          (
+               pay.profile_end_date is null
+               or
+               trunc(profile_end_date) >= trunc(in_profile_start_date)
+          )
+          -- OSPRODUCT-2992 end
+        and
+          pay.preferred_prof_id = 1
+        and
+          pay.recur_mode_id = 1;
+
+-- OSPRODUCT-2992 Start         | Added ExcludeId and StartDate as cursor parameters
+cursor c_ba_disb_profile_to_stop
+       (
+            in_billing_acc_id       in  object.object_id%type,
+            in_exclude_profile_id   in  object.object_id%type,
+            in_profile_start_date   in  date
+       )
+is
+     select
+          disb.disb_profile_id
+       from
+          dragon_disb_profile disb
+      where
+          disb.billing_account_id = in_billing_acc_id
+        and
+          disb.policy_id is null -- not associated with a policy
+        and
+          -- OSPRODUCT-2992 Start
+          disb.disb_profile_id <> in_exclude_profile_id
+        and
+          (
+               disb.profile_end_date is null
+               or
+               trunc(disb.profile_end_date) >= trunc(in_profile_start_date)
+          )
+          -- OSPRODUCT-2992 End
+        and
+          disb.preferred_prof_id = 1
+        and
+          disb.recur_mode_id = 1;
+
+-- end OSPRODUCT-2558
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Type
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Profile details indexed by Billing Account
+type r_ba_profile_config is record
+(
+     action_object_id      object.object_id%type,
+     action_object_type_id object_type.object_type_id%type,
+     billing_account_id    object.object_id%type,
+     payment_mode          number,
+     profile_type          char, --1.new or 2.existing
+     ctf_id                object.object_id%type,
+     customer_acc_tf       char
+);
+
+type t_ba_profile_config is table of r_ba_profile_config index by pls_integer;
+
+type t_db_object_list is table of object.object_id%type index by varchar2(12);
+
+type t_ba_profile_batch is table of object.object_id%type index by varchar2(12);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Exceptions
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+PROFILE_SETUP_ERROR       exception;
+/*PROFILE_NOT_FOUND_ERROR   exception;
+DUPLICATE_PROFILE_FOUND_ERROR exception;
+PROFILE_ASSOCIATION_ERROR     exception;*/
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Public variable declarations
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- CashTransferProfile
+gbv_CTFPaymentMode                   constant business_variable.business_variable_id%type       	:= 30010546;
+gbv_CTFProfileDetails                constant business_variable.business_variable_id%type       	:= 32375746;
+gbv_CTF_EmptyProfile                 constant business_variable.business_variable_id%type           := 32972848; -- UTPRODUCT-3154
+-- PRODUCT-3043
+gbv_CTFAdhocRecurring                constant business_variable.business_variable_id%type       	:= 32952848;
+gbv_CTFStartDate                     constant business_variable.business_variable_id%type           := 32375346;
+gbv_CTFStopDate                      constant business_variable.business_variable_id%type           := 32375446;
+gbv_CTFRecurranceMode                constant business_variable.business_variable_id%type           := 32282540;
+gbv_CTFPreferredTF                   constant business_variable.business_variable_id%type           := 32377046;
+gbv_CTFAssociateToPolicy             constant business_variable.business_variable_id%type           := 32377146;
+gbv_CTFProfileType                   constant business_variable.business_variable_id%type           := 30010446;
+gbv_CTFRecurrencyMode                constant business_variable.business_variable_id%type           := 32282540;
+gbv_CTFCardPayerType                 constant business_variable.business_variable_id%type           := 32685846;
+gbv_CTFCardHolderName                constant business_variable.business_variable_id%type           := 32833940;
+gbv_CTFCardNumber16digit             constant business_variable.business_variable_id%type           := 32835640;
+gbv_CTFCardNumber4digit              constant business_variable.business_variable_id%type           := 30011046;
+gbv_CTFCardTokenNumber               constant business_variable.business_variable_id%type           := 32834040;
+gbv_CTFCardExpiryDate                constant business_variable.business_variable_id%type       	:= 32122940;
+gbv_CTFCardExpMon                    constant business_variable.business_variable_id%type           := 30011246;
+gbv_CTFCardExpYear                   constant business_variable.business_variable_id%type           := 30011146;
+gbv_CTFCardSecurityCode              constant business_variable.business_variable_id%type           := 30010946;
+gbv_CTFCardType                      constant business_variable.business_variable_id%type           := 30010846;
+gbv_CTFCardBillingAdd                constant business_variable.business_variable_id%type           := 30744746;
+gbv_CTFCardBillingAddPartner         constant business_variable.business_variable_id%type           := 30794446;
+gbv_CTFCardadd1                      constant business_variable.business_variable_id%type           := 29325214;
+gbv_CTFCardadd2                      constant business_variable.business_variable_id%type           := 210417;
+gbv_CTFCardZip                       constant business_variable.business_variable_id%type           := 29327414;
+gbv_CTFCardCity                      constant business_variable.business_variable_id%type           := 29326314;
+gbv_CTFCardState                     constant business_variable.business_variable_id%type           := 210419;
+gbv_CTFCardCountry                   constant business_variable.business_variable_id%type           := 210423;
+gbv_CTFCardNewOrExisting             constant business_variable.business_variable_id%type           := 32638846;
+gbv_CTFEFTPayerType                  constant business_variable.business_variable_id%type           := 32689146;
+gbv_CTFEFTLegalEntityType            constant business_variable.business_variable_id%type           := 32689046;
+gbv_CTFEFTLegalEntityName            constant business_variable.business_variable_id%type           := 32689246;
+gbv_CTFEFTAccHolderFirstName         constant business_variable.business_variable_id%type           := 30743846;
+gbv_CTFEFTAccHolderLastName          constant business_variable.business_variable_id%type           := 30743946;
+gbv_CTFEFTAccHolderMiddleName        constant business_variable.business_variable_id%type           := 30744046;
+gbv_CTFEFTBankID                     constant business_variable.business_variable_id%type           := 32088040;
+gbv_CTFEFTTransitNo                  constant business_variable.business_variable_id%type           := 32088140;
+gbv_CTFEFTBankRoutingNo              constant business_variable.business_variable_id%type           := 30011346;
+gbv_CTFEFTBankName                   constant business_variable.business_variable_id%type           := 30011446;
+gbv_CTFEFTBankAccNumber              constant business_variable.business_variable_id%type           := 30011946;
+gbv_CTFEFTBankAccType                constant business_variable.business_variable_id%type           := 30011646;
+gbv_CTFEFTBankAdd1                   constant business_variable.business_variable_id%type           := 32087840;
+gbv_CTFEFTBankAdd2                   constant business_variable.business_variable_id%type           := 32087940;
+gbv_CTFEFTBankZip                    constant business_variable.business_variable_id%type           := 32377246;
+gbv_CTFEFTBankPhone                  constant business_variable.business_variable_id%type           := 32088440;
+gbv_CTFEFTCurrency                   constant business_variable.business_variable_id%type           := 32088540;
+gbv_CTFEFTBankCity                   constant business_variable.business_variable_id%type           := 32377446;
+gbv_CTFEFTBankCountry                constant business_variable.business_variable_id%type           := 32377346;
+gbv_CTFEFTBankProvince               constant business_variable.business_variable_id%type           := 32088340;
+gbv_CTFEFTBankPostalCode             constant business_variable.business_variable_id%type           := 32088240;
+gbv_CTFEFTNewOrExisting              constant business_variable.business_variable_id%type           := 32640646;
+gbv_ProfileErrorCode                 constant business_variable.business_variable_id%type           := 32914148;
+gbv_CTFRefIntermediaryPrfl           constant business_variable.business_variable_id%type           := 34212046;
+gbv_CTFEFTAccountName                constant business_variable.business_variable_id%type           := 32689246;
+gbv_CTFIntermediaryPrflTF            constant business_variable.business_variable_id%type           := 34213146;
+gbv_CTFIntermediaryPrflReq           constant business_variable.business_variable_id%type           := 34212146;
+gbv_CTFSortCode                      constant business_variable.business_variable_id%type           := 34204446;
+gbv_CTFIBAN                          constant business_variable.business_variable_id%type           := 34204246;
+gbv_CTFSwiftCode                     constant business_variable.business_variable_id%type           := 34204346;
+gbv_CTFAdditionalInfo                constant business_variable.business_variable_id%type           := 34204146;
+gbv_CTFRefEFTBillAddCstmr            constant business_variable.business_variable_id%type           := 32922648;
+gbv_CTFRefEFTBankAddCstmr            constant business_variable.business_variable_id%type           := 32922748;
+gbv_CTFRefEFTBillAddIE               constant business_variable.business_variable_id%type           := 32922848;
+gbv_CTFRefEFTBankAddIE               constant business_variable.business_variable_id%type           := 32922948;
+gbv_CTFRefEFTBankAddPtnr             constant business_variable.business_variable_id%type           := 34211846;
+gbv_CTFRefEFTBillAddPtnr             constant business_variable.business_variable_id%type           := 34211946;
+gbv_CTFEFTTokenNumber                constant business_variable.business_variable_id%type           := 32834040;
+gbv_CTFCreator                       constant business_variable.business_variable_id%type           := 34275748;
+gbv_CTFFabricPayPrfId                constant business_variable.business_variable_id%type           := 33990448;
+
+-- Billing Account
+gbv_BAPlchldrDisbProfUsage           constant business_variable.business_variable_id%type           := 31705646;
+gbv_BACTFPlchldrCheque               constant business_variable.business_variable_id%type           := 30744246;
+gbv_BACTFPlchldrEFT                  constant business_variable.business_variable_id%type           := 30023846;
+gbv_BACTFPlchldrCard                 constant business_variable.business_variable_id%type           := 30023746;
+gbv_BAPreferredPayProfUsage          constant business_variable.business_variable_id%type           := 30744446;
+gbv_BAPreferredDisbProfUsage         constant business_variable.business_variable_id%type           := 31705546;
+gbv_BAProfileReviewDt                constant business_variable.business_variable_id%type           := 32531848;
+gbv_BACurrentBatch                   constant business_variable.business_variable_id%type           := 31904446;
+gbv_BAChequeProfile                  constant business_variable.business_variable_id%type           := 32765148;
+
+-- DisbursementProfileUsage
+gbv_DPUStartDate                     constant business_variable.business_variable_id%type           := 32755948;
+gbv_DPUStopDate                      constant business_variable.business_variable_id%type           := 32756048;
+gbv_DPUState                         constant business_variable.business_variable_id%type           := 34196946;
+gbv_DPUDisbursementType              constant business_variable.business_variable_id%type           := 30013746;
+gbv_DPUInsuranceLine                 constant business_variable.business_variable_id%type           := 30013846;
+gbv_DPUUsageDescription              constant business_variable.business_variable_id%type           := 30013646;
+gbv_DPUDisbursementSched             constant business_variable.business_variable_id%type           := 31688446;
+gbv_DPUDateOfMonth                   constant business_variable.business_variable_id%type           := 31690746;
+gbv_DPUDateType                      constant business_variable.business_variable_id%type           := 32861640;
+gbv_DPUDayOfWeek                     constant business_variable.business_variable_id%type           := 31690646;
+gbv_DPUDisbMode                      constant business_variable.business_variable_id%type           := 31690846;
+gbv_DPURecurrencyMode                constant business_variable.business_variable_id%type           := 32208140;
+gbv_DPUPreferredtf                   constant business_variable.business_variable_id%type           := 32423346;
+gbv_DPUCustomerAddForDisb            constant business_variable.business_variable_id%type           := 31691546;
+gbv_DPUPartnerAddForDisb             constant business_variable.business_variable_id%type           := 31692346;
+gbv_DPUCashTrsfrProfileUsed          constant business_variable.business_variable_id%type           := 30013446;
+gbv_DPUCreatedByBatch                constant business_variable.business_variable_id%type           := 32756148;
+gbv_DPUAssociatedToPolicy            constant business_variable.business_variable_id%type           := 32237440;
+gbv_DPUAssociatedToTerm              constant business_variable.business_variable_id%type           := 32760548;
+gbv_DPUAssociatedTermPayer           constant business_variable.business_variable_id%type           := 32574548;
+--OSPRODUCT-2992 variable added
+gbv_DPUProfileDirty                  constant business_variable.business_variable_id%type           := 32910848;
+gbv_DPUBatchCreatedUsingPrf          constant business_variable.business_variable_id%type           := 31711146;
+
+-- PaymentProfileUSage
+gbv_PPUStartDate                     constant business_variable.business_variable_id%type           := 32755748;
+gbv_PPUStopDate                      constant business_variable.business_variable_id%type           := 32755848;
+gbv_PPUState                         constant business_variable.business_variable_id%type           := 34195946;
+gbv_PPURecurrencyMode                constant business_variable.business_variable_id%type           := 32614648;
+gbv_PPUPreferredtf                   constant business_variable.business_variable_id%type           := 32423446;
+gbv_PPUCashTransferProfUSed          constant business_variable.business_variable_id%type           := 30013046;
+gbv_PPUCreatedByBatch                constant business_variable.business_variable_id%type           := 32756248;
+gbv_PPUAssociatedToPolicy            constant business_variable.business_variable_id%type           := 32237746;
+gbv_PPUAssociatedToTerm              constant business_variable.business_variable_id%type           := 32760648;
+gbv_PPUAssociatedTermPayer           constant business_variable.business_variable_id%type           := 32574448;
+--OSPRODUCT-2992 variable added
+gbv_PPUProfileDirty                  constant business_variable.business_variable_id%type           := 32910748;
+
+-- PolicyTerm
+gbv_TermPreferredPayProfile          constant business_variable.business_variable_id%type           := 32251146;
+gbv_TermPreferredDisbProfile         constant business_variable.business_variable_id%type           := 32251246;
+gbv_PolicyTermExpirationDate         constant business_variable.business_variable_id%type           := 29705946;
+
+-- PolicyTermPayer
+gbv_TermPayerPrefPayProf             constant business_variable.business_variable_id%type           := 32574248;
+gbv_TermPayerPrefDisbProf            constant business_variable.business_variable_id%type           := 32574348;
+
+-- Generic Object
+gbv_ObjEffectiveDate                 constant business_variable.business_variable_id%type           := 29722901;
+gbv_ObjExpirationDate                constant business_variable.business_variable_id%type           := 29723001;
+
+-- Activity
+gbv_UsageOfGenericObject             constant business_variable.business_variable_id%type           := 32251646;
+
+-- PTPPayer
+gbv_PTPPayerDwnPmntMode              constant business_variable.business_variable_id%type           := 32574648;
+gbv_PTPPayerEFTProfileType           constant business_variable.business_variable_id%type           := 32575148;
+gbv_PTPPayerCardProfileType          constant business_variable.business_variable_id%type           := 32575048;
+gbv_Ref_PTPPayerCurrentProfile       constant business_variable.business_variable_id%type           := 32574848;
+gbv_Ref_PTPPayerCardPlchldr          constant business_variable.business_variable_id%type           := 32573948;
+gbv_Ref_PTPPayerEFTPlchldr           constant business_variable.business_variable_id%type           := 32574048;
+gbv_Ref_PTPPayerPlchldrPrfInpt       constant business_variable.business_variable_id%type           := 32924748;
+gbv_Ref_TermPayerEntity              constant business_variable.business_variable_id%type           := 32714824;
+gbv_Ref_PayProfilePayer              constant business_variable.business_variable_id%type           := 32574448;
+gbv_Ref_DisbProfilePayer             constant business_variable.business_variable_id%type           := 32574548;
+gbv_AssociatedTermPayer              constant business_variable.business_variable_id%type           := 32578848;
+gbv_Ref_PTPPayerRecurringCTF         constant business_variable.business_variable_id%type           := 33030048;
+gbv_Ref_PTPPayerDownPaymentCTF       constant business_variable.business_variable_id%type           := 33030148;
+-- UTPRODUCT-3984
+gbv_PayerAddAdhocDwnPmntPrf          constant business_variable.business_variable_id%type           := 33017448;
+gbv_Ref_PayerDwnPmCardPlchldr        constant business_variable.business_variable_id%type           := 33016348;
+gbv_Ref_PayerDwnPmEFTPlchldr         constant business_variable.business_variable_id%type           := 33016448;
+gbv_Ref_PayerDwnPlchldrPrfInpt       constant business_variable.business_variable_id%type           := 33016548;
+gbv_Ref_PayerDwnPmntProfile          constant business_variable.business_variable_id%type           := 33018948;
+gbv_PayerDifferentAdhocPrf           constant business_variable.business_variable_id%type           := 33029548;
+
+-- PolicyTransactionPolicy
+gbv_PTPDownPmntMode                  constant business_variable.business_variable_id%type           := 211929;
+gbv_RefPaymentPrfCC                  constant object_bv_value.business_variable_id%type             := 32068740;
+gbv_RefPaymentPrfEFT                 constant business_variable.business_variable_id%type           := 32072440;
+gbv_CashTrsPrCardExp                 constant business_variable.business_variable_id%type           := 31900946;
+gbv_PolicyEffectiveDt                constant business_variable.business_variable_id%type           := 504;
+gbv_PTPChangePayProfile              constant business_variable.business_variable_id%type           := 34233146;
+gbv_EFTProfileNewOrExisting          constant business_variable.business_variable_id%type           := 32072540;
+gbv_CardProfileNewOrExisting         constant business_variable.business_variable_id%type           := 32068240;
+gbv_PTPCurrentProfile                constant business_variable.business_variable_id%type           := 29494046;
+gbv_PTPAddAdhocDwnPmntPrf            constant business_variable.business_variable_id%type           := 33016748;
+gbv_PTPDifferentAdhocPrf             constant business_variable.business_variable_id%type           := 33028548;
+
+--Policy Transaction
+gbv_PTCardPlaceholder                constant business_variable.business_variable_id%type           := 33993546;
+gbv_PTEFTPlaceholder                 constant business_variable.business_variable_id%type           := 33993646;
+gbv_PTProfileDetailPlchldr           constant business_variable.business_variable_id%type           := 32924648;
+gbv_Ref_PTRecurringCTF               constant business_variable.business_variable_id%type           := 33026848;
+gbv_Ref_PTDownPaymentCTF             constant business_variable.business_variable_id%type           := 33028648;
+-- UTPRODUCT-3984
+gbv_PTDwnPmntCardPlaceholder         constant business_variable.business_variable_id%type           := 33016048;
+gbv_PTDwnPmntEFTPlaceholder          constant business_variable.business_variable_id%type           := 33016148;
+gbv_PTDwnPmntPrfDetailPlchldr        constant business_variable.business_variable_id%type           := 33016248;
+gbv_PTDwnPmntAdhocProfile            constant business_variable.business_variable_id%type           := 33018848;
+
+-- Billing Account Transaction Set
+-- OSPRODUCT-15437
+gbv_ProfileNotForFutureUse           constant business_variable.business_variable_id%type           := 33298048;
+gbv_Ref_BatchAssociatedProfile       constant business_variable.business_variable_id%type           := 32828640;
+gbv_Ref_CurrentFiTransaction         constant business_variable.business_variable_id%type           := 29743646;
+-- 2574
+gbv_Ref_BatchCardPlaceholder         constant business_variable.business_variable_id%type           := 32919648;
+gbv_Ref_BatchEFTPlaceholder          constant business_variable.business_variable_id%type           := 32919748;
+gbv_Ref_BatchPlfPlchldrInput         constant business_variable.business_variable_id%type           := 32924848;
+gbv_Ref_BatchPlfPlchldrDisb          constant business_variable.business_variable_id%type           := 32975648;
+
+-- FITransaction
+gbv_FITrx_Ref_ActionPolicy           constant business_variable.business_variable_id%type           := 29974046;
+gbv_FITrx_PaymentMode                constant business_variable.business_variable_id%type           := 30744646;
+gbv_FITrx_CardNewOrExisting          constant business_variable.business_variable_id%type           := 32274240;
+gbv_FITrx_CardHolderFirstName        constant business_variable.business_variable_id%type           := 32123640;
+gbv_FITrx_CardHolderMiddleName       constant business_variable.business_variable_id%type           := 32123740;
+gbv_FITrx_CardHolderLastName         constant business_variable.business_variable_id%type           := 32123840;
+gbv_FITrx_CardHolderName             constant business_variable.business_variable_id%type           := 32848340;
+gbv_FITrx_CardType                   constant business_variable.business_variable_id%type           := 32123440;
+gbv_FITrx_CardNumber                 constant business_variable.business_variable_id%type           := 32123540;
+gbv_FITrx_CardExpiryMonth            constant business_variable.business_variable_id%type           := 32123940;
+gbv_FITrx_CardExpiryYear             constant business_variable.business_variable_id%type           := 32124040;
+gbv_FITrx_CardSecurityCode           constant business_variable.business_variable_id%type           := 32124140;
+gbv_FITrx_CardNumber4Digit           constant business_variable.business_variable_id%type           := 32848140;
+gbv_FITrx_CardTokenNumber            constant business_variable.business_variable_id%type           := 32848240;
+gbv_FITrx_CardStartDate              constant business_variable.business_variable_id%type           := 32848440;
+gbv_FITrx_EFTNewOrExisting           constant business_variable.business_variable_id%type           := 32598940;
+gbv_FITrx_EFTPayerType               constant business_variable.business_variable_id%type           := 32689846;
+gbv_FITrx_EFTEntityType              constant business_variable.business_variable_id%type           := 32689946;
+gbv_FITrx_EFTEntityName              constant business_variable.business_variable_id%type           := 32689746;
+gbv_FITrx_EFTPayerFirstName          constant business_variable.business_variable_id%type           := 32600840;
+gbv_FITrx_EFTPayerMiddleName         constant business_variable.business_variable_id%type           := 32600740;
+gbv_FITrx_EFTPayerLastName           constant business_variable.business_variable_id%type           := 32600640;
+gbv_FITrx_EFTBankPostalCode          constant business_variable.business_variable_id%type           := 32600140;
+gbv_FITrx_EFTBankTransitNumber       constant business_variable.business_variable_id%type           := 32600240;
+gbv_FITrx_EFTBankName                constant business_variable.business_variable_id%type           := 32600340;
+gbv_FITrx_EFTBankIDNumber            constant business_variable.business_variable_id%type           := 32600440;
+gbv_FITrx_EFTBankRoutingNo           constant business_variable.business_variable_id%type           := 32029146;
+gbv_FITrx_EFTAccountType             constant business_variable.business_variable_id%type           := 32029346;
+gbv_FITrx_EFTBankAccNumber           constant business_variable.business_variable_id%type           := 32600540;
+gbv_FITrx_EFTAccNumberNew            constant business_variable.business_variable_id%type           := 32848640;
+gbv_FITrx_EFTBankAddLine1            constant business_variable.business_variable_id%type           := 32601040;
+gbv_FITrx_EFTBankAddLine2            constant business_variable.business_variable_id%type           := 32600940;
+gbv_FITrx_EFTBankPhoneNo             constant business_variable.business_variable_id%type           := 32601340;
+gbv_FITrx_EFTCurrency                constant business_variable.business_variable_id%type           := 32601240;
+gbv_FITrx_EFTBankZIPCode             constant business_variable.business_variable_id%type           := 34096246;
+gbv_FITrx_EFTBankProvince            constant business_variable.business_variable_id%type           := 34096346;
+gbv_FITrx_EFTBankCity                constant business_variable.business_variable_id%type           := 32677446;
+gbv_FITrx_EFTBankCountry             constant business_variable.business_variable_id%type           := 32677346;
+
+-- Profile Usage Update
+gbv_PrfUpdateRefPayProfile          constant business_variable.business_variable_id%type            := 32828240;
+gbv_PrfUpdateRefDisbProfile         constant business_variable.business_variable_id%type            := 32837040;
+
+-- Policy
+gbv_current_term                    constant business_variable.business_variable_id%type            := 31844846;
+
+-- Partner
+gbv_PartnerPaymentMode              constant business_variable.business_variable_id%type            := 34113446;
+
+-- Integration
+gbv_path_Payment_Integration        constant varchar2(100)                                          := '210090.32855748';  --Sessobject._Reference_Connected To.Payment_provider_Integration -- UTPRODUCT-4175
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+g_PaymentMode_PlchldrCard            constant    lookup_list_value.lookup_enum%type                := 4;
+g_PaymentMode_PlchldrEFT             constant    lookup_list_value.lookup_enum%type                := 5;
+g_PaymentMode_Cheque                 constant    lookup_list_value.lookup_enum%type                := 1;
+g_PaymentMode_Card                   constant    lookup_list_value.lookup_enum%type                := 2;
+g_PaymentMode_EFT                    constant    lookup_list_value.lookup_enum%type                := 3;
+g_DisbMode_Cheque                    constant    lookup_list_value.lookup_enum%type                := 3;
+g_DisbMode_Card                      constant    lookup_list_value.lookup_enum%type                := 2;
+g_DisbMode_EFT                       constant    lookup_list_value.lookup_enum%type                := 1;
+g_Profile_Type_New                   constant    lookup_list_value.lookup_enum%type                := 2;
+g_Profile_Type_Existing              constant    lookup_list_value.lookup_enum%type                := 1;
+g_Profile_Type_Pmnt                  constant    lookup_list_value.lookup_enum%type                := 1;
+g_Profile_Type_Disb                  constant    lookup_list_value.lookup_enum%type                := 2;
+g_Profile_Type_Both                  constant    lookup_list_value.lookup_enum%type                := 3;
+g_Yes0                               constant    lookup_list_value.lookup_enum%type                := 0;
+g_Yes                                constant    lookup_list_value.lookup_enum%type                := 1;
+g_No                                 constant    lookup_list_value.lookup_enum%type                := 2;
+g_RecurrencyMode_Recurring           constant    lookup_list_value.lookup_enum%type                := 1;
+g_RecurrencyMode_Adhoc               constant    lookup_list_value.lookup_enum%type                := 2;
+g_DisbSchedule_Daily                 constant    lookup_list_value.lookup_enum%type                := 1;
+g_DisbSchedule_Weekly                constant    lookup_list_value.lookup_enum%type                := 2;
+g_DisbSchedule_Fortnight             constant    lookup_list_value.lookup_enum%type                := 3;
+g_DisbSchedule_Monthly               constant    lookup_list_value.lookup_enum%type                := 4;
+g_DisbSchedule_Quarterly             constant    lookup_list_value.lookup_enum%type                := 5;
+g_DisbSchedule_Halfyear              constant    lookup_list_value.lookup_enum%type                := 6;
+g_DisbSchedule_Yearly                constant    lookup_list_value.lookup_enum%type                := 7;
+g_DisbSchedule_3Pay                  constant    lookup_list_value.lookup_enum%type                := 8;
+g_PayerType_Individual               constant    lookup_list_value.lookup_enum%type                := 1;
+g_PayerType_Business                 constant    lookup_list_value.lookup_enum%type                := 2;
+g_ProfileState_Active                constant    lookup_list_value.lookup_enum%type                := 75;
+g_ProfileState_Inactive              constant    lookup_list_value.lookup_enum%type                := 58248;
+g_ProfileState_Expired               constant    lookup_list_value.lookup_enum%type                := 36746;
+g_ProfileState_Discarded             constant    lookup_list_value.lookup_enum%type                := 58548;
+g_FITrx_PaymentMode_Card             constant    lookup_list_value.lookup_enum%type                := 51940;
+g_FITrx_PaymentMode_EFT              constant    lookup_list_value.lookup_enum%type                := 53346;
+g_FITrx_PymntModeAgntPrtl_Card       constant    lookup_list_value.lookup_enum%type                := 54151;
+g_FITrx_PymntModeAgntPrtl_EFT        constant    lookup_list_value.lookup_enum%type                := 54251;
+g_FITrx_PymntModeCustPrtl_Card       constant    lookup_list_value.lookup_enum%type                := 54351;
+g_FITrx_PymntModeCustPrtl_EFT        constant    lookup_list_value.lookup_enum%type                := 54451;
+g_PrfVldtnCd_MissingPlchldr          constant    lookup_list_value.lookup_enum%type                := 1;
+g_PrfVldtnCd_InvldPlchldrType        constant    lookup_list_value.lookup_enum%type                := 2;
+g_PrfVldtnCd_MissingCardType         constant    lookup_list_value.lookup_enum%type                := 3;
+g_PrfVldtnCd_MissingCardNum          constant    lookup_list_value.lookup_enum%type                := 4;
+g_PrfVldtnCd_MissingCardExpMn        constant    lookup_list_value.lookup_enum%type                := 5;
+g_PrfVldtnCd_MissingCardExpYr        constant    lookup_list_value.lookup_enum%type                := 6;
+g_PrfVldtnCd_MissingEFTAccNum        constant    lookup_list_value.lookup_enum%type                := 7;
+g_PrfVldtnCd_MissingBankCntry        constant    lookup_list_value.lookup_enum%type                := 8;
+g_PrfVldtnCd_MissingAcctType         constant    lookup_list_value.lookup_enum%type                := 9;
+g_PrfVldtnCd_MissingRoutingNum       constant    lookup_list_value.lookup_enum%type                := 10;
+g_PrfVldtnCd_MissingBankID           constant    lookup_list_value.lookup_enum%type                := 11;
+g_PrfVldtnCd_MissingTransitNum       constant    lookup_list_value.lookup_enum%type                := 12;
+g_PrfVldtnCd_DuplicateProfile        constant    lookup_list_value.lookup_enum%type                := 13;
+g_PrfVldtnCd_InvldProfileMode        constant    lookup_list_value.lookup_enum%type                := 14;
+g_PrfVldtnCd_ValidationPassed        constant    lookup_list_value.lookup_enum%type                := 20;
+-- 2828
+g_BATS_TypeID_ProfileUssage          constant    lookup_list_value.lookup_enum%type                := 7004; --OSPRODUCT-AKM
+gBatchEntryMethod_System             constant    lookup_list_value.lookup_enum%type                :=   401; --OSPRODUCT-8104
+gBatchEntryMethod_Manual             constant    lookup_list_value.lookup_enum%type                :=   101;
+
+--OSPRODUCT-3698 start
+gbv_CustRefPrimaryEntity             constant business_variable.business_variable_id%type          := 29253414;
+gObjType_BillingAccount              constant object_type.object_type_id%type                      := 2365346;
+--OSPRODUCT-3698 end
+
+--OSPRODUCT-4031
+--[rr] not properly aligned
+gOutcome_ProfileSetupError           constant outcome.outcome_id%type                              := 60448;
+
+-- Adhoc Profile option
+g_ProfileForAll                      constant    lookup_list_value.lookup_enum%type                :=   2; --OSPRODUCT-8104
+g_DiffProfileForDwnPmnt              constant    lookup_list_value.lookup_enum%type                :=   1;
+
+/*
+gbv_PartnerMailingAddress            constant business_variable.business_variable_id%type          := 29367314;
+gbv_PartnerPrimaryAddress            constant business_variable.business_variable_id%type          := 29367214;
+gbv_PartnerFirstApproved             constant business_variable.business_variable_id%type          := 28930205;
+*/																		 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Public function and procedure declarations
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_setup_new_ctf
+(
+     in_session_id                in             object.object_id%type,
+     in_transaction_id            in             object.object_id%type,
+     in_billing_account_id        in             object.object_id%type,
+     in_payment_mode              in             object_bv_value.business_variable_value%type,
+     in_placeholder_id            in             object.object_id%type,
+     out_ctf_id                   out            object.object_id%type,
+     in_plchldr_use_tf            in             char default 'F',
+     in_allow_duplicate_prf_tf    in             char default 'F' -- pass T if adhoc profile needs to be created without any duplicate check
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_profile_placeholder
+(
+     in_session_id                in             object.object_id%type,
+     in_transaction_id            in             object.object_id%type,
+     in_action_object_id          in             object.object_id%type,
+     io_object_cache              in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id         in out nocopy  outcome.outcome_id%type,
+     in_down_payment_prf_tf       in             char default 'F'
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_dpu_for_customer
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     in_action_object_id             in             object.object_id%type default null,
+     in_cash_transfer_profile_id     in             object.object_id%type default null,
+     in_placeholder_dpu_id           in             object.object_id%type default null,
+     io_object_id                    out            object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_dpu_for_non_customer
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_billing_account_id                 in             object.object_id%type,
+     in_profile_type_id                    in             number,
+     in_cash_transfer_profile_id           in             object.object_id%type,
+     in_placeholder_dpu_id                 in             object.object_id%type default null,
+     io_object_id                          out            object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_ppu
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     in_action_object_id             in             object.object_id%type default null,
+     in_cash_transfer_profile_id     in             object.object_id%type default null,
+     io_object_id                    out            object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_prf_chnged_for_term_tf
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_policy_term_id               in             object.object_id%type,
+     in_payment_mode                 in             char,
+     in_new_ctf_id                   in             object.object_id%type
+)return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_prf_chnged_for_termpayer_tf
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_term_payer_id                in             object.object_id%type,
+     in_payment_mode                 in             char,
+     in_new_ctf_id                   in             object.object_id%type
+)return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_prf_setup_nb_pnbt
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_policy_trx_id                in             object.object_id%type,
+     in_action_object_id             in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type,
+     v_rollback_trx_tf                     in             char default 'F'
+);
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- OSPRODUCT-25867
+procedure sp_syncup_disb_prf_address  --addeess update on disbursement profile
+(
+     in_session_id                  in             object.object_id%type,
+     in_transaction_id              in             object.object_id%type,
+     in_action_object_id            in             object.object_id%type,
+     io_action_outcome_id           in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_prf_setup_nb_pnbt
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_policy_trx_id                in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_ba_profile_setup
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_ba_assoc_policy_prf_setup
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_action_object_id             in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type,
+     in_policy_list_from_ui_tf       in             char default 'T',
+     in_policy_list                  in             object_bv_value.business_variable_value%type default null,
+     in_bor_flag                     in             char := 'F'
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_associate_policy_to_profile
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     in_policy_list                  in             object_bv_value.business_variable_value%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type,
+     in_requested_by_ba_trx_set      in             object.object_id%type default null,
+     in_pay_profile_id               in             object.object_id%type default null,
+     in_disb_profile_id              in             object.object_id%type default null,
+     in_associate_to_curr_term_tf    in             char := 'T',
+     in_ctf_id                       in             object.object_id%type default null,
+     in_disb_placeholder_id          in             object.object_id%type default null,
+     in_profile_type                 in             object_bv_value.business_variable_value%type default g_Profile_Type_Both,
+     in_profile_start_date           in             object_bv_value.business_variable_value%type default null,
+     in_preferred_tf                 in             char := g_Yes,
+     in_recurring_tf                 in             char := g_RecurrencyMode_Recurring,
+     in_billplan_update_tf           in             char := 'F',
+     in_adhoc_profile_tf             in             char default 'F'
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_preferred_pmnt_disb_profile
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_object_id                    in             object.object_id%type, -- Policy term ID (Can be implemented for BA)
+     in_profile_type                 in             object_type.object_type_id%type -- PaymentProfileUsage or DisbursementProfileUsage
+)    return object.object_id%type;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_asso_pols_to_new_profile
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_object_cache                 in out         pkg_os_object_cache.t_object_cache,
+     in_action_object_id             in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_single_pmnt_profile_setup
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_acc_trx_set_id       in             object.object_id%type,
+     io_action_outcome_id            in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_inactivate_profile
+(
+     in_session_id                   in             object.object_id%type,
+     in_transaction_id               in             object.object_id%type,
+     in_billing_account_id           in             object.object_id%type,
+     io_action_outcome_id            in out         outcome.outcome_id%type,
+     in_ctf_id                       in             object.object_id%type default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_partner_setup_new_profiles
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_billing_account_id                 in             object.object_id%type,
+     io_action_outcome_id                  in             out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_ba_preferred_profile_count
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_action_object_id                   in             object.object_id%type
+)    return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_ba_eft_profile_validation
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_action_object_id                   in             object.object_id%type
+)    return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_future_dated_profile_upd
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_profile_id                      in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_remove_expired_card_details
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ctf_id                          in             object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_intermediary_prof
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_action_object_id                   in             object.object_id%type,
+     io_action_outcome_id                  in out         outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_cl_multiple_prfl
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_billing_account_id                 in             object.object_id%type,
+     io_action_outcome_id                  in             out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_cl_create_new_prfl
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_billing_account_id                 in             object.object_id%type,
+     io_action_outcome_id                  in             out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_cl_clear_CTP_plchldr
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_action_object_id                   in             object.object_id%type,
+     io_action_outcome_id                  in             out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_sanity_check_for_profile
+(
+     in_session_id                in             object.object_id%type,
+     in_transaction_id            in             object.object_id%type,
+     in_payment_mode_id           in             char,
+     in_placeholder_id            in             object.object_id%type
+)return varchar;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_disbursement_profile_setup
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_billing_acc_trx_set_id             in             object.object_id%type,
+     io_action_outcome_id                  in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_insert_bank_info
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_cashtrasferprofile_id              in             object.object_id%type,
+     io_action_outcome_id                  in out         outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_refresh_bank_info
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_cashtrasferprofile_id              in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_bank_info
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_action_object_id                   in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_inactivate_adhoc_profile
+(
+     in_session_id                    in             object.object_id%type,
+     in_transaction_id                in             object.object_id%type,
+     in_action_object_id              in             object.object_id%type, -- PTP ID
+     io_action_outcome_id             in out         outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_trunc_bankaccnt_number
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_bankaccnt_number                   in             object_bv_value.business_variable_value%type,
+     in_digits                             in             number default 4,
+     in_keep_length_tf                     in             char   default 'T'
+)
+return object_bv_value.business_variable_value%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_trunc_CC_number
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_cc_number                          in             object_bv_value.business_variable_value%type,
+     in_digits                             in             number default 4,
+     in_keep_length_tf                     in             char   default 'T'
+)
+return object_bv_value.business_variable_value%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_cascade_prf_to_bor_acct
+(
+     in_session_id                          object.object_id%type,
+     in_transaction_id                      object.object_id%type,
+     in_old_billing_account                 object.object_id%type,
+     in_new_billing_account                 object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-13624
+procedure sp_cleanup_profile_placeholder   
+(
+     in_session_id                          object.object_id%type,
+     in_transaction_id                      object.object_id%type,
+     in_action_object_id                    object.object_id%type,
+     io_action_outcome_id       in out      outcome.outcome_id%type,
+     in_down_payment_prf_tf     in          char default 'F'
+);
+
+procedure sp_create_profile_placeholder
+(
+     in_session_id                in             object.object_id%type,
+     in_transaction_id            in             object.object_id%type,
+     in_action_object_id          in             object.object_id%type,
+     io_action_outcome_id         in  out nocopy outcome.outcome_id%type
+     
+);
+
+-- OSPRODUCT-17719
+function fn_is_card_expired
+(
+     in_session_id                         in             object.object_id%type,
+     in_transaction_id                     in             object.object_id%type,
+     in_card_ctf_id                        in             object.object_id%type,
+     in_as_of_date                         in             date default sysdate
+)return char;
+
+--OSPRODUCT-29325
+function fn_bind_with_pmnt_allowd_tf
+(
+     in_session_id                   in object.object_id%type,
+     in_transaction_id               in object.object_id%type,
+     in_ptp_id                       in object.object_id%type
+)return char;
+
+function fn_bind_with_payment_tf
+(
+     in_session_id                   in object.object_id%type,
+     in_transaction_id               in object.object_id%type,
+     in_ptp_id                       in object.object_id%type
+)return char;
+
+procedure sp_writing_comp_disb_prf_setup
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     io_action_outcome_id               in             out nocopy  outcome.outcome_id%type
+);
+
+end PKG_DB_PROFILES;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+/

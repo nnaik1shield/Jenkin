@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2013-07-13T13:33:52" created="2012-02-13T10:55:17" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Partner/License by Status.xanalyzer" name="License by Status"/>
+    </commonStorageAttributes>
+    <report freezeRows="false" freezeColumns="false" autoRefresh="true" version="7" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="true" reportTypeEnum="PIVOT" cube="PARTNER_LICENSE_CUBE" catalog="Partner Management Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure gembarOrdinal="0" gembarId="measures" id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[License_Count]"/>
+        </measures>
+        <columnAttributes>
+            <attribute gembarOrdinal="0" gembarId="columns" sortOrderEnum="ASC" showSubtotal="false" formula="[License_Status].[License Status]"/>
+        </columnAttributes>
+        <rowAttributes>
+            <attribute gembarOrdinal="0" gembarId="rows" sortOrderEnum="ASC" showSubtotal="false" formula="[License_Jurisdiction].[License Jurisdiction]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions legendFontFamily="Default" labelFontFamily="Default" legendStyle="PLAIN" legendColor="#000000" legendSize="12" legendBackgroundColor="#ffffff" labelStyle="PLAIN" backgroundColorEnd="#ffffff" maxChartsPerRow="3" backgroundFill="NONE" labelSize="12" labelColor="#000000" backgroundColor="#ffffff" maxValues="100" lineShape="CIRCLE" lineWidth="2" displayUnitsSecondary="UNITS_0" autoRangeSecondary="true" displayUnits="UNITS_0" autoRange="true" showLegend="true" legendPosition="RIGHT" customChartType="ccc_horzbar" chartType="CUSTOM"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelScalingPageTall="1" excelScalingPageWide="1" excelScalingPercent="100" excelScalingType="PERCENT" pdfOrientation="LANDSCAPE" excelOrientation="LANDSCAPE" pdfPageSize="LETTER" excelPageSize="LETTER"/>
+    </report>
+    <uiAttributes showFilterPanel="false" showFieldLayout="false" showFieldList="true">
+        <rowFieldWidths actualWidths="119">
+            <labelWidth index="0">
+                <width>-25</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

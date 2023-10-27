@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-06-08T09:59:58" created="2011-06-08T09:31:33" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Submission/Quote Dashboard by Status Chart.xanalyzer" name="Quote Dashboard by Status Chart"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="CHART" cube="Quote Activity" catalog="Quote Activity">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]"/>
+        </measures>
+        <columnAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Period].[Period]"/>
+        </columnAttributes>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Status].[Status]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Period].[Period Type]">
+                <predicates>
+                    <predicate parameterName="Period" operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Day" formula="[Period].[Day]"/>
+                        <member pos="0" caption="Month" formula="[Period].[Month]"/>
+                        <member pos="0" caption="Quarter" formula="[Period].[Quarter]"/>
+                        <member pos="0" caption="Week" formula="[Period].[Week]"/>
+                        <member pos="0" caption="YTD" formula="[Period].[YTD]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="VERTICAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

@@ -1,0 +1,1147 @@
+create or replace package pkg_db_billing_modify
+
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_BILLING_MODIFY_PSK.sql  $
+-- $Revision:   1.3  $
+--   $Author:   gkaur  $
+--     $Date:   16 Jan 2014 15:56:54  $
+-------------
+
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+g_billing_account_list             pkg_db_object.t_billing_account_list;
+g_scheduled_payment_list           pkg_os_object.t_object_list;
+
+
+plan_type_linear              constant  number(12)                                        :=   1;
+plan_type_monthly             constant  number(12)                                        :=   2;
+plan_type_formulaic           constant  number(12)                                        :=   3;
+plan_type_fullpay             constant  number(12)                                        :=   1401;
+plan_type_quarterly           constant  number(12)                                        :=   1606;
+split_on_payment_plan         constant  number(12)                                        :=   346;
+split_on_custom_plan          constant  number(12)                                        :=   446;
+split_on_upfront              constant  number(12)                                        :=   246;
+
+paymentmode_EFT              constant  number(12)                                        :=   3;
+paymentmode_CC               constant  number(12)                                        :=   2;
+
+gObjType_ScheduledPayment     constant object_type.object_type_id%type                    :=   2297206;
+gObjType_ScheduledElement     constant object_type.object_type_id%type                    :=   2365546;
+gObjType_ScheduledInstallment constant object_type.object_type_id%type                    :=   2365446;
+gObjType_FITransaction        constant object_type.object_type_id%type                    :=   2365046;
+gObjType_FItem                constant object_type.object_type_id%type                    :=   2365246;
+gObjType_FIChange             constant object_type.object_type_id%type                    :=   2365146;
+gObjType_BillingAccount       constant object_type.object_type_id%type                    :=   2365346;
+gObjType_PolicyTerm           constant object_type.object_type_id%type                    :=   2389401;
+gObjType_BillingAccountTrxSet constant object_type.object_type_id%type                    :=   2365946;
+gObjType_GenericObject        constant object_type.object_type_id%type                    :=   0;
+gObjType_PayPlan              constant object_type.object_type_id%type                    :=   638;
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gObjType_PolBillReference     constant object_type.object_type_id%type                    :=   3373246;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+gTrxSubType_changeBilltype    constant PD_TRANSACTION_SUB_TYPE.PD_TRANSACTION_SUB_TYPE_id%type := 2;  --OSBILLING-4516
+gTrxSubType_changepayplan     constant PD_TRANSACTION_SUB_TYPE.PD_TRANSACTION_SUB_TYPE_id%type := 5;  --OSBILLING-4516
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Session
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_SessionRefPolicy          constant business_variable.business_variable_id%type        :=   29650546;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PaymentPlan
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PaymentPlanChildPayment   constant business_variable.business_variable_id%type        :=   29105606;
+gbv_PaymentPlanCurrentStub    constant business_variable.business_variable_id%type        :=   31689146;
+gbv_PaymentPlanMDID           constant business_variable.business_variable_id%type        :=   212015;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PaymentPlan
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyTermBillStatus      constant business_variable.business_variable_id%type        :=   29706146;
+gbv_PolicyTermType            constant business_variable.business_variable_id%type        :=   29706046;
+gbv_PolicyRefModPayPlan       constant business_variable.business_variable_id%type        :=   31906646;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--PaymentPlanScheduledPayment
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PaymentParentPaymentPlan  constant business_variable.business_variable_id%type        :=   29105506;
+gbv_billing_issue_date        constant business_variable.business_variable_id%type        :=   29105806;
+gbv_billing_due_date          constant business_variable.business_variable_id%type        :=   29105906;
+gbv_actual_due_date           constant business_variable.business_variable_id%type        :=   30745246;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gbv_agent_due_date            constant business_variable.business_variable_id%type        :=   29712046;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+gbv_ScheduledPaymentType      constant business_variable.business_variable_id%type        :=   31202846;
+gbv_actual_end_date           constant business_variable.business_variable_id%type        :=   31206846;
+gbv_installement_no_calc      constant business_variable.business_variable_id%type        :=   31929546;
+gbv_billing_withdr_date       constant business_variable.business_variable_id%type        :=   32178546;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccount
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_BillingAccountType        constant business_variable.business_variable_id%type        :=   29711346;
+gbv_BillingAccountParent      constant business_variable.business_variable_id%type        :=   29704546;
+gbv_BillingAcc_RecentPayTrx   constant business_variable.business_variable_id%type        :=   29995446;
+gbv_BillingAcc_RecentFIChange constant business_variable.business_variable_id%type        :=   31839646;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccountTransactionSet/FITransactionSet
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FITrxSetDatePosted        constant business_variable.business_variable_id%type        :=   29707646;
+gbv_FITrxSetTotalItems        constant business_variable.business_variable_id%type        :=   29707846;
+gbv_FITrxSetTotalAmount       constant business_variable.business_variable_id%type        :=   29707746;
+gbv_FITrxSetEntryType         constant business_variable.business_variable_id%type        :=   29707546;
+gbv_FITrxSetEnteredby         constant business_variable.business_variable_id%type        :=   32264940;
+gbv_FITrxSetExternalBatchId   constant business_variable.business_variable_id%type        :=   29707446;
+gbv_FITrxSetBatchType         constant business_variable.business_variable_id%type        :=   29707346;
+gbv_BillAccTrxSet_ProcessDate constant business_variable.business_variable_id%type        :=   29707246;
+gbv_BillAccTrxSet_CurrTrx     constant business_variable.business_variable_id%type        :=   29743646;
+--OSBILLING:1397- Defined new constant
+gbv_Batrxset_RefAsscPolicyTrx constant business_variable.business_variable_id%type        :=   32502146;
+--2016-08-04 Cheryl osbillng-2534
+gbv_Batrxset_RefCreatedbyFITX constant business_variable.business_variable_id%type        :=   31756346;
+gbv_Batrxset_RefCreatedFITX   constant business_variable.business_variable_id%type        :=   31756446;
+gbv_BillAccTrxSet_Description constant business_variable.business_variable_id%type        :=   31875346;
+gbv_BillAccTrxSet_RefReinstmt constant business_variable.business_variable_id%type        :=   33598148; -- LXPRODUCT-502
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FITransaction
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FITrxProcessDate          constant business_variable.business_variable_id%type        :=   29708446;
+gbv_FITransactionType         constant business_variable.business_variable_id%type        :=   29708346;
+gbv_FITransactionDesc         constant business_variable.business_variable_id%type        :=   29743946;
+gbv_FITrxRefPolicy            constant business_variable.business_variable_id%type        :=   29721146;
+gbv_FITrxRefPolicyTxn         constant business_variable.business_variable_id%type        :=   29744046;
+gbv_FitransactionChildCnt     constant business_variable.business_variable_id%type        :=   29703946;
+gbv_FITrxRefActionPolicyTxn   constant business_variable.business_variable_id%type        :=   29974146;
+gbv_FITrxParentFITrxSet       constant business_variable.business_variable_id%type        :=   29703446;
+gbv_FITransaction_Amount      constant business_variable.business_variable_id%type        :=   29708946;
+gbv_FITransaction_RefBillAcc  constant business_variable.business_variable_id%type        :=   29745946;
+gbv_FITransaction_EffDate     constant business_variable.business_variable_id%type        :=   29709246;
+gbv_FITransaction_GLDate      constant business_variable.business_variable_id%type        :=   29755046;
+gbv_FITrxRefActionPolicy      constant business_variable.business_variable_id%type        :=   29974046;
+gbv_FITrxCashSubCategoy       constant business_variable.business_variable_id%type        :=   32011446;
+--2016-03-13 Cheryl pmadev-712
+gbv_FITrxrefassocfitem        constant business_variable.business_variable_id%type        :=   31689946;
+gbv_FITrxrefPolicyTerm        constant business_variable.business_variable_id%type        :=   32080546;
+gbv_FITrxreasontransfer       constant business_variable.business_variable_id%type        :=   31756546;
+gbv_FITrxcashapply            constant business_variable.business_variable_id%type        :=   32376246;
+gbv_FITrx_RefFromAcc          constant business_variable.business_variable_id%type        :=   31755346;
+gbv_FITrx_RefFromPol          constant business_variable.business_variable_id%type        :=   31755446;
+--OSBILLING:1397-Defined new constant
+gFIUpdateWithdrawalTrxType    constant lookup_list_value.lookup_enum%type                 :=   4001;
+gFITrxDefPremUpdTrxType       constant lookup_list_value.lookup_enum%type                 :=   6004;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PaymentSchedule
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_ScheduledRefInstallment   constant business_variable.business_variable_id%type        :=   29705446;
+gbv_ScheduledElementRefAsset  constant business_variable.business_variable_id%type        :=   29717346;
+--gbv_ScheduledElementRefAsset  constant business_variable.business_variable_id%type        :=   29717346;
+gbv_ScheduledPaymentAmount    constant business_variable.business_variable_id%type        :=   29107106;
+gbv_ScheduledPayCalAmount     constant business_variable.business_variable_id%type        :=   29756446;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FItem
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FItemRefInstallment       constant business_variable.business_variable_id%type        :=   29704446;
+gbv_FItemRefAsset             constant business_variable.business_variable_id%type        :=   29719446;
+gbv_FItemRefPolicy            constant business_variable.business_variable_id%type        :=   29721246;
+gbv_fitem_debit_credit        constant business_variable.business_variable_id%type        :=   29710046;
+gbv_fitem_category            constant business_variable.business_variable_id%type        :=   29710146;
+gbv_fitem_subcategory         constant business_variable.business_variable_id%type        :=   29710246;
+gbv_fitem_effective_date      constant business_variable.business_variable_id%type        :=   29710446;
+gbv_fitem_billing_status      constant business_variable.business_variable_id%type        :=   29710946;
+gbv_fitem_processing_status   constant business_variable.business_variable_id%type        :=   29711146;
+gbv_fitem_bill_status_date    constant business_variable.business_variable_id%type        :=   29711046;
+gbv_fitem_amount_due          constant business_variable.business_variable_id%type        :=   29710546;
+gbv_FItemRefPolicyTxn         constant business_variable.business_variable_id%type        :=   29748446;
+gbv_FItemRefEntityBelongsTo   constant business_variable.business_variable_id%type        :=   29748546;
+gbv_FItemRefActionPolicyTxn   constant business_variable.business_variable_id%type        :=   29974746;
+gbv_FItemRefCustomer          constant business_variable.business_variable_id%type        :=   31694846;
+gbv_fitem_Earningstatus       constant business_variable.business_variable_id%type        :=   31709146;
+gbv_Fitem_RecentFIChange      constant business_variable.business_variable_id%type        :=   31842046;
+gbv_fitem_earned_amount       constant business_variable.business_variable_id%type        :=   31706446;
+gbv_fitem_unearned_amount     constant business_variable.business_variable_id%type        :=   31706546;
+gbv_fitem_paid_amount         constant business_variable.business_variable_id%type        :=   31710246;
+gbv_fitem_asset_name          constant business_variable.business_variable_id%type        :=   32003746;
+--OSBILLING-1397:Defined new constant
+gbv_FItemActualDueDate        constant business_variable.business_variable_id%type        :=   32014546;
+gbv_FItemCreatedByElement     constant business_variable.business_variable_id%type        :=   34002946;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FIChange
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FIChangeProcessDate       constant business_variable.business_variable_id%type        :=   29719346;
+gbv_FIChangeRefFItem          constant business_variable.business_variable_id%type        :=   29704046;
+gbv_fichange_action           constant business_variable.business_variable_id%type        :=   29709546;
+gbv_fichange_action_delta     constant business_variable.business_variable_id%type        :=   29709646;
+gbv_fichange_sum_include      constant business_variable.business_variable_id%type        :=   29709846;
+gbv_FIchangeRefPolicy         constant business_variable.business_variable_id%type        :=   29748246;
+gbv_FIchangeRefPolicyTxn      constant business_variable.business_variable_id%type        :=   29748346;
+gbv_FIchangeRefBelongsTo      constant business_variable.business_variable_id%type        :=   29748646;
+gbv_FIchangeSeqNo             constant business_variable.business_variable_id%type        :=   31839346;
+gbv_FIchangeRunTotPrev        constant business_variable.business_variable_id%type        :=   31839446;
+gbv_FIchangeRunTotFinal       constant business_variable.business_variable_id%type        :=   31839546;
+gbv_FIchangePolicyTotPrev     constant business_variable.business_variable_id%type        :=   31841546;
+gbv_FIchangePolicyTotFinal    constant business_variable.business_variable_id%type        :=   31841646;
+gbv_FIchangeFitemTotPrev      constant business_variable.business_variable_id%type        :=   31841746;
+gbv_FIchangeFitemTotFinal     constant business_variable.business_variable_id%type        :=   31841846;
+--OSBILLING:1397-Defined new constant
+gbv_FIChangeAmountFYI         constant business_variable.business_variable_id%type        :=   32403946;
+gbv_comment                   constant business_variable.business_variable_id%type        :=   29709946;
+gFIChangeAction_FYI         constant lookup_list_value.lookup_enum%type                 :=   401;
+gFIChangeAction_Change     constant lookup_list_value.lookup_enum%type                 :=   201;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Installment
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_installment_due_date      constant business_variable.business_variable_id%type        :=   29711846;
+gbv_installment_issue_date    constant business_variable.business_variable_id%type        :=   29712246;
+gbv_installment_actual_date   constant business_variable.business_variable_id%type        :=   30745146;
+gbv_installment_actual_end    constant business_variable.business_variable_id%type        :=   31689246;
+gbv_installment_number        constant business_variable.business_variable_id%type        :=   29718346;
+gbv_installment_type          constant business_variable.business_variable_id%type        :=   31686846;
+gbv_PrevInstallment           constant business_variable.business_variable_id%type        :=   31683446;
+gbv_NextInstallment           constant business_variable.business_variable_id%type        :=   31683346;
+gbv_install_withdrawal_date   constant business_variable.business_variable_id%type        :=   32178946;
+gbv_Install_IsCrrntPayPlanInst constant business_variable.business_variable_id%type       :=   33820646 ;
+gbv_Installment_PayPlan_MD_ID constant business_variable.business_variable_id%type        :=   33882546;
+gbv_Installment_BillMethodID  constant business_variable.business_variable_id%type        :=   33883746;
+gbv_Installment_balance       constant business_variable.business_variable_id%type        :=   32080746;
+gbv_Ref_Bel_to_PayPlan_ID     constant business_variable.business_variable_id%type        :=   34001446; -- _Ref_Belongs_to_Payment_Plan -- OSBILLING-4478
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- SchedulePaymentElement
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_ScheduledPayment_num      constant business_variable.business_variable_id%type        :=   29107006;
+gbv_installment_fee           constant business_variable.business_variable_id%type        :=   29107206;
+gbv_element_name              constant business_variable.business_variable_id%type        :=   29712346;
+gbv_element_asset_name        constant business_variable.business_variable_id%type        :=   31904407;
+gbv_create_debit_flag         constant business_variable.business_variable_id%type        :=   29712446;
+gbv_debit_category            constant business_variable.business_variable_id%type        :=   29712546;
+gbv_debit_sub_category        constant business_variable.business_variable_id%type        :=   29712646;
+gbv_create_credit_flag        constant business_variable.business_variable_id%type        :=   29712746;
+gbv_credit_category           constant business_variable.business_variable_id%type        :=   29712846;
+gbv_credit_sub_category       constant business_variable.business_variable_id%type        :=   29712946;
+gbv_element_amount            constant business_variable.business_variable_id%type        :=   29713846;
+gbv_billing_element_id        constant business_variable.business_variable_id%type        :=   30790846;
+gbv_ScheduleElementFitem_id   constant business_variable.business_variable_id%type        :=   30792846;
+gbv_ElementRefDebitBillAcc    constant business_variable.business_variable_id%type        :=   31975646;
+gbv_ElementRefCreditBillAcc   constant business_variable.business_variable_id%type        :=   31975746;
+gbv_ElementRefCreatorPolTrns  constant business_variable.business_variable_id%type        :=   31983746;
+gbv_IncludeInPayScheduleTF    constant business_variable.business_variable_id%type        :=   31975846;
+gbv_ElementCategory           constant business_variable.business_variable_id%type        :=   33852946;
+gbv_ElementValidTF            constant business_variable.business_variable_id%type        :=   34002346;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Policy
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyBillingMethod       constant business_variable.business_variable_id%type        :=   27372305;
+gbv_PolicyRefProdAgency       constant business_variable.business_variable_id%type        :=   26590907;
+gbv_PolicyPayment_Amount      constant business_variable.business_variable_id%type        :=   212037;
+gbv_PolicyAppliedCashFromAcc  constant business_variable.business_variable_id%type        :=   29753646;
+gbv_PolicyRefChosenPlan       constant business_variable.business_variable_id%type        :=   212021;
+gbv_Policy_RecentFIChange     constant business_variable.business_variable_id%type        :=   31841946;
+--OSBILING-1397:Defined new constant
+gbv_PolicyCostchange          constant business_variable.business_variable_id%type        :=   31902746;
+  --  2016-06-02 Cheryl osbilling-2233 - moved bill to and payment method to policy term
+gbv_PolicyPaymentMethod       constant business_variable.business_variable_id%type        :=   211929;
+gbv_PolicyBillTo              constant business_variable.business_variable_id%type        :=   29608209;
+gbv_Policy_RefMostRctFuncTrx  constant business_variable.business_variable_id%type        :=   31909746;
+--2017-04-11 Cheryl osbilling-3933
+--2017-09-17 changed gbv_PolicyCurrentTerm to  gbv_CurrentTermFromRolledDate osbilling-4074
+gbv_CurrentTermFromRolledDate constant business_variable.business_variable_id%type        :=   31844846;
+gbv_PolicyCurrentTerm         constant business_variable.business_variable_id%type        :=   31844846;
+
+-- Use Existing Schedule
+-- 2517
+gbv_PTPUseExistingSchedule    constant business_variable.business_variable_id%type        :=   32575248;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTransaction
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolTrxAppliedCashFromAcc  constant business_variable.business_variable_id%type        :=   29753746;
+gbv_PolTrxAppliedCashFromPol  constant business_variable.business_variable_id%type        :=   29753846;
+gbv_PolicyTrxRefPolicyTerm    constant business_variable.business_variable_id%type        :=   29728801;
+gbv_PolicyTrxRefActionPolTrx  constant business_variable.business_variable_id%type        :=   29944346;
+gbv_PolicyTrxRefCoverages     constant business_variable.business_variable_id%type        :=   212318;
+gbv_PolicyTrxFinancialsReq    constant business_variable.business_variable_id%type        :=   33828346;
+gbv_PTOldProducerCommAmt      constant business_variable.business_variable_id%type        :=   30743246;  -- Old Producer Commission adjusted amount
+gbv_PTNewProducerCommAmt      constant business_variable.business_variable_id%type        :=   30743346;  -- New Producer Commission amount
+gbv_UserSessionRefConnectedTo constant business_variable.business_variable_id%type        :=   210090;
+gbv_ExchangeRefSponsorPartner constant business_variable.business_variable_id%type        :=   21814301;
+gbv_PolTrxRefBillingAccTrxSet constant business_variable.business_variable_id%type        :=   31866546;
+--2016-03-12 Cheryl osbilling-712
+gbv_TransferCashonBillMethod  constant business_variable.business_variable_id%type        :=   33823446;
+--OSBILLING:1397-Defined new constants
+gbv_RefBasisCoverage          constant business_variable.business_variable_id%type        :=   21912302;
+gbv_childPTP                  constant business_variable.business_variable_id%type        :=   28555504;
+gbv_PolicyTrxRetroAdjYear     constant business_variable.business_variable_id%type        :=   33852446;
+gbv_PTPRefPayArrangement      constant business_variable.business_variable_id%type        :=   34207146;
+gbv_BillAccInstPayArngmnt     constant business_variable.business_variable_id%type        :=   34206646;
+
+ -- added 2016-03-17  Cheryl  osbilling-1745
+ -- Billing Method is now being kept at the policy term level
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTerm
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyTermBillingMethod  constant business_variable.business_variable_id%type        :=   33820346;
+--OSBILLING:1397-Defined new constant
+gbv_prefwithdrwal_day        constant business_variable.business_variable_id%type        :=   32853540;
+  --  2016-06-02 Cheryl osbilling-2233 - moved bill to and payment method to policy term
+gbv_PolicyTermPaymentMethod  constant business_variable.business_variable_id%type        :=   33848546;
+gbv_PolicyTermBilledTo       constant business_variable.business_variable_id%type        :=   33848346;
+gbv_PolicyTermExpDate        constant business_variable.business_variable_id%type        :=   29705946;
+
+gbv_PolicyTermPayPlan        constant business_variable.business_variable_id%type        :=   32204446;
+gbv_BillMethodChangeFlag     constant business_variable.business_variable_id%type        :=   33932846;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTransaction
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PTP_ProcessModPayPlanInd  constant business_variable.business_variable_id%type        :=   31934046;
+gPolicyTrxType_PartialWith     constant pd_transaction_type.pd_transaction_type_id%type := 7046;
+gPolicyTrxType_ServiceTrx    constant pd_transaction_type.pd_transaction_type_id%type := 7346;
+-- added 2016-03-16  Cheryl osbilling-1745
+gbv_PolicyImageBillingMethod constant business_variable.business_variable_id%type        :=   33820946;
+gbv_PolicyTrx_EndSubType     constant business_variable.business_variable_id%type        :=   26542407;
+--constants
+gObjType_BillAccInst               constant object_type.object_type_id%type                := 3209840;
+gObjType_BillAccInstComponent      constant object_type.object_type_id%type                := 3209940;
+gbv_BillAccInstComp_RelInst        constant business_variable.business_variable_id%type    := 32842040;
+gbv_BillAccInstWithDate            constant business_variable.business_variable_id%type    := 32842140;
+gbv_billaccinstpayprofile          constant business_variable.business_variable_id%type    := 32846140;
+gbv_billaccinstcashtrprofile       constant business_variable.business_variable_id%type    := 32843540;
+gbv_BillAccInstLabelName           constant business_variable.business_variable_id%type    := 32843640;
+
+--OSPRODUCT-834 starts
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTransactionPolicyPayer
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gbv_PTPayerAssociatedTerm          constant business_variable.business_variable_id%type := 32578848;
+gbv_PTPayerPaymentProfile          constant business_variable.business_variable_id%type := 32574248;
+--OSPRODUCT-834 ends
+
+gbv_installmentbalanceamount       constant business_variable.business_variable_id%type := 33028948;  --OSPRODUCT-12737
+
+--2016-03-12 Cheryl osbilling-712
+gFItem_SubCat_TransCash       constant number(12)                                         := 51646;
+gFITrxType_CashTransfer       constant number(12)                                         := 401;
+gFITrxStatus_InProcess        constant number(12)                                         := 38146;
+--OSBILLING:1397-Defined new constant
+gChangeWithdrawal             constant number(12)                                         := 6040;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gAdjustmentType_First         constant lookup_list_value.lookup_enum%type                 :=   2146;
+gAdjustmentType_Last          constant lookup_list_value.lookup_enum%type                 :=   2246;
+gFItem_Debit                  constant db_fitem_type.db_fitem_type_id%type                :=   146;
+gFItem_Credit                 constant db_fitem_type.db_fitem_type_id%type                :=   246;
+gFIChange_Create              constant lookup_list_value.lookup_enum%type                 :=   101;
+gFIChange_Change              constant lookup_list_value.lookup_enum%type                 :=   201;
+gFIChange_Yes                 constant lookup_list_value.lookup_enum%type                 :=   1;
+gBillingAcStatus_Active       constant lookup_list_value.lookup_enum%type                 :=   37246;
+gBillingAcType_Customer       constant lookup_list_value.lookup_enum%type                 :=   201;
+gBillingAcType_Partner        constant lookup_list_value.lookup_enum%type                 :=   101;
+gBillingMethod_Direct         constant lookup_list_value.lookup_enum%type                 :=   1;
+gBillingMethod_Agency         constant lookup_list_value.lookup_enum%type                 :=   2;
+gBatchEntryMethod_System      constant lookup_list_value.lookup_enum%type                 :=   401;
+gBatchStatus_Processed        constant lookup_list_value.lookup_enum%type                 :=   39846;
+gFITrxType_Dr_Generate        constant lookup_list_value.lookup_enum%type                 :=   601;
+gFITrxType_Cr_Generate        constant lookup_list_value.lookup_enum%type                 :=   602;
+gFITrxType_Cash_Post          constant lookup_list_value.lookup_enum%type                 :=   603;
+gFITrxType_Cash_Apply         constant lookup_list_value.lookup_enum%type                 :=   101;
+gFITrxType_Cash_UnApply       constant lookup_list_value.lookup_enum%type                 :=   301;
+gFITrxStatus_Processed        constant lookup_list_value.lookup_enum%type                 :=   37646;
+gFItemBillStatus_Active       constant lookup_list_value.lookup_enum%type                 :=   38246;
+gFItemProcStatus_Created      constant lookup_list_value.lookup_enum%type                 :=   39246;
+gCashApplyMethod_ProRata      constant lookup_list_value.lookup_enum%type                 :=   146;
+gCashApplyMethod_Seq          constant lookup_list_value.lookup_enum%type                 :=   246;
+gCoverage_FinalCommission     constant pc_coverage.pc_coverage_id%type                    :=   365946;
+gRule_Installment             constant rule.rule_id%type                                  :=   8782746;
+gInstallmentType_Installment  constant lookup_list_value.lookup_enum%type                 :=   1;
+gInstallmentType_Stub         constant lookup_list_value.lookup_enum%type                 :=   2;
+gFItem_Unearned               constant lookup_list_value.lookup_enum%type                 :=   2;
+gFitem_EarningNotApplicable   constant lookup_list_value.lookup_enum%type                 :=   4;
+gPolixyTerm_Active            constant lookup_list_value.lookup_enum%type                 :=   43746;
+
+ChargeScheduleTypeDefault     constant pc_charge_schedule_type.charge_schedule_type_id%type    :=   107;
+ChargeScheduleTypeFirstInst   constant pc_charge_schedule_type.charge_schedule_type_id%type    :=   207;
+ChargeScheduleTypeOthers      constant pc_charge_schedule_type.charge_schedule_type_id%type    :=   307;
+PolicyBillingMethodList       constant lookup_list.lookup_list_id%type                         :=   5298605;
+FITransactionTypeList         constant lookup_list.lookup_list_id%type                         :=   5366546;
+
+gInstalmnt_CrntPayPlan_True   constant lookup_list_value.lookup_enum%type                     :=   1;
+gInstalmnt_CrntPayPlan_False  constant lookup_list_value.lookup_enum%type                     :=   2;
+gbv_billelt_ElementMD_ID      constant business_variable.business_variable_id%type            :=   30790846;
+gChangeBillingMethod          constant lookup_list_value.lookup_enum%type                     :=   2;
+gChangePaymentPlan            constant lookup_list_value.lookup_enum%type                     :=   5;
+gEndorsement                  constant lookup_list_value.lookup_enum%type                     :=   1;--OSBILLING-7448
+gFITrxType_Comm_Adjustment    constant lookup_list_value.lookup_enum%type                     :=   6006;
+
+gFullPayDisc_BillingElement   constant  number(12)                                            :=   64848 ; --OSBILLING-7448
+gPremium_BillingElement       constant  number(12)                                            :=   52846 ; --OSBILLING-7448
+
+-- OSPRODUCT-2517 Re - arranged and added new
+gFitem_SubCat_Premium         constant lookup_list_value.lookup_enum%type                     :=   46746 ;--OSBILLING-6566
+gFitem_SubCat_PremiumRec      constant lookup_list_value.lookup_enum%type                     :=   46846 ; --OSBILLING-6566
+gFitem_SubCat_FullPayDiscount constant lookup_list_value.lookup_enum%type                     :=   55248;
+gFItem_Category_Cash          constant lookup_list_value.lookup_enum%type                     :=   646;
+gFItem_Cat_Commission         constant lookup_list_value.lookup_enum%type                     :=   946;
+gFItem_SubCat_Commision       constant lookup_list_value.lookup_enum%type                     :=   3846;
+gFItemCatSet_CashApply        constant lookup_list_value.lookup_enum%type                     :=   446;
+gFItem_SubCat_PayChngCredit   constant lookup_list_value.lookup_enum%type                     :=   51746;
+-- 2016-03-21  Cheryl  pmadev-648
+gFItem_SubCat_BillMethodCredit constant lookup_list_value.lookup_enum%type                    :=   58146;
+
+-- OSPRODUCT-2517
+g_No                          constant lookup_list_value.lookup_enum%type                     :=   2;
+g_Yes                         constant lookup_list_value.lookup_enum%type                     :=   1;
+
+genum_Payables_Earning_Adjstm constant lookup_list_value.lookup_enum%type                     :=   2201;  --OSPRODUCT-7199
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Type Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type t_fitem_list             is table of number(38)             index by varchar2(20);   --OSPRODUCT-1446,modified size
+type t_due_date_list          is table of date                   index by varchar2(5);
+
+type t_fitem_installment_tab is table of object.object_id%type index by varchar2(500);
+
+-- [RR] OSPRODUCT-2517
+type t_obj_column_value_tab is table of varchar2(500) index by varchar2(500);
+gnull_obj_column_val_tab    t_obj_column_value_tab;
+
+--Kiran start OSPRODUCT-29816 / 34066
+type t_manual_added_fitem_list  is table of   dragon_fitem.fitem_id%type       index by varchar2(50);
+--Kiran end OSPRODUCT-29816 / 34066
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Cursors ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Added to return the playment plan details which are having valid elements as per transaction type
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+cursor getPayPlanValidBillingItems
+(
+     in_payment_plan_id  in   payment_plan_detail.payment_plan_id%type,
+     in_product_id       in   payment_plan_detail.pd_product_id%type,
+     in_filing_id        in   payment_plan_detail.pd_filing_id%type,
+     in_txn_type_id      in   number
+)
+is
+     select
+          a.*
+     from
+          DB_payment_plan_detail  a,DB_billing_element b
+     where
+          a.payment_plan_id         =     in_payment_plan_id
+     and
+          (
+               a.pd_product_id in (in_product_id, pkg_os_reference_lookup.gDefaultProductID)
+               or
+               a.pd_product_id is null
+          )
+     and
+          (    a.pd_filing_id      <=     in_filing_id or     a.pd_filing_id   is null   )
+     and
+          (    a.last_pd_filing_id  >=    in_filing_id or     a.last_pd_filing_id   is null   )
+     and
+          a.db_billing_element_id = b.DB_billing_element_id
+     and
+          (
+              (decode(in_txn_type_id,601,'T','F')  = b.create_debit_tf and b.create_debit_tf = 'T')
+              or
+              (decode(in_txn_type_id,602,'T','F')  = b.create_credit_tf and b.create_credit_tf = 'T')
+          )
+     and
+          b.active_tf='T'
+          and
+          NVL(a.active_tf,'T') ='T'
+     order by
+          a.apply_order
+         ;
+
+cursor    getBillingElementList
+is
+     select
+         *
+     from
+         DB_billing_element
+     ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Process element only when either debit or credit is set for the element.
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+cursor getBillingElementMapInfo
+(
+     in_billing_element_id       in     DB_billing_element_map.DB_billing_element_id%type,
+     in_product_id               in     payment_plan_detail.pd_product_id%type,
+     in_filing_id                in     payment_plan_detail.pd_filing_id%type
+)
+is
+     select
+          a.*
+     from
+          DB_billing_element_map    a, DB_billing_element b
+     where
+          a.DB_billing_element_id  =  in_billing_element_id
+     and
+          a.DB_billing_element_id  =  b.DB_billing_element_id
+     and
+          (
+               a.pd_product_id in (in_product_id, pkg_os_reference_lookup.gDefaultProductID)
+               or
+               a.pd_product_id is null
+          )
+     and
+          (    a.pd_filing_id       <=     in_filing_id or     a.pd_filing_id        is null   )
+     and
+          (    a.last_pd_filing_id  >=    in_filing_id  or     a.last_pd_filing_id   is null   )
+     and
+          (
+               b.create_credit_tf = 'T'
+               or
+               b.create_debit_tf  = 'T'
+          )
+     and
+          a.active_tf = 'T'
+     and
+          b.active_tf = 'T'
+     order by
+          b.apply_order
+     ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Cursor for getting the Coverage IDs mapped with Debit Billing Elements
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+cursor c_debit_coverages
+is
+     select
+          distinct bem.pc_coverage_id
+     from
+          DB_payment_plan_detail ppd, DB_billing_element be, DB_billing_element_map bem
+     where
+          ppd.db_billing_element_id = be.DB_billing_element_id
+     and
+          be.DB_billing_element_id = bem.DB_billing_element_id
+     and
+          be.create_debit_tf = 'T'
+     and
+          be.active_tf = 'T'
+     and
+          bem.active_tf = 'T'
+     and
+         NVL(ppd.active_tf,'T') ='T'
+     ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Cursor for getting the Coverage IDs mapped with Credit Billing Elements
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+cursor c_credit_coverages
+is
+     select
+          distinct bem.pc_coverage_id
+     from
+          DB_payment_plan_detail ppd, DB_billing_element be, DB_billing_element_map bem
+     where
+          ppd.db_billing_element_id = be.DB_billing_element_id
+     and
+          be.DB_billing_element_id = bem.DB_billing_element_id
+     and
+          be.create_credit_tf = 'T'
+     and
+          be.active_tf = 'T'
+     and
+          bem.active_tf = 'T'
+     and
+         NVL(ppd.active_tf,'T') = 'T'
+     ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Type Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type  t_billing_element_list  is table of  getBillingElementList%rowtype  index by  pls_integer;
+
+billing_element_tab                     t_billing_element_list;
+
+type  type_schedule_element_tab  is table of  object.object_id%type  index by  varchar2(500);
+
+g_schedule_element_cache                type_schedule_element_tab;
+
+type t_AllInstallment  is table of object.object_id%type index by varchar2(500);
+
+g_AllInstallment_cache                  t_AllInstallment;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Function and Procedure Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function  fn_payment_plan_name_get
+(
+     in_payment_plan_id                 in             number
+)
+return varchar2;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_financial_trx_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_trx_id                   in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null,
+     in_override_ba_id                  in             object.object_id%type default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_debit_credit_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             pd_product.pd_product_id%type,
+     in_filing_id                       in             pd_filing.pd_filing_id%type,
+     in_policy_trx_effective_date       in             varchar2,
+     in_policy_billing_method           in             number,
+     in_agency_billing_account_id       in             object.object_id%type default null,
+     in_fi_transaction_id               in             object.object_id%type,
+     in_fi_transaction_type_id          in             number,
+     in_payplan_option_id               in             object.object_id%type,
+     in_payment_plan_md_row             in             pkg_db_payplan_modify.getPaymentPlanList%rowtype,
+     in_trx_installment_type            in             lookup_list_value.lookup_enum%type,
+     in_installment_start_num           in             number,
+     in_installment_count               in             number,
+     in_remaining_inst_list             in             pkg_os_object.t_object_list,
+     in_master_customer_id              in             object.object_id%type,
+     in_installment_object_id           in             object.object_id%type default null,
+     out_tot_change_amount              out            number,
+     out_count_rec                      out            number,
+     in_credit_fitransaction_id         in             object.object_id%type default null,
+     in_choosen_payplan_id              in             object.object_id%type, --VAULTDEV-6645,
+     --[RR] new dev - 2517
+     in_dm_value_table                  in             t_obj_column_value_tab default gnull_obj_column_val_tab
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_fitem_category_in_set
+(
+     in_fitem_category_id               in             number,
+     in_fitem_category_set_id           in             number
+)
+return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_fitem_subcategory_in_set
+(
+     in_fitem_subcategory_id            in             number,
+     in_fitem_subcategory_set_id        in             number
+)
+return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_billing_trx_type_in_set
+(
+     in_billing_trx_set_type_id          in        number,
+     in_billing_trx_set_id                 in        number
+)
+return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+procedure sp_create_billing_item
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_product_id                      in        pd_product.pd_product_id%type,
+     in_filing_id                       in        pd_filing.pd_filing_id%type,
+     in_master_policy_id                in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_master_customer_id              in        object.object_id%type,
+     in_policy_trx_effective_date       in        varchar2,
+     in_fi_transaction_id               in        object.object_id%type,
+     in_fi_transaction_type_id          in        number,
+     in_policy_billing_method_id        in        number,
+     in_agency_billing_account_id       in        object.object_id%type,
+     in_schedule_element_id             in        object.object_id%type,
+     in_installment_object_id           in        object.object_id%type,
+     in_element_pol_trans_id            in        object.object_id%type,
+     in_trx_installment_type            in        lookup_list_value.lookup_enum%type,
+     in_installment_count               in        number,
+     in_installment_start_num           in        number,
+     in_billing_element_md_id           in        db_billing_element.db_billing_element_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     in_element_amount                  in        number,
+     in_element_debit_category          in        number,
+     in_element_debit_subcategory       in        number,
+     in_element_credit_category         in        number,
+     in_element_credit_subcategory      in        number,
+     in_create_debit_tf                 in        char,
+     in_create_credit_tf                in        char,
+     v_IncludeInPayScheduleTF           in        char,
+     in_remaining_inst_count            in        number,
+     in_rounding_precision              in        number default 5,
+     in_chosen_payplan_id               in        object.object_id%type,
+     out_fi_change_amount               out       number
+);
+*/
+
+procedure sp_create_billing_item
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_product_id                      in        pd_product.pd_product_id%type,
+     in_filing_id                       in        pd_filing.pd_filing_id%type,
+     in_master_policy_id                in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_master_customer_id              in        object.object_id%type,
+     in_policy_trx_effective_date       in        varchar2,
+     in_fi_transaction_id               in        object.object_id%type,
+     in_fi_transaction_type_id          in        number,
+     in_policy_billing_method_id        in        number,
+     in_agency_billing_account_id       in        object.object_id%type,
+     in_schedule_element_id             in        object.object_id%type,
+     in_installment_object_id           in        object.object_id%type,
+     in_element_pol_trans_id            in        object.object_id%type,
+     in_trx_installment_type            in        lookup_list_value.lookup_enum%type,
+     in_installment_count               in        number,
+     in_installment_start_num           in        number,
+     in_billing_element_md_id           in        db_billing_element.db_billing_element_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     in_element_amount                  in        number,
+     in_element_debit_category          in        number,
+     in_element_debit_subcategory       in        number,
+     in_element_credit_category         in        number,
+     in_element_credit_subcategory      in        number,
+     in_create_debit_tf                 in        char,
+     in_create_credit_tf                in        char,
+     v_IncludeInPayScheduleTF           in        char,
+     in_remaining_inst_count            in        number,
+     in_rounding_precision              in        number default 5,
+     in_chosen_payplan_id               in        object.object_id%type,
+     out_fi_change_amount               out       number,
+     in_policy_term_id                  in        number default null,
+     out_fitem_id                       out       object.object_id%type, -- OSBILLING-6566
+     --[RR] 2517
+     in_dm_value_table                  in        t_obj_column_value_tab default gnull_obj_column_val_tab
+     
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_carrier_billing_item
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_product_id                      in             pd_product.pd_product_id%type,
+     in_filing_id                       in             pd_filing.pd_filing_id%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_policy_trx_effective_date       in             varchar2,
+     in_fi_transaction_id               in             object.object_id%type,
+     in_fi_transaction_type_id          in             number,
+     in_installment_id                  in             object.object_id%type,
+     in_installment_count               in             number,
+     in_installment_number              in             number,
+     in_coverage_object_id              in             object.object_id%type,
+     in_equivalent_type_tf              in             char,
+     in_billing_element_row             in             DB_billing_element%rowtype,
+     in_element_amount                  in             number,
+     in_carrier_billing_acc_id          in             object.object_id%type default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_bor_billtrx_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_old_agency_id                   in             object.object_id%type,
+     in_new_agency_id                   in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_fitem_type_in_set
+(
+     in_fitem_type_id                   in             db_fitem_type.db_fitem_type_id%type,
+     in_fitem_category_set_id           in             db_fitem_type_set.db_fitem_type_set_id%type
+)
+return char;
+
+/*-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_close_cash_source_task
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_fitem_id                        in             object.object_id%type,
+     in_action_outcome_id               in             outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);*/
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+/*
+procedure sp_change_payplan_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change,
+     in_current_date_time               in             date default null,
+     in_earlier_payment_plan_id         in             object.object_id%type default null, --VAULTDEV-6645
+     in_delete_payer_tf                 in             char      default 'F'
+);*/
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billaccinstallment_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type, --Policy image
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_billingaccount_type_id           in             number default 201 -- Customer
+
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_billing_update_datamart
+(
+     in_session_id                       in             object.object_id%type,
+     in_transaction_id                   in             object.object_id%type,
+     in_action_object_id                 in             object.object_id%type, --Policy image or Policy Transaction
+     io_action_outcome_id                in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--added 2016-03-21  Cheryl pmadev-648
+
+procedure sp_create_reversal_offsets
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_earlier_pay_plan_id             in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change,
+     in_current_date_time               in             date default null,
+     in_delete_payer_tf                 in             char      default 'F', -- VAULTDEV-6645
+     in_payer_billing_acc_id            in             object.object_id%type default null -- OSPRODUCT-34206_2
+	 
+);
+---------------------------------------------------------------------------------------------------------
+procedure sp_reversal_fitem_fichange
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_earlier_pay_plan_id             in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change
+     in_current_date_time               in             date default null,
+     in_FITrxType_Generate              in             number,
+     in_billing_account                 in             object.object_id%type,
+     in_offset_billing_account          in             object.object_id%type,
+     in_fi_trx_id                       in             object.object_id%type,
+     in_element_category                in             number,
+     in_element_subcategory             in             number,
+     in_element_amount_total            in             number,
+     in_billing_element_id              in             number,
+     in_create_debit_tf                 in             char,
+     in_create_credit_tf                in             char,
+     in_debit_run                       in             number,     
+     io_fitem_installment_list		in out		t_fitem_installment_tab -- 7817
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_cs_reversal_fitem_fichange
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_earlier_pay_plan_id             in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change
+     in_current_date_time               in             date default null,
+     in_FITrxType_Generate              in             number,
+     in_billing_account                 in             object.object_id%type,
+     in_offset_billing_account          in             object.object_id%type,
+     in_fi_trx_id                       in             object.object_id%type,
+     in_element_category                in             number,
+     in_element_subcategory             in             number,
+     in_element_amount_total            in             number,
+     in_billing_element_id              in             number,
+     in_create_debit_tf                 in             char,
+     in_create_credit_tf                in             char,
+     in_debit_run                      in             number
+     );
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_bill_deferred_prem_upd
+(
+     in_session_id                       in             object.object_id%type,
+     in_transaction_id                   in             object.object_id%type,
+     in_action_object_id                 in             object.object_id%type,
+     io_action_outcome_id                in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_upd_commission_adjustment
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_schedule_element_id             in             object.object_id%type,
+     in_installment_object_id           in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- 2517
+procedure sp_fitem_datamart_update_row
+
+(
+     in_session_id                  in object.object_id%type,
+     in_transaction_id              in object.object_id%type,
+     in_object_id                   in object.object_id%type,
+     in_obj_column_value_tab        in t_obj_column_value_tab
+);
+
+procedure sp_change_payplan_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null,
+     in_current_date_time               in             date default null, --VAULTDEV-6645
+     in_earlier_payment_plan_id         in             object.object_id%type default null,
+     in_delete_payer_tf                 in             char default 'F',
+     in_dm_value_table                  in             t_obj_column_value_tab default gnull_obj_column_val_tab, -- 7817
+     in_payer_billing_acc_id            in             object.object_id%type default null -- OSPRODUCT-34206_2
+
+);
+
+
+-- KR CR
+procedure sp_cpp_termstrt_createoffset
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_earlier_pay_plan_id             in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change
+     in_current_date_time               in             date default null,
+     in_delete_payer_tf                 in             char     default 'F' --VAULTDEV-6645
+
+);
+
+--------------------------------------------------------------------------------------------
+
+procedure sp_cpp_termstrt_fitem_fichnge
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_product_id                      in             object.object_id%type,
+     in_filing_id                       in             object.object_id%type,
+     in_policy_billing_method           in             number,
+     in_ultimate_customer_id            in             object.object_id%type,
+     in_customer_billing_acc_id         in             object.object_id%type,
+     in_agency_billing_acc_id           in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     in_policy_trx_effective_date       in             object_bv_value.business_variable_value%type,
+     in_master_policy_id                in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_transaction_type         in             object_bv_value.business_variable_value%type,
+     in_mod_pay_plan_id                 in             object.object_id%type,
+     in_earlier_pay_plan_id             in             object.object_id%type,
+     in_fi_trx_debit_id                 in             object.object_id%type,
+     in_fi_trx_credit_id                in             object.object_id%type,
+     in_chosen_pay_plan_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_prior_billing_method_id         in             number default null, -- used for billing method change
+     in_current_date_time               in             date default null,
+     in_FITrxType_Generate              in             number,
+     in_billing_account                 in             object.object_id%type,
+     in_offset_billing_account          in             object.object_id%type,
+     in_fi_trx_id                       in             object.object_id%type,
+     in_element_category                in             number,
+     in_element_subcategory             in             number,
+     in_element_amount_total            in             number,
+     in_billing_element_id              in             number,
+     in_create_debit_tf                 in             char,
+     in_create_credit_tf                in             char,
+     in_debit_run                       in             number
+
+);
+--KR CR
+----------------------------------------------------------------------------------------------
+-- OSPRODUCT-20551 Start
+procedure sp_poltrm_payer_inst_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_termpayer_object_id        in             object.object_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+);
+-- OSPRODUCT-20551 End
+
+--Kiran start OSPRODUCT-29816 / 34066
+procedure sp_fitems_associate
+(
+     in_session_id                in              object.object_id%type,
+     in_transaction_id            in              object.object_id%type,
+     in_product_id                in              object.object_id%type,
+     in_policy_image_id           in              object.object_id%type,
+     in_policy_trx_id             in              object.object_id%type,
+     in_installment_object_id     in              object.object_id%type,
+     in_fitem_list                in              t_manual_added_fitem_list  
+);
+--Kiran end OSPRODUCT-29816 / 34066
+
+----------------------------------------------------------------------------------------------
+
+end pkg_db_billing_modify;
+/
+

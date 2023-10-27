@@ -1,0 +1,3553 @@
+create or replace package body PKG_DB_NIGHTLY_PROCESS
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_NIGHTLY_PROCESS.PBK  $
+-- $Revision:   1.25  $
+--   $Author:   pmedapati  $
+--     $Date:   16 Oct 2013 14:50:46  $
+-------------
+AS
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  package constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+pkg_name  constant  system_log.program_name%type  := 'pkg_db_nightly_process.';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure show_version
+is
+begin
+
+     dbms_output.put_line('$Workfile:   BASE_API.PKG_DB_NIGHTLY_PROCESS.PBK  $');
+     dbms_output.put_line('$Revision:   1.25  $');
+     dbms_output.put_line('$Author:   pmedapati  $');
+     dbms_output.put_line('$Date:   16 Oct 2013 14:50:46  $');
+
+exception
+     when others then
+
+          dbms_output.put_line(sqlerrm(sqlcode));
+
+end show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_timezone_date_map
+--
+--   %usage
+--        This procedure map the time zone with date and insert in to table.
+--
+--   %algorithm
+--        map the time zone with date and insert in to table.
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_timezone_id                timezone id
+--   %param    in_timezone_entry_date        timezone_date_map.timezone_entry_date%type
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_timezone_date_map
+--
+--   %usage
+--        This procedure rolls the date for the timezone by putting a record in timezone_date_map.
+--
+--   %algorithm
+--        map the time zone with date and insert in to table.
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_timezone_id                timezone id
+--   %param    in_timezone_entry_date        timezone_date_map.timezone_entry_date%type
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_timezone_date_map
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_timezone_id                in        timezone.timezone_id%type, -- TimeZone id for which date roll should happen
+     io_action_outcome_id          in out    outcome.outcome_id%type
+)
+is
+
+
+     v_procedure_name              constant system_log.program_name%type   :=   'sp_timezone_date_map';
+     v_session_control             pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_utc_date_time               timestamp;
+     v_target_tz_date_time         timestamp;
+     v_rolled_date                 timezone_date_map.rolled_date%type;
+     v_timeone_date_map_id         timezone_date_map.timezone_data_map_id%type;
+     v_timezone_name               timezone.timezone_name_oracle%type;
+     v_tz_date_roll_offset         timezone.tz_date_roll_offset%type;
+     
+     v_timezone_map_new_id         number;
+
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+  -- v_target_tz_date_time_org     timestamp;--GCNA-2710
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+begin
+
+    --
+    -- 1. Get the  oracale timezone name for the input timezone id
+    --
+    begin
+
+          select
+               timezone_name_oracle , tz_date_roll_offset
+          into
+               v_timezone_name, v_tz_date_roll_offset
+          from
+               timezone
+          where
+               timezone_id = in_timezone_id
+          ;
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Target Timezone: ' ||in_timezone_id||'  '|| v_timezone_name);
+
+          end if;
+
+     exception
+          when others then
+
+               pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                    'Error in selecting Target Timezone: ' || sqlerrm);
+
+           io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+           return;
+     end;
+
+    --
+    -- 2. Get the datetime of the server timezone
+    --
+    begin
+
+          select
+               sys_extract_utc(systimestamp)
+          into
+               v_utc_date_time
+          from
+               dual
+          ;
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... UTC DATE Time: ' ||v_utc_date_time);
+
+          end if;
+
+     exception
+          when others then
+
+               pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                    'Error in Selecting UTC DATE Time: ' || sqlerrm);
+
+           io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+           return;
+
+     end;
+
+
+    --
+    -- 3. Get the  datetime of the input timezone
+    --
+    begin
+
+          select
+               from_tz( cast(sys_extract_utc(systimestamp) as timestamp), 'UTC') at time zone (
+                                    select v_timezone_name from dual )
+          into
+               v_target_tz_date_time
+          from
+               dual;
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Target TZ DATE Time : ' || v_target_tz_date_time);
+
+          end if;
+
+     exception
+          when others then
+
+               pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                    'Error in Target TZ DATE Time: ' || sqlerrm);
+
+           io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+           return;
+     end;
+
+    --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+      --v_target_tz_date_time_org  := v_target_tz_date_time;--GCNA-2710
+    --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+     begin
+
+          --
+          -- 4. Get the last record for which date_rolled_tf is 'T'
+          --
+          select
+               tmp.timezone_data_map_id,tmp.rolled_date
+          into
+               v_timeone_date_map_id,v_rolled_date
+          from
+               timezone_date_map tmp
+          where
+               timezone_id = in_timezone_id
+          and
+              tmp.date_rolled_tf   = 'T'
+          ;
+
+     exception
+          when no_data_found then
+
+          if v_session_control.glogging_full then
+               --pkg_os_logging.sp_log_error
+               pkg_os_logging.sp_log   --OSBILLING-7732
+               (in_session_id, in_transaction_id, v_procedure_name,
+               'No data is found for target Timezone in timezone_date_map table,inserting record');
+          end if;
+
+     end;
+
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+  /* OSPRODUCT-1616  commenting this if condition
+     if v_rolled_date is not null
+     then
+          v_target_tz_date_time:= to_timestamp(v_rolled_date);
+     end if;
+      */ --OSPRODUCT-1616
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+     --
+     -- 6. Insert a new record for the input timezone in the TimeZone_date_map table for the rolled date
+     --
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+ 
+     
+
+     --if (v_rolled_date is null or trunc(v_rolled_date) < to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')+1 )
+     if (v_rolled_date is null)--Day 1 Production Case
+     then
+          begin
+
+               insert
+               into
+                    timezone_date_map
+                    (
+                         timezone_data_map_id,
+                         timezone_id,
+                         rolled_date,
+                         date_rolled_tf,
+                         timezone_entry_date,
+                         automated_tf
+                    )
+               values
+                    (
+                         timezone_date_map_seq.nextval,
+                         in_timezone_id,
+                         to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')+1,   -- OSPRODUCT-1616 Adding +1
+                         'T',
+                         v_utc_date_time,
+                         'T'
+                    )
+               ;
+
+          exception
+          when others
+          then
+               pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in inserting record in from timezone_date_map for target Timezone: '||sqlerrm);
+
+
+               io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+               return;
+
+          end;
+
+																										
+		 
+          
+          --UTDEV-17695
+    /* elsif (trunc(v_rolled_date) < to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')+1)      
+     then*/
+     else 
+             -- Verify that for the timezone considering the offset , it is moving to next day; if yes move to one more day 
+        if 
+          ((
+           v_tz_date_roll_offset > 0 and
+           to_number(to_char(v_target_tz_date_time,'HH24')) + v_tz_date_roll_offset >= 24
+          )
+          and (trunc(v_rolled_date) < to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')+1)      
+          )
+             
+       then
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... We have reached on the offset and hence updatating the v_target_tz_date_time to +1 date   ' ||in_timezone_id||'  '|| v_timezone_name);
+
+          end if;
+
+             
+               begin
+       --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+               v_timezone_map_new_id :=  timezone_date_map_seq.nextval;
+
+               insert into
+                    timezone_date_map
+                    (
+                         timezone_data_map_id,
+                         timezone_id,
+                         rolled_date,
+                         date_rolled_tf,
+                         timezone_entry_date,
+                         automated_tf
+                    )
+               values
+                    (
+                         v_timezone_map_new_id , --timezone_date_map_seq.nextval,
+                         in_timezone_id,
+                         to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')+1,
+                         'T',
+                         v_utc_date_time,
+                         'T'
+
+                    )
+               ;
+               exception
+               when others then
+                    pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                         'Error in inserting record in from timezone_date_map for target Timezone: '||sqlerrm);
+
+               v_timezone_map_new_id := 0;
+         
+               io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+               return;
+               end;
+               
+        elsif 
+          
+          ((
+           v_tz_date_roll_offset <= 0 and
+           to_number(to_char(v_target_tz_date_time,'HH24')) + v_tz_date_roll_offset >= 0
+          ) 
+          and 
+          (trunc(v_rolled_date) < to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')) 
+          )      
+       then
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... We have reached on the offset and hence updatating the v_target_tz_date_time to +1 date   ' ||in_timezone_id||'  '|| v_timezone_name);
+
+          end if;
+
+             
+               begin
+       --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+               v_timezone_map_new_id :=  timezone_date_map_seq.nextval;
+
+               insert into
+                    timezone_date_map
+                    (
+                         timezone_data_map_id,
+                         timezone_id,
+                         rolled_date,
+                         date_rolled_tf,
+                         timezone_entry_date,
+                         automated_tf
+                    )
+               values
+                    (
+                         v_timezone_map_new_id , --timezone_date_map_seq.nextval,
+                         in_timezone_id,
+                         to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY'),
+                         'T',
+                         v_utc_date_time,
+                         'T'
+
+                    )
+               ;
+               exception
+               when others then
+                    pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                         'Error in inserting record in from timezone_date_map for target Timezone: '||sqlerrm);
+
+               v_timezone_map_new_id := 0;
+         
+               io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+               return;
+               end;       
+          
+          -- Insert as same date as the dap job is running on the next day 
+        else  
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... We have not reached the offset and hence updatating to the same  v_target_tz_date_time  date   ' ||in_timezone_id||'  '|| v_timezone_name);
+
+          end if;
+
+          begin
+          if
+             trunc(v_rolled_date ) < to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY')
+            then -- KR 
+
+              v_timezone_map_new_id := timezone_date_map_seq.nextval;
+
+              insert into
+                   timezone_date_map
+                   (
+                        timezone_data_map_id,
+                        timezone_id,
+                        rolled_date,
+                        date_rolled_tf,
+                        timezone_entry_date,
+                        automated_tf
+                   )
+              values
+                   (
+                        v_timezone_map_new_id , -- timezone_date_map_seq.nextval,
+                        in_timezone_id,
+                        to_date(to_char(v_target_tz_date_time,'DDMMYYYY'),'DDMMYYYY'),
+                        'T',
+                        v_utc_date_time,
+                        'T'
+    
+                   )
+              ;         
+        
+            end if;--KR 
+     exception
+          when others then
+               pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+                    'Error in inserting record in from timezone_date_map for target Timezone: '||sqlerrm);
+
+          v_timezone_map_new_id := 0;
+
+          io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+          return;
+          end;
+          
+        end if; 
+     end if;
+--     end if;   --OSBILLING-5899
+
+          --
+     -- Update the date_rolled_tf to 'F' of last record of the timezone
+     --
+     if v_timeone_date_map_id is not null and nvl(v_timezone_map_new_id,0) <> 0 
+     then
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... The last record of this time zone is ' ||v_timeone_date_map_id);
+
+          end if;
+
+          begin
+               update
+                    timezone_date_map
+               set
+                    date_rolled_tf = 'F'
+               where
+                    timezone_data_map_id = v_timeone_date_map_id;
+
+
+          exception
+               when others then
+                    pkg_os_logging.sp_log_error
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         'Error in updating record in timezone_date_map for  Timezone date map id : '||v_timeone_date_map_id
+                         || 'Error' || sqlerrm);
+
+                io_action_outcome_id    := pkg_os_constant_enum.gOutcome_UserInputIncomplete;
+                return;
+
+          end;
+      end if;
+
+   
+
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+end sp_timezone_date_map;
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_calculate_equity_date
+--
+--   %usage
+--        Calculates equity date of the policy based on the payments made under the policy and
+--        premium earned till the equity date.
+--
+--   %algorithm
+--        1. Get the payments made under the policy
+--        2. Get the premium earned hitherto
+--        3. Through binary search algorithm, identify the date at which the earned premium matches payment. Earned
+--           premium is calculated using pkg_os_policy_stat.sp_earned_premium_get
+--        Note - Another approach can be 'Policy Effective Date + (Payment * (Days in term) / WrittenPremium). This
+--        approach though attractive will not give correct equity date for policy with seasonal coverages, where
+--        premium earned per day varies.
+--
+--   %param    in_session_id                 User Session Id
+--   %param    in_transaction_id             Transaction Id
+--   %param    in_policy_id                  Policy Id
+--   %param    out_equity_date               Equity Date
+--   %param    in_current_date_time          Current Date Time
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_calculate_equity_date
+(
+     in_session_id                 in          object.object_id%type,
+     in_transaction_id             in          object.object_id%type,
+     in_policy_id                  in          object.object_id%type,
+     out_equity_date               out          object_bv_value.business_variable_value%type,
+     in_current_date_time          in          date default sysdate
+) as
+
+     v_procedure_name              constant system_log.program_name%type        :=   pkg_name||'sp_calculate_equity_date';
+     v_session_control               pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_eff_date_str                object_bv_value.business_variable_value%type := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_policy_id, pkg_os_constant_bv.gbv_PolicyEffectiveDate );
+     v_exp_date_str                object_bv_value.business_variable_value%type := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_policy_id, pkg_os_constant_bv.gbv_PolicyExpiratinoDate );
+
+     v_earned_prem                 number;
+     v_unearned_prem               number;
+     v_written_prem                number;
+     v_earned_prem_i1              number;
+     v_unearned_prem_i1            number;
+     v_written_prem_i1             number;
+     v_earned_prem_i2              number;
+     v_unearned_prem_i2            number;
+     v_written_prem_i2             number;
+     v_paid_amount                 number;
+     v_start                       date;
+     v_mid                         date;
+     v_end                         date;
+     v_counter                     pls_integer;
+     v_flag                        boolean;
+
+     v_eff_date                    date := trunc(to_date( v_eff_date_str, pkg_os_constant.DragonDateFormatDefault ));
+     v_exp_date                    date := trunc(to_date( v_exp_date_str, pkg_os_constant.DragonDateFormatDefault ));
+     v_current_date                date := trunc(to_date(to_char( in_current_date_time, pkg_os_constant.DragonDateFormatDefault ), pkg_os_constant.DragonDateFormatDefault));
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Calculating Equity date for Policy ID: ' || in_policy_id);
+
+     end if;
+
+     --
+     -- Get the payments made under the policy
+     --
+
+     select
+          sum (balance)
+     into
+          v_paid_amount
+     from
+          dragon_fitem f
+     where
+          f.policy_id         = in_policy_id
+     and
+          f.fitem_category_id = gFitemCategory_Cash
+     and
+          f.debit_credit      = 'Debit';
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Payments for Policy ID: ' || in_policy_id || ' equals: '|| v_paid_amount);
+
+     end if;
+
+     pkg_os_policy_stat.sp_earned_premium_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_policy_id,
+          to_char(pkg_db_functions.fn_get_policy_current_date(in_session_id, in_transaction_id, in_policy_id), pkg_os_constant.DragonDateFormatDefault),
+          v_earned_prem,
+          v_unearned_prem,
+          v_written_prem
+     );
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Premium status for Policy ID: ' || in_policy_id ||
+               ' on date: ' || in_current_date_time || ' v_earned_prem: ' || v_earned_prem ||
+               ' v_unearned_prem: ' || v_unearned_prem || ' v_written_prem: ' || v_written_prem );
+
+     end if;
+
+     --
+     -- Basic Initializations for Binary Search, code then identifies the date range in which earned premium
+     -- equals Paid Amount, returning equity date
+     --
+
+     --
+     -- Get the greater date from TZ_policy_map and TZ_date_map, instead of taking an input.
+     --
+
+     if (v_written_prem = 0 or v_written_prem is null)
+     then
+          out_equity_date := v_eff_date;
+
+     elsif (v_paid_amount >= v_written_prem)
+     then
+          out_equity_date := v_exp_date;
+
+     elsif (v_paid_amount = 0 or v_paid_amount is null)
+     then
+          out_equity_date := v_eff_date;
+
+     elsif (v_paid_amount > 0.01)
+     then
+
+          v_flag := false;
+          v_counter := 0;
+
+          if (v_paid_amount > v_earned_prem)
+          then
+
+               v_start := v_current_date;
+               v_end := v_exp_date;
+
+          else
+
+               v_start := v_eff_date;
+               v_end := v_current_date;
+
+          end if; -- end of v_paid_amount check
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '...Counter: ' || v_counter || ', Start Date: ' ||v_start ||', End Date: ' || v_end);
+
+          end if;
+
+          while (v_start <= v_end) loop
+          begin
+
+               -- Temporary solution to break loop, until a better one is found.
+               -- Please see OSDEMO-10584 for system log
+               -- ......In loop counter: 9319037, Start Date: 02-DEC-12, End Date: 03-DEC-12, Mid Date: 03-DEC-12
+               -- MasterPolicyID:73978800556 Term:365 TrxID:73978800656 ExpDate:20130828000100 Earned Days:97 Unearned Days:268 Daily Premium:2.87397 Inhrited:0 Ren:1049
+               -- MasterPolicyID:73978800556 Term:365 TrxID:73978800656 ExpDate:20130828000100 Earned Days:98 Unearned Days:267 Daily Premium:2.87397 Inhrited:0 Ren:1049
+               if (v_mid = v_start + round((v_end - v_start)/2) )
+               then
+
+                    exit; -- exit loop
+
+               else
+
+                    v_mid  := v_start + round((v_end - v_start)/2);
+
+               end if;
+
+               v_counter := v_counter + 1;
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......In loop counter: ' || v_counter || ', Start Date: ' || v_start ||
+                         ', End Date: ' || v_end || ', Mid Date: ' || v_mid);
+
+               end if;
+
+               pkg_os_policy_stat.sp_earned_premium_get
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_policy_id,
+                    to_char(v_mid, pkg_os_constant.DragonDateFormatDefault),
+                    v_earned_prem_i1,
+                    v_unearned_prem_i1,
+                    v_written_prem_i1
+               );
+
+               pkg_os_policy_stat.sp_earned_premium_get
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_policy_id,
+                    to_char(v_mid + 1, pkg_os_constant.DragonDateFormatDefault),
+                    v_earned_prem_i2,
+                    v_unearned_prem_i2,
+                    v_written_prem_i2
+               );
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......Mid Date: ' || v_mid ||
+                         ', Premium Earned : ' || v_earned_prem_i1 ||
+                         ', Premium Earned till next day : ' || v_earned_prem_i2);
+
+               end if;
+
+               if (v_paid_amount >= v_earned_prem_i1 and v_paid_amount <= v_earned_prem_i2)
+               then
+
+                    out_equity_date := v_mid;
+                    v_flag := true;
+
+                    if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                              '.........Equity Date: ' || out_equity_date || ', as Payments made : ' || v_paid_amount ||
+                              ', fall in the premium earned range by Date: ' || v_mid ||', Premium Earned: ' ||v_earned_prem_i1 ||
+                              ', Premium Earned till next day : ' || v_earned_prem_i2);
+
+                    end if;
+
+                    exit;
+
+               end if; -- end of v_paid_amount check
+
+               if (v_paid_amount < v_earned_prem_i1)
+               then
+
+                    v_end := v_mid;
+
+               else
+
+                    v_start := v_mid;
+
+               end if;
+
+          end;
+
+               -- Temporary solution to break loop, until a better one is found.
+               -- Please see OSDEMO-10584 for system log
+               -- End Date and Start Date are the same or 1 day apart
+               if ( (v_end - v_start)/2 < 1)
+               then
+
+                    exit;     -- exit loop
+
+               end if;
+
+          end loop; -- end of while loop
+
+     end if; -- end of v_written_prem check
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Policy Equity date: ' || out_equity_date);
+
+     end if;
+
+end sp_calculate_equity_date;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_get_term_equity_date
+--
+--   %usage
+--        Calculates equity date of the policy based on the payments made under the policy and
+--        premium earned till the equity date.
+--
+--   %algorithm
+--        1. Get the payments made under the policy
+--        2. Get the premium earned hitherto
+--        3. Through binary search algorithm, identify the date at which the earned premium matches payment. Earned
+--           premium is calculated using pkg_os_policy_stat.sp_earned_premium_get
+--        Note - Another approach can be 'Policy Effective Date + (Payment * (Days in term) / WrittenPremium). This
+--        approach though attractive will not give correct equity date for policy with seasonal coverages, where
+--        premium earned per day varies.
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_policy_term_id             transaction id
+--   %param    out_equity_date               equity date
+--   %param    in_current_date_time          current date time
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_get_term_equity_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_term_id             in             object.object_id%type,
+     out_equity_date               out            object_bv_value.business_variable_value%type,
+     in_current_date_time          in             date default sysdate
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type        :=   pkg_name||'sp_get_term_equity_date';
+     v_session_control               pkg_os_session.r_dragon_session_control    :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_policy_id                   object.object_id%type                        :=   pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id, in_policy_term_id);
+     v_in_term_eff_date_str        object_bv_value.business_variable_value%type :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_policy_term_id, pkg_base_policy_stat.gbv_PolicyTerm_eff_date );
+     v_in_term_exp_date_str        object_bv_value.business_variable_value%type :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_policy_term_id, pkg_base_policy_stat.gbv_PolicyTerm_exp_date );
+     v_in_term_eff_date            date                                         :=   trunc(to_date( v_in_term_eff_date_str, pkg_os_constant.DragonDateFormatDefault ));
+     v_in_term_exp_date            date                                         :=   trunc(to_date( v_in_term_exp_date_str, pkg_os_constant.DragonDateFormatDefault ));
+     v_rounding_precision          number                                       :=   5;
+     v_term_eff_date_str           object_bv_value.business_variable_value%type;
+     v_object_list                 pkg_os_object.t_object_list;
+
+     v_term_eff_date               date;
+     v_earned_prem                 number;
+     v_unearned_prem               number;
+     v_written_prem                number;
+     v_earned_prem_i1              number;
+     v_unearned_prem_i1            number;
+     v_written_prem_i1             number;
+     v_earned_prem_i2              number;
+     v_unearned_prem_i2            number;
+     v_written_prem_i2             number;
+     v_paid_amount                 number;
+     v_posted_amount               number;
+     v_applied_amount              number;
+     v_start                       date;
+     v_mid                         date;
+     v_end                         date;
+     v_counter                     pls_integer;
+     v_flag                        boolean;
+     v_object_index                number;
+     v_prev_terms_prem             number;
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Calculating Equity date for Policy ID: ' || v_policy_id ||' and Policy Term ID: ' || in_policy_term_id);
+
+     end if;
+
+     --
+     --  Get the balance of cash posted under the policy
+     --
+
+     select
+          nvl(sum(balance),0) * (-1)
+     into
+          v_posted_amount
+     from
+          dragon_fitem
+     where
+          policy_id = v_policy_id
+     and
+          fitem_category_id = gFitemCategory_Cash
+     and
+          debit_credit = 'Credit';
+
+     --
+     --  Get cash applied on the policy
+     --
+
+     select
+          nvl(sum(action_delta),0)
+     into
+          v_applied_amount
+     from
+          dragon_fichange
+     where
+          policy_id = v_policy_id
+     and
+          --Commented under ticket OSBILLING-1340 to optimize performance by doing ID comparison instead.
+          --fitransaction_type = 'Cash Apply'
+           fitem_transaction_type_id = FITrxType_Cash_Apply
+     and
+          (
+               (
+                    --Commented under ticket OSBILLING-1340 to optimize performance by doing ID comparison instead.
+                    --fitransaction_type = 'Cash Apply'
+                    fitem_transaction_type_id = FITrxType_Cash_Apply
+                    and
+                    action_delta > 0
+               )
+               or
+               (
+                    fitem_transaction_type_id = 301
+                    and
+                    action_delta > 0
+               )
+           )
+     and
+          policy_id is not null
+     and
+          processing_date is not null;
+
+     --
+     --  Get total cash for the policy
+     --
+
+     v_paid_amount := v_applied_amount + v_posted_amount;
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Cash Applied: ' || v_applied_amount || ' Cash posted: ' || v_posted_amount ||
+               ' Total Amount: ' || v_paid_amount || ' For Policy ID: ' || v_policy_id );
+
+     end if;
+
+     --
+     --    Get all the PolicyTerm objects under the policy
+     --
+
+     pkg_os_object_search.sp_object_children_of_type_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_policy_id,
+          pkg_db_functions.gObjType_PolicyTerm,
+          v_object_list
+     );
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Policy ID: ' || v_policy_id ||' has number of terms: ' || v_object_list.count);
+
+     end if;
+
+     --
+     --  Loop through the terms fetched and identify sum of the written premiums for terms effective before the input term
+     --
+
+     if v_object_list.count > 0
+     then
+
+          v_object_index := v_object_list.first;
+
+          while v_object_index is not null loop
+
+               v_term_eff_date_str := pkg_os_object_io.fn_object_bv_get
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_object_list(v_object_index),
+                    pkg_base_policy_stat.gbv_PolicyTerm_eff_date
+               );
+
+               v_term_eff_date := trunc(to_date(v_term_eff_date_str, pkg_os_constant.DragonDateFormatDefault));
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......Policy Term ID: ' || v_object_list(v_object_index) ||
+                         ' has effective date: ' || v_term_eff_date ||' Input Term Eff Date:' || v_in_term_eff_date);
+
+               end if;
+
+               if v_term_eff_date is not null and v_term_eff_date < v_in_term_eff_date
+               then
+
+                    pkg_base_policy_stat.sp_term_earned_premium_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_object_list(v_object_index),
+                         v_term_eff_date_str,
+                         v_rounding_precision,
+                         v_earned_prem,
+                         v_unearned_prem,
+                         v_written_prem
+                    );
+
+                    v_prev_terms_prem := nvl(v_prev_terms_prem,0) + nvl(v_written_prem,0);
+
+                    if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                              '......Term: ' || v_object_list(v_object_index) ||' has written premium = ' || v_written_prem ||
+                              ' v_earned_prem = ' || v_earned_prem || ' v_unearned_prem = ' || v_unearned_prem ||
+                              ' and total previous writen premium: ' || v_prev_terms_prem);
+
+                    end if;
+
+               end if; -- end of v_term_eff_date check
+
+               v_object_index := v_object_list.next(v_object_index);
+
+          end loop; -- end of while loop
+
+     end if; -- end of v_object_list check
+
+     --
+     -- Get total cash for the policy term
+     --
+
+     v_paid_amount := v_paid_amount - nvl(v_prev_terms_prem, 0);
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '......Cash available for the input Policy term ID: ' || in_policy_term_id ||' = ' || nvl(v_paid_amount,0));
+
+     end if;
+
+     --
+     -- Get input Policy term's Earned, UnEarned, Written Premium
+     --
+
+     pkg_base_policy_stat.sp_term_earned_premium_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_policy_term_id,
+          v_in_term_eff_date_str,
+          v_rounding_precision,
+          v_earned_prem,
+          v_unearned_prem,
+          v_written_prem
+     );
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Premium status for Policy term ID: ' || in_policy_term_id ||
+               ' on date: ' || v_in_term_eff_date_str || ' v_earned_prem: ' || v_earned_prem ||
+               ' v_unearned_prem: ' || v_unearned_prem || ' v_written_prem: ' || v_written_prem );
+
+     end if;
+
+     --
+     -- Basic Initializations for Binary Search, code then identifies the date range in which earned premium
+     -- equals Paid Amount, returning equity date
+     --
+
+     if (v_written_prem = 0 or v_written_prem is null)
+     then
+
+          out_equity_date := v_in_term_eff_date;
+
+     elsif (v_paid_amount >= v_written_prem)
+     then
+
+          out_equity_date := v_in_term_exp_date;
+
+     elsif (v_paid_amount = 0 or v_paid_amount is null)
+     then
+
+          out_equity_date := v_in_term_eff_date;
+
+     elsif (v_paid_amount > 0.01)
+     then
+
+          v_flag  := false;
+          v_counter := 0;
+          v_start := v_in_term_eff_date;
+          v_end   := v_in_term_exp_date;
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '...Counter: ' || v_counter || ', Start Date: ' || v_start || ', End Date: ' || v_end);
+
+          end if;
+
+          while (v_start <= v_end) and v_counter < 20
+          loop
+
+               begin
+
+                    if (v_mid = v_start + round((v_end - v_start)/2) )
+                    then
+
+                         exit; -- exit loop
+
+                    else
+
+                         v_mid  := v_start + round((v_end - v_start)/2);
+
+                    end if;
+
+                    v_counter    := v_counter + 1;
+
+                    if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                              '......In loop counter: ' || v_counter || ', Start Date: ' || v_start || ', End Date: ' || v_end || ', Mid Date: ' || v_mid);
+
+                    end if;
+
+                    pkg_base_policy_stat.sp_term_earned_premium_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_policy_term_id,
+                         to_char(v_mid, pkg_os_constant.DragonDateFormatDefault),
+                         v_rounding_precision,
+                         v_earned_prem_i1,
+                         v_unearned_prem_i1,
+                         v_written_prem_i1
+                    );
+
+                    pkg_base_policy_stat.sp_term_earned_premium_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_policy_term_id,
+                         to_char(v_mid + 1, pkg_os_constant.DragonDateFormatDefault),
+                         v_rounding_precision,
+                         v_earned_prem_i2,
+                         v_unearned_prem_i2,
+                         v_written_prem_i2
+                    );
+
+                    if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                              '......Mid Date: ' ||v_mid || ', Premium Earned : ' || v_earned_prem_i1 ||
+                              ', Premium Earned till next day : ' || v_earned_prem_i2);
+
+                    end if;
+
+                    if (v_paid_amount >= v_earned_prem_i1 and v_paid_amount <= v_earned_prem_i2)
+                    then
+
+                         out_equity_date           :=      v_mid;
+                         v_flag                    :=      TRUE;
+
+                         if v_session_control.gLogging_Full then
+
+                              pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                                   '.........Equity Date: ' || out_equity_date ||', as Payments made : ' || v_paid_amount ||
+                                   ', fall in the premium earned range by Date: ' || v_mid || ', Premium Earned: ' || v_earned_prem_i1 ||
+                                   ', Premium Earned till next day : ' || v_earned_prem_i2);
+
+                         end if;
+
+                         exit;     -- Exit Loop
+
+                    end if;
+
+                    if (v_paid_amount < v_earned_prem_i1)
+                    then
+
+                         v_end := v_mid;
+
+                    else
+
+                         v_start := v_mid;
+
+                    end if;
+
+               end;
+
+               -- Temporary solution to break loop, until a better one is found.
+               -- Please see OSDEMO-10584 for system log
+               -- End Date and Start Date are the same or 1 day apart
+               if ( (v_end - v_start)/2 < 1)
+               then
+
+                    exit;     -- exit loop
+
+               end if;
+
+          end loop; -- end of while loop
+
+     end if; -- end of v_written_prem check
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '...Policy Term Equity date: ' || out_equity_date );
+
+     end if;
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               '...... Not able to calculate equity date for Policy Term ID: ' || in_policy_term_id );
+
+end sp_get_term_equity_date;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        fn_get_term_equity_date
+--
+--   %USAGE
+--        This function returns the equity date of the term.
+--
+--   %ALGORITHM
+--       1. Get the policy current date from timezone_policy_map.
+--       2. Get the policy current date from timezone_date_map.
+--       3. Return the maximum of the 2 dates above.
+--
+--   %PARAM     in_session_id              session ID
+--   %PARAM     in_transaction_id          transaction ID
+--   %PARAM     in_policy_term_id          policy term ID
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_term_equity_date
+(
+
+     in_session_id                 in          object.object_id%type,
+     in_transaction_id             in          object.object_id%type,
+     in_policy_term_id             in          object.object_id%type
+)
+return date
+is
+
+     v_procedure_name              constant  system_log.program_name%type  := pkg_name||'fn_get_term_equity_date';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_term_equity_date            date;
+
+begin
+
+     pkg_db_nightly_process.sp_get_term_equity_date
+     (
+          in_session_id,
+          in_transaction_id,
+          in_policy_term_id,
+          v_term_equity_date
+     );
+
+     return v_term_equity_date;
+
+end;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_billacc_update_aging_status
+--
+--   %usage
+--        This is a wrapper for updating aging status of fitems for all the polices of the billing account
+--
+--   %algorithm
+--        Updation of aging status of fitems for all the polices of the billing account.
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_action_object_id           policy id
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billacc_update_aging_status
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+)
+as
+
+     v_procedure_name              constant  system_log.program_name%type  :=   pkg_name||'sp_billacc_update_aging_status';
+     v_session_control             pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_datamart_tf                 char(1) := 'T';
+     v_fitem_agingstatus_changedt  object_bv_value.business_variable_value%type;
+     v_rolled_date                 timezone_date_map.rolled_date%type;
+     v_billing_account_id          object.object_id%type := pkg_os_object.fn_object_parent_get(in_session_id,in_transaction_id,in_action_object_id);
+
+     cursor c_policies
+     is
+          select
+               a.policy_id
+          from
+               dragon_policy a, dragon_billingaccount b
+          where
+               b.parent_object_type_id = pkg_os_constant.gObjType_Customer
+          and
+               b.customer_object_id = a.customer_id
+          and
+               b.billingaccount_id = v_billing_account_id
+          and
+               a.billing_method_id = gBillingMethod_Direct;
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Entering in process sp_billacc_update_aging_status');
+
+     end if;
+
+     for r_policies in c_policies
+     loop
+
+          sp_update_aging_status
+          (
+               in_session_id,
+               in_transaction_id,
+               r_policies.policy_id
+          );
+
+     end loop;
+
+end;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_update_aging_status                             --OSPRODUCT-13562
+(
+     in_session_id                 in          object.object_id%type,
+     in_transaction_id             in          object.object_id%type,
+     in_object_id                  in          object.object_id%type ,-- This can be either a BATrx level or a Policy ...
+     in_fitransaction_id           in          object.object_id%type default null,
+     in_current_date_time          in          date default null --OSBILLING-7829
+)
+as   
+     v_action_outcome_id    number := pkg_os_constant.gOutcome_OK;
+begin
+    
+     sp_update_aging_status
+      (
+           in_session_id,
+           in_transaction_id,
+           in_object_id,
+           in_fitransaction_id,
+           in_current_date_time   ,
+           v_action_outcome_id
+      );
+end;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_update_aging_status
+--
+--   %usage
+--        Updates aging status of Policy FItems
+
+--
+--   %algorithm
+--        Updates aging status of Policy FItems
+--
+--    @@@VG: Look at the generic idea of a receivable, not just policy receivables. For instance, a vendor may owe us. We need to extend
+--    this to invoicing as well, because we may invoice a vendor.
+
+--        Expected Input Objects -
+--        Policy ID/BillingaccountTrxSet ID
+--        1. While processing any transaction like Endorsement, NB, Account Current Agency Statement this procedure is invoked with BillingAccountTrxSet that represents the transaction in question.
+--        2. In Account current, agency statement if any financials are added /excluded then in order to update the aging this procedure will
+--        be invoked for that particialur billngaccounttrxset and fitransaciton. @@@VG: Food for thought, this seems a little wasteful, since if we have added 9-10 additional transactions, we'll need to call this procedure 9-10 times.
+--        3. While processing aging through nightly process, this procedure will be invoked using policy id, and will focus on the looking at ageing only receivables for the policy in question.
+--
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_object_id                  policy id or billingaccounttrxset id
+--   %param    in_fitransaction_id           fitransaction id
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_update_aging_status
+(
+     in_session_id                 in          object.object_id%type,
+     in_transaction_id             in          object.object_id%type,
+     in_object_id                  in          object.object_id%type ,-- This can be either a BATrx level or a Policy ...
+     in_fitransaction_id           in          object.object_id%type default null,
+     in_current_date_time          in          date default null,  --OSBILLING-7829
+     io_action_outcome_id          in out      outcome.outcome_id%type                   --OSPRODUCT-13562
+)
+as
+
+     v_procedure_name              constant  system_log.program_name%type       :=   pkg_name||'sp_update_aging_status';
+     v_session_control             pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_datamart_tf                 char(1)                                      :=   'T';
+     v_fitem_agingstatus_changedt  object_bv_value.business_variable_value%type;
+     v_current_date                timezone_date_map.rolled_date%type;
+     v_cust_billing_acc_id         object.object_id%type;
+     v_billingaccounttrxset_id     object.object_id%type;
+     v_bv_table                    pkg_os_object_io.t_bv_table;
+     v_total_items                 number;
+     v_total_changes               number := 0;
+     v_policy_id                   object.object_id%type;
+     v_object_type_id              object_type.OBJECT_TYPE_ID%type;
+     v_fulfilment_days             number;
+     v_aging_on_invoice            pd_property.pd_property_value%type;
+     v_accounting_period           pd_property.pd_property_value%type;  --osproduct-3494 20200916 Cheryl
+     v_bats_id                     object.object_id%type;
+     v_policy_billing_method       object_bv_value.business_variable_value%type;
+     v_term_billing_method         object_bv_value.business_variable_value%type;
+     v_old_aging_status_id         object.object_id%type;
+     v_withdrawal_date             date;
+     v_due_date                    date;
+     v_current_policy_id           object.object_id%type;
+     v_policy_fitem_list           t_policy_fitem_tbl;
+     v_batrx_fitem_list            t_batrxset_fitem_tbl;
+     v_index                       number;
+     r_billing_account_list        pkg_db_object.t_billing_account_list;
+     v_account_balance             number;
+     v_object_cache                pkg_os_object_cache.t_object_cache;
+     v_action_outcome_id           outcome.outcome_id%type;
+     v_agtbill_advance_days        pd_property.pd_property_value%type; --20190124 OSBILLING-6617 Cheryl
+
+     -- #MP
+     type  t_ba_batrx_tab          is table of varchar2(50) index by long; -- Index is a BillingAccountID, value is a BillingAccountTrxSetID
+     v_ba_batrx_list               t_ba_batrx_tab;
+     v_idx                         long;
+     -- /#MP
+     --OSPRODUCT-6451
+     v_past_due_amount               number;
+     v_current_due_amount            number;
+     v_future_due_amount             number;
+	 v_due_amount				     number;
+     v_past_due_amount_cust          number;
+     v_current_due_amount_cust       number;
+     v_future_due_amount_cust        number;
+     v_total_due_amount_cust         number;
+
+     v_date_bv_path                   object_bv_value.business_variable_value%type;   --OSPRODUCT-29773
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+          '|||||| Entering process sp_update_aging_status for Object ID:'||in_object_id||'FITransactionID:'||in_fitransaction_id );
+
+     end if;
+
+     io_action_outcome_id   :=      pkg_os_constant.gOutcome_OK;    --OSPRODUCT-13562
+     --
+     -- Find the object type of the input object
+     --
+
+     v_object_type_id := pkg_os_object.fn_object_type_get (in_session_id, in_transaction_id, in_object_id);
+
+     if ( v_object_type_id   = pkg_os_constant.gobjType_Policy )
+     then
+
+          v_policy_id    := in_object_id;
+    --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+          --v_cust_billing_acc_id := pkg_db_functions.fn_get_policy_billing_account(in_session_id, in_transaction_id, v_policy_id);
+
+          --[RR] Not in use -- UTPRODUCT-3679
+          /*select
+              dp.responsible_billing_account
+          into
+              v_cust_billing_acc_id
+          from
+              dragon_policy dp
+          where
+              dp.policy_id = v_policy_id;*/               
+ 
+          v_current_date := pkg_db_functions.fn_get_policy_current_date(in_session_id, in_transaction_id, v_policy_id);
+
+          v_fulfilment_days := fn_get_fulfilment_days(in_session_id, in_transaction_id,v_policy_id);
+
+          v_aging_on_invoice   := fn_get_fulfilment_days(in_session_id, in_transaction_id,v_policy_id);
+
+          v_aging_on_invoice  := nvl( pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, v_policy_id, gAgeingBasedOnInvoice ), 'T' ); -- If True, this means that we only start aging a particular receivable if it has been invoiced.
+          v_accounting_period := nvl( pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, v_policy_id, gUse_Accounting_Period ), 'F' ); --default is false osproduct-3494 20200916 Cheryl
+          v_policy_billing_method := pkg_os_object_io.fn_object_bv_get
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id ,
+               gbv_PolicyBillingMethod
+          );
+
+          -- Loop through each FITEM related to the given policy
+
+          v_total_items := 0;
+
+          v_policy_fitem_list.delete;
+
+          open c_policy_fitems (v_policy_id);
+
+          fetch c_policy_fitems bulk collect into v_policy_fitem_list;
+
+          close c_policy_fitems;
+
+
+          v_index := v_policy_fitem_list.first;
+
+          while v_index is not null
+          loop
+
+               v_old_aging_status_id := v_policy_fitem_list(v_index).aging_status_id;
+
+               v_withdrawal_date := v_policy_fitem_list(v_index).withdrawal_date;
+
+               v_term_billing_method :=  pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_policy_fitem_list(v_index).policy_term_id ,
+                         gbv_PolicyTermBillingMethod
+                    );
+               if v_term_billing_method is null
+               then
+
+                    if v_session_control.gLogging_Full
+                    then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......Billing method is null on Term. So, Take the Billing Method Value from Policy :'|| v_policy_billing_method);
+                    end if;
+
+                    v_term_billing_method := v_policy_billing_method;
+
+               end if;
+
+               if v_policy_fitem_list(v_index).fitem_business_relationship is not null                  
+               then 
+                  begin
+                    select t.bv_path into v_date_bv_path from DB_FITEMRELATIONSHIP_AGING t  where t.db_business_relationship_id = v_policy_fitem_list(v_index).fitem_business_relationship;
+                    
+                    v_due_date := to_date (pkg_os_object_io.fn_object_bv_path_get
+                                    (
+                                         in_session_id,
+                                         in_transaction_id,
+                                         v_policy_fitem_list(v_index).fitem_id,
+                                         rtrim(v_date_bv_path, pkg_os_constant.bv_path_segmentor)
+                                    ),pkg_os_constant.DragonDateFormatDefault);
+                    
+                  exception when no_data_found
+                    then
+                     pkg_os_logging.sp_log_error
+                     (
+                          in_session_id,
+                          in_transaction_id,
+                          v_procedure_name,
+                          '... Error metadata configuration is missing in The DB_FITEMRELATIONSHIP_AGING for business relationship   ' || v_policy_fitem_list(v_index).fitem_business_relationship||
+                          ' Error: ' ||sqlerrm
+                     );                       
+                     
+                     v_due_date := v_policy_fitem_list(v_index).due_date;
+                     
+                  end; 
+                 
+                  --- Get the date that should be considered for aging from the MD Table DB_FITEMRELATIONSHIP_AGING 
+
+               else 
+
+               if v_term_billing_method = gBillingMethod_Agency
+               then
+
+                    if v_session_control.gLogging_Full
+                    then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '...... Checking for Agency Billed Policy FItems of Debit Type');
+                    end if;
+                 --20190124 OSBILLING-6617 Cheryl use the v_aging_on_invoice to determine date sent
+                 if v_aging_on_invoice = 'T' then
+                      v_due_date := v_policy_fitem_list(v_index).agency_due_date;
+                 else
+                      v_due_date := v_policy_fitem_list(v_index).due_date;
+                      --get the accounting period end date to use based on the due date
+                      if v_due_date is null then
+                           v_due_date := v_current_date;
+                      end if;
+                     if v_session_control.gLogging_Full
+                     then
+                     pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                      '...... due_date to start: ' || v_due_date
+                      || ' current date: ' || v_current_date);
+                     end if;
+                     if v_accounting_period = 'T'  --osproduct-3494 20200916 Cheryl - only change the due date if set to T
+                     then 
+                        begin
+                        select ayp.date_to
+                        into v_due_date
+                        from accounting_yr_prd ayp
+                        where trunc(v_policy_fitem_list(v_index).due_date) between ayp.date_from
+                          and ayp.date_to;
+                          exception when others then
+                          v_due_date := v_current_date;
+                         end;
+                      end if;   
+                      -- now add the amount of days the agent has to pay
+                      v_agtbill_advance_days  := nvl( pkg_os_product.fn_product_property_get
+                                ( 0, --product all
+                                  null, --filing
+                                  gAgtbilladvancedays
+                                  ), 0 );
+                      v_due_date := v_due_date + v_agtbill_advance_days;
+                      v_withdrawal_date := v_due_date; -- setting to the same for agency bill
+                 end if;
+                 if v_session_control.gLogging_Full
+                   then
+                      pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                       '......aging on invoice :'|| v_aging_on_invoice
+                       || ' fitem: ' || v_policy_fitem_list(v_index).fitem_id
+                       || ' due date from fitem: ' || v_policy_fitem_list(v_index).due_date
+                       || ' agt advance days: ' || v_agtbill_advance_days
+                       || ' due date: ' || v_due_date);
+                end if;
+
+               elsif v_term_billing_method = gBillingMethod_Direct
+               then
+
+                    if v_session_control.gLogging_Full then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......... Checking for Direct Billed Policy FItems ');
+                    end if;
+
+                    v_due_date := v_policy_fitem_list(v_index).due_date;
+
+
+               end if;
+               
+               end if;
+
+               -- #MP
+               if v_ba_batrx_list.exists(v_policy_fitem_list(v_index).billing_account_id)
+               then
+                    -- if at least one fitem from a billing account has already been processed, use those Billing Account Trx Set.
+                    --
+                    v_billingaccounttrxset_id := v_ba_batrx_list(v_policy_fitem_list(v_index).billing_account_id);
+               else
+                    -- if this is the first fitem for a billing account, a Billing Account Trx Set will be created below and then saved to the v_ba_batrx_list
+                    v_billingaccounttrxset_id := null;
+               end if;
+               --
+
+               sp_fitem_aging_status_update
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_policy_fitem_list(v_index).fitem_id,
+                    v_policy_fitem_list(v_index).fitem_billed_tf,
+                    v_withdrawal_date,
+                    v_due_date, -- @@@ Assign this to a variable based on bill type, and then call the procedure once.
+                    v_current_date,
+                    v_aging_on_invoice,
+                    v_old_aging_status_id,
+                    v_billingaccounttrxset_id,
+                    -- v_cust_billing_acc_id,                       -- #MP. commented out
+                    v_policy_fitem_list(v_index).billing_account_id,-- #MP. added
+                    v_policy_fitem_list(v_index).policy_id,
+                    v_total_items
+                );
+
+               -- #MP
+               if v_billingaccounttrxset_id is not null
+               then
+                    v_ba_batrx_list(v_policy_fitem_list(v_index).billing_account_id) := v_billingaccounttrxset_id; -- save v_billingaccounttrxset_id for billing account
+               end if;
+
+               v_index    := v_policy_fitem_list.next(v_index);
+
+          end loop;
+          
+          if v_billingaccounttrxset_id is not null               --OSPRODUCT-13562
+          then 
+               io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          else
+               io_action_outcome_id := g_outcome_AgingNotUpdated;
+          end if;
+
+          --OSBILLING-3803
+          /*pkg_os_datamart.sp_datamart_update_row   ----OSPRODUCT-6451
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               v_datamart_tf
+          );*/
+          
+          v_past_due_amount         :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 31762846);
+          v_current_due_amount      :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 31762946);
+          v_future_due_amount       :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 31763046);
+		  v_past_due_amount_cust    :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 32941348);
+          v_current_due_amount_cust :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 32941448);
+          v_future_due_amount_cust  :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 32941548);
+          v_total_due_amount_cust   :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_policy_id, 32941748);
+         
+             update dragon_policy set
+                PAST_DUE_AMOUNT   = v_past_due_amount,
+                CURRENT_DUE_AMOUNT = v_current_due_amount,
+                FUTURE_DUE_AMOUNT = v_future_due_amount,
+                DUE_AMOUNT = v_past_due_amount + v_current_due_amount + v_future_due_amount,
+                DUE_AMOUNT_OF_CUST = v_total_due_amount_cust,
+                PAST_DUE_AMOUNT_OF_CUST = v_past_due_amount_cust,
+                CURRENT_DUE_AMOUNT_OF_CUST = v_current_due_amount_cust,
+                FUTURE_DUE_AMOUNT_OF_CUST = v_future_due_amount_cust
+             where policy_id = v_policy_id ; 
+
+
+     elsif (v_object_type_id = gObjType_BillingAccountTrxSet) -- 2365946
+     then
+
+          v_bats_id    := in_object_id;
+
+          v_cust_billing_acc_id := pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id,v_bats_id);
+
+
+          v_current_policy_id := 0;
+
+          v_batrx_fitem_list.delete;
+
+          -- Loop through each FITEM related to GivenBilling Account Trx Set
+          open c_ba_fitems(v_bats_id,in_fitransaction_id);
+
+          fetch c_ba_fitems bulk collect into v_batrx_fitem_list;
+
+          close c_ba_fitems;
+
+          v_index           := v_batrx_fitem_list.first;
+
+          while v_index is not null
+          loop
+
+               -- GCNA-2457
+               v_policy_id       := v_batrx_fitem_list(v_index).policy_id;
+
+               v_withdrawal_date := v_batrx_fitem_list(v_index).withdrawal_date;
+               -------
+               -- If there are multiple fitems for a policy, we need not to get the v_current_date,v_aging_on_invoice, fulfilment days and withdrawal dates ech time
+               -- as these are policy specific fields. So, we'll get these fields only once for a policy
+               -------
+
+               if v_batrx_fitem_list(v_index).policy_id <> v_current_policy_id then
+
+                    --OSBILLING-3803
+                    --------
+                    -- If there are multiple fitems for a policy, We need not to update the policy datamart every time.
+                    -- We will update the datamart of a policy  just before moving to next polixy. i.e before initializing v_current_policy_id with next policy
+                    -- Null check is added to avoid datamart refresh when v_current_policy_id is 0.
+                    --------
+
+                    if nvl(v_current_policy_id,0)<>0
+                    then
+
+                         /*pkg_os_datamart.sp_datamart_update_row
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_current_policy_id,
+                              v_datamart_tf
+                         );*/
+                         
+                         v_past_due_amount         :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31762846);
+                         v_current_due_amount      :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31762946);
+                         v_future_due_amount       :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31763046);
+		                 v_past_due_amount_cust    :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941348);
+                         v_current_due_amount_cust :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941448);
+                         v_future_due_amount_cust  :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941548);
+                         v_total_due_amount_cust   :=  pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941748);
+                         
+                        begin
+                         
+                        update dragon_policy set
+                          PAST_DUE_AMOUNT   = v_past_due_amount,
+                          CURRENT_DUE_AMOUNT = v_current_due_amount,
+                          FUTURE_DUE_AMOUNT = v_future_due_amount,
+                          DUE_AMOUNT = v_past_due_amount + v_current_due_amount + v_future_due_amount,
+                          DUE_AMOUNT_OF_CUST = v_total_due_amount_cust,
+                          PAST_DUE_AMOUNT_OF_CUST = v_past_due_amount_cust,
+                          CURRENT_DUE_AMOUNT_OF_CUST = v_current_due_amount_cust,
+                          FUTURE_DUE_AMOUNT_OF_CUST = v_future_due_amount_cust
+                          where 
+                          policy_id = v_current_policy_id ; 
+                        end;
+
+                    end if;
+
+                    v_current_policy_id :=v_batrx_fitem_list(v_index).policy_id;
+
+                    v_current_date := pkg_db_functions.fn_get_policy_current_date(in_session_id, in_transaction_id, v_batrx_fitem_list(v_index).policy_id);
+
+                    v_aging_on_invoice := NVL(pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, v_batrx_fitem_list(v_index).policy_id, gAgeingBasedOnInvoice),'T');--Aging dependent on Invoice Generation -- @@@VG This should be a system-level setting, not a policy level setting, no?
+
+                    if(v_batrx_fitem_list(v_index).policy_id is not null)
+                    then
+                         v_fulfilment_days   := fn_get_fulfilment_days(in_session_id, in_transaction_id,v_batrx_fitem_list(v_index).policy_id);
+
+                    else
+
+                         v_fulfilment_days := 0;
+
+                    end if;
+
+                    if v_fulfilment_days <> 0
+                    then
+
+                         v_withdrawal_date := pkg_db_functions.fn_substr_business_days(in_session_id, in_transaction_id, v_batrx_fitem_list(v_index).policy_id,v_batrx_fitem_list(v_index).withdrawal_date,v_fulfilment_days);
+
+                    else
+
+                         v_withdrawal_date := v_batrx_fitem_list(v_index).withdrawal_date;
+
+                    end if;
+
+               end if; --- if we're dealing with a new policy.
+
+               v_old_aging_status_id := v_batrx_fitem_list(v_index).aging_status_id;
+
+
+               v_term_billing_method  := pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_batrx_fitem_list(v_index).policy_term_id ,
+                         gbv_PolicyTermBillingMethod
+                    );
+
+               if v_term_billing_method is null
+               then
+
+                    v_policy_billing_method := pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_batrx_fitem_list(v_index).policy_id ,
+                              gbv_PolicyBillingMethod
+                         );
+
+                    if v_session_control.gLogging_Full
+                    then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......Billing method is null on Term. So, Take the Billing Method Value from Policy :'|| v_policy_billing_method);
+                    end if;
+
+                    v_term_billing_method := v_policy_billing_method;
+
+               end if;
+
+
+               if v_term_billing_method = gBillingMethod_Agency
+               then
+
+                    if v_session_control.gLogging_Full
+                    then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '...... Checking for Agency Billed Fitem ');
+                    end if;
+
+                    v_due_date := v_batrx_fitem_list(v_index).agency_due_date;
+                    v_aging_on_invoice := 'T';
+
+               elsif v_term_billing_method = gBillingMethod_Direct
+               then
+
+                    if v_session_control.gLogging_Full then
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                         '......... Checking for Direct Billed FItems ');
+                    end if;
+
+                    v_due_date := v_batrx_fitem_list(v_index).due_date;
+
+
+               end if;
+
+               -- #MP
+               if v_ba_batrx_list.exists(v_batrx_fitem_list(v_index).billing_account_id)
+               then
+                    -- if at least one fitem from a billing account has already been processed, use those Billing Account Trx Set.
+                    --
+                    v_billingaccounttrxset_id := v_ba_batrx_list(v_batrx_fitem_list(v_index).billing_account_id);
+               else
+                    -- if this is the first fitem for a billing account, a Billing Account Trx Set will be created below and then saved to the v_ba_batrx_list
+                    v_billingaccounttrxset_id := null;
+
+               end if;
+               --
+
+               sp_fitem_aging_status_update
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_batrx_fitem_list(v_index).fitem_id,
+                    v_batrx_fitem_list(v_index).fitem_billed_tf,
+                    v_withdrawal_date,
+                    v_due_date, -- @@@ Assign this to a variable based on bill type, and then call the procedure once.
+                    v_current_date,
+                    v_aging_on_invoice,
+                    v_old_aging_status_id,
+                    v_billingaccounttrxset_id,
+                    -- v_cust_billing_acc_id,                      -- #MP. commented out
+                    v_batrx_fitem_list(v_index).billing_account_id,-- #MP. added
+                    v_batrx_fitem_list(v_index).policy_id,
+                    v_total_items
+               );
+
+               -- #MP
+               if v_billingaccounttrxset_id is not null
+               then
+                    v_ba_batrx_list(v_batrx_fitem_list(v_index).billing_account_id) := v_billingaccounttrxset_id; -- save v_billingaccounttrxset_id for billing account
+               end if;
+               --
+
+               v_index      := v_batrx_fitem_list.next(v_index);
+
+          end loop; -- for v_policy_fitem_list(v_index)s in c_policy_fitems
+
+          --OSBILLING-3803
+          -- In the end of loop, we'll update datamart for the last policy.
+
+          if nvl(v_current_policy_id,0)<>0 then
+
+               /*pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_current_policy_id,
+                    v_datamart_tf
+               );*/
+               
+               --OSPRODUCT-8922. Introduced variables to avoid mutation
+			v_past_due_amount         := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31762846);
+			v_current_due_amount      := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31762946);
+			v_future_due_amount       := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31763046);
+			v_due_amount		      := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 31763146);
+			v_past_due_amount_cust    := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941348);
+            v_current_due_amount_cust := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941448);
+            v_future_due_amount_cust  := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941548);
+            v_total_due_amount_cust   := pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_current_policy_id, 32941748);
+
+			update dragon_policy set
+                PAST_DUE_AMOUNT = v_past_due_amount, 
+                CURRENT_DUE_AMOUNT = v_current_due_amount,
+                FUTURE_DUE_AMOUNT = v_future_due_amount,
+                DUE_AMOUNT = v_due_amount,
+                DUE_AMOUNT_OF_CUST = v_total_due_amount_cust,
+                PAST_DUE_AMOUNT_OF_CUST = v_past_due_amount_cust,
+                CURRENT_DUE_AMOUNT_OF_CUST = v_current_due_amount_cust,
+                FUTURE_DUE_AMOUNT_OF_CUST = v_future_due_amount_cust
+               where policy_id = v_current_policy_id ;
+
+          end if;
+
+     end if;
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,'...... What is in the  v_ba_batrx_list....');
+
+          v_idx := v_ba_batrx_list.first; -- v_idx is a BillingAccountID
+          while v_idx is not null
+          loop
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id, v_procedure_name,
+                    '...... Billing account :'|| v_idx ||
+                    ' BATrxSET :' || v_ba_batrx_list(v_idx)
+               );
+
+               v_idx := v_ba_batrx_list.next(v_idx);
+          end loop; -- for each billing account
+     end if;
+
+     --
+     -- Update the BVs for the Batch if exists
+     --
+
+     --if v_billingaccounttrxset_id is not null  -- #MP in need to analyse a collection, not a scalar variable
+     if v_ba_batrx_list.count > 0
+     then
+
+          v_fitem_agingstatus_changedt:= to_char(NVL(in_current_date_time, pkg_os_time.fn_os_sysdate(in_session_id, in_transaction_id, v_policy_id)), pkg_os_constant.DragonDateFormatDefault);  --OSBILLING-7829
+
+          r_billing_account_list.delete;
+
+
+          v_idx := v_ba_batrx_list.first; -- v_idx is a BillingAccountID
+
+          while v_idx is not null
+          loop
+               --
+               -- if v_cust_billing_acc_id is not null -- #MP
+               if v_ba_batrx_list(v_idx) is not null -- double check to prevent dummy errors. A billing account trx set should not be null !
+               then
+                    r_billing_account_list(r_billing_account_list.count + 1)     :=     to_number(v_idx); -- v_cust_billing_acc_id;  -- #MP
+
+                    v_bv_table.delete;
+                    v_bv_table ( pkg_db_cashpost.gbv_FITrxSetTotalAmount      ).business_variable_value  := v_total_changes;
+                    v_bv_table ( pkg_db_cashpost.gbv_FITrxSetTotalItems       ).business_variable_value  := v_total_items;
+                    v_bv_table ( pkg_db_cashpost.gbv_FITrxSetDatePosted       ).business_variable_value  := v_fitem_agingstatus_changedt;
+                    v_bv_table ( pkg_db_cashpost.gbv_BillAccTrxSet_ProcessDate).business_variable_value  := v_fitem_agingstatus_changedt;
+                    --OSPRODUCT-2371 start
+				    v_bv_table ( pkg_db_object.gbv_FITrxSet_AccntingPeriod    ).business_variable_value  := pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id, in_transaction_id, v_ba_batrx_list(v_idx));
+                    v_bv_table ( pkg_db_object.gbv_FITrxSet_BATotalBalance    ).business_variable_value  := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,to_number(v_idx),pkg_db_object.gbv_BillAcc_TotalBalance);
+                    --OSPRODUCT-2371 end
+                    v_bv_table ( pkg_os_constant_bv.gbv_GenObjObjectState     ).business_variable_value  := pkg_db_object.gBatchStatus_Processed;
+
+                    pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         --v_billingaccounttrxset_id, -- #MP
+                         v_ba_batrx_list(v_idx),      -- #MP
+                         v_bv_table
+                    );
+
+                      --OSPRODUCT-2371 start
+--                    --OSBILLING-3884
+--                    pkg_db_object.sp_billing_acct_trx_process
+--                    (
+--                         in_session_id,
+--                         in_transaction_id,
+--                         --v_billingaccounttrxset_id, -- #MP
+--                         v_ba_batrx_list(v_idx),      -- #MP
+--                         v_object_cache,
+--                         v_action_outcome_id
+--
+--                    );
+                    
+                    pkg_cs_db_billing.sp_bill_trx_cs_post_process
+                    (
+                         in_session_id ,
+                         in_transaction_id ,
+                         v_ba_batrx_list(v_idx)
+                    );
+		  
+                    pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_ba_batrx_list(v_idx), v_datamart_tf);
+                    --OSPRODUCT-2371 end
+               end if ; -- / A billing account trx set should not be null !
+
+               v_idx := v_ba_batrx_list.next(v_idx);
+          end loop; -- for each billing account
+
+          --
+          -- Update the billing account datamart
+          --
+
+          if  r_billing_account_list.count   >   0
+          then
+
+	 --OSBILLING-6669, commented below
+     /*pkg_db_stmt_date.sp_set_nid_on_acctlist
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    r_billing_account_list
+               );*/
+               pkg_db_object.sp_update_billingaccount_dm
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    r_billing_account_list
+               );
+
+          end if ;
+
+      end if; -- if v_billingaccounttrxset_id is not null
+
+end sp_update_aging_status;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_policy_date_advance
+--
+--   %usage
+--        Advances the current date of the policy by inserting a row in timezone_policy_map
+--
+--   %algorithm
+--        1. Get the policy advance to date value -- this is already validated to begreater than the current date
+--        2. Insert a row in timezone_policy_map with the policy, timezone and date
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_policy_id                  policy id
+--   %param    io_action_outcome_id          action outcome id
+--   %param    in_current_date_time          current date time
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_date_advance
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_id                  in        object.object_id%type,
+     io_action_outcome_id          in out     outcome.outcome_id%type,
+     in_current_date_time          in        date default null
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type        :=   pkg_name||'sp_policy_date_advance';
+     v_session_control               pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_advance_to_date             date;
+     v_policy_current_date         date  :=   pkg_db_functions.fn_get_policy_current_date (in_session_id, in_transaction_id, in_policy_id);
+     v_date                        date  :=   to_date(substr(v_advance_to_date,1,8), 'YYYYMMDD');
+     v_timezone_id                 object.object_id%type;
+
+begin
+
+     select
+          p.timezone_id
+     into
+          v_timezone_id
+     from
+          dragon_policy p
+     where
+          p.policy_id = in_policy_id;
+
+     v_advance_to_date := trunc(to_date(pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_policy_id, pkg_db_nightly_process.gbv_PolicyAdvanceToDate),
+                              pkg_os_constant.DragonDateFormatDefault));
+
+     if in_policy_id is not null and v_advance_to_date is not null and v_advance_to_date > v_policy_current_date
+     then
+
+          insert into
+               timezone_policy_map
+               (
+                 policy_id,
+                 timezone_id,
+                 rolled_date
+               )
+          values
+               (
+                 in_policy_id,
+                 v_timezone_id,
+                 v_advance_to_date
+               );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_policy_id,
+               gbv_PolicyAdvanceToDate,
+               to_char(v_advance_to_date, pkg_os_constant.DragonDateFormatDefault)
+          );
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                     '... Advanced the current date for Policy ID: ' || in_policy_id ||' to: ' || v_advance_to_date);
+
+          end if;
+
+     else
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Enter a valid date for Policy ID: ' || in_policy_id );
+
+          end if;
+
+     end if;
+
+     io_action_outcome_id  := pkg_os_constant.gOutcome_OK;
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in dpdating policy date: ' || in_policy_id || sqlerrm);
+
+            io_action_outcome_id  := pkg_os_constant.gOutcome_InternalError;
+
+end sp_policy_date_advance;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_billaccount_date_advance
+--
+--   %usage
+--        Advances the current date of the billing account by inserting a row in timezone_billaccount_map
+--
+--   %algorithm
+--        1. Get the billing account advance to date value -- this is already validated to begreater than the current date
+--        2. Insert a row in timezone_billaccount_map with the billing account id, timezone and date
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_billing_account_id         billing account id
+--   %param    io_action_outcome_id          action outcome id
+--   %param    in_current_date_time          current date time
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billaccount_date_advance
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billing_account_id         in             object.object_id%type,
+     io_action_outcome_id          in out          outcome.outcome_id%type,
+     in_current_date_time          in             date default null
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type        :=   pkg_name||'sp_billaccount_date_advance';
+     v_session_control               pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_advance_to_date             date;
+     v_billaccount_current_date    date  :=   pkg_db_functions.fn_get_billacc_current_date (in_session_id, in_transaction_id, in_billing_account_id);
+     v_date                        date  :=   to_date(substr(v_advance_to_date,1,8), 'YYYYMMDD');
+     v_timezone_id                 object.object_id%type;
+
+begin
+
+     select
+          b.timezone_id
+     into
+          v_timezone_id
+     from
+          dragon_billingaccount b
+     where
+          b.billingaccount_id = in_billing_account_id;
+
+     v_advance_to_date := trunc(to_date(pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_billing_account_id, gbv_BillAccountAdvanceToDate ),
+                                   pkg_os_constant.DragonDateFormatDefault ));
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '...The advance date is ' || v_advance_to_date );
+
+          end if;
+     if in_billing_account_id is not null and v_advance_to_date is not null and v_advance_to_date > v_billaccount_current_date
+     then
+
+          insert into
+               timezone_billaccount_map
+               (
+                    billing_account_id,
+                    timezone_id,
+                    rolled_date
+               )
+          values
+               (
+                    in_billing_account_id,
+                    v_timezone_id,
+                    v_advance_to_date
+               );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_billing_account_id,
+               gbv_BillAccountAdvanceToDate,
+               to_char(v_advance_to_date, pkg_os_constant.DragonDateFormatDefault)
+          );
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                     '|||||| Advanced the current date for Billing Account ID: ' || in_billing_account_id ||' to: ' || v_advance_to_date);
+
+          end if;
+
+     else
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Enter a valid date for Billing Account ID: ' || in_billing_account_id);
+
+          end if;
+
+     end if;
+
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in updating Billing Account date: ' || in_billing_account_id || sqlerrm);
+
+end sp_billaccount_date_advance;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_exchange_date_advance
+--
+--   %usage
+--        Advances the current date of the system by inserting a row in timezone_exchange_map
+--
+--   %algorithm
+--        1. Get the system advance to date value -- this is already validated to begreater than the current date
+--        2. Insert a row in timezone_exchange_map with the exchange id, timezone and date
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_exchange_id                exchange id
+--   %param    io_action_outcome_id          action outcome id
+--   %param    in_current_date_time          current date time
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_exchange_date_advance
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_exchange_id                in        object.object_id%type,
+     io_action_outcome_id          in out      outcome.outcome_id%type,
+     in_current_date_time          in        date default null
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type        :=   pkg_name||'sp_exchange_date_advance';
+     v_session_control               pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_advance_to_date             date;
+     v_exchange_current_date       date := pkg_db_functions.fn_get_exchange_current_date (in_session_id, in_transaction_id, in_exchange_id);
+     v_timezone_id                 object.object_id%type;
+
+begin
+
+     v_timezone_id := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_exchange_id,
+          gbv_ExchangeTimezone
+     );
+
+     v_advance_to_date := trunc(to_date(pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_exchange_id, gbv_ExchangeAdvanceToDate ),
+                                   pkg_os_constant.DragonDateFormatDefault ));
+
+     if in_exchange_id is not null and v_advance_to_date is not null and v_advance_to_date > v_exchange_current_date
+     then
+
+          insert into
+               timezone_exchange_map
+               (
+                    exchange_id,
+                    timezone_id,
+                    rolled_date
+               )
+          values
+               (
+                    in_exchange_id,
+                    v_timezone_id,
+                    v_advance_to_date
+               );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_exchange_id,
+               gbv_ExchangeAdvanceToDate,
+               to_char(v_advance_to_date, pkg_os_constant.DragonDateFormatDefault)
+           );
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '|||||| Advanced the current date for Exchange ID: ' || in_exchange_id ||' to: ' || v_advance_to_date);
+
+          end if;
+
+     else
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Enter a valid date for Exchange ID: ' || in_exchange_id);
+
+          end if;
+
+     end if;
+
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in updating system date: ' || in_exchange_id || sqlerrm);
+
+end sp_exchange_date_advance;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_policy_nightly_process
+--
+--   %usage
+--        Processes the nightly processes required on the policy.
+--
+--   %algorithm
+--        1. Update the earned policy cost, equity date and other policy specific variables in policy_premium
+--        2. Carry out other nightly processes required and list them here.
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_action_id                  in_action_id
+--   %param    in_action_object_id           in_action_object_id
+--   %param    in_current_date_time          in_current_date_time
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_nightly_process
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type,          -- Policy ID
+     in_current_date_time          in             date default null
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type   :=   pkg_name||'sp_policy_nightly_process';
+     v_session_control             pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_policy_id                   object.object_id%type     :=   in_action_object_id;
+     v_policy_trx_count            object.object_id%type     :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_policy_id, 211995);
+     v_caused_by_trx_id            object.object_id%type     :=   null;
+     v_policy_term_id              object.object_id%type     :=   null;
+
+     v_job_id                      object.object_id%type;
+     v_earned_policy_cost          number;
+     v_unearned_policy_cost        number;
+     v_written_policy_cost         number;
+     v_paid_amount                 number;
+     v_equity_date                 date;
+     v_policy_current_date         date;
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Calculating Earned Policy Cost and Equity Date for Policy ID: ' || v_policy_id);
+
+     end if;
+
+     v_policy_current_date := pkg_db_functions.fn_get_policy_current_date(in_session_id, in_transaction_id, v_policy_id);
+
+     if ( in_current_date_time is null )
+     then
+
+          pkg_os_policy_stat.sp_earned_premium_get
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               to_char(v_policy_current_date, pkg_os_constant.DragonDateFormatDefault),
+               v_earned_policy_cost,
+               v_unearned_policy_cost,
+               v_written_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32002846,
+               to_char(v_policy_current_date, pkg_os_constant.DragonDateFormatDefault)
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32002946,
+               v_earned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003046,
+               v_unearned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003146,
+               v_written_policy_cost
+          );
+
+     else
+
+          pkg_os_policy_stat.sp_earned_premium_get
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               to_char(in_current_date_time, pkg_os_constant.DragonDateFormatDefault),
+               v_earned_policy_cost,
+               v_unearned_policy_cost,
+               v_written_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003246,
+               to_char(in_current_date_time, pkg_os_constant.DragonDateFormatDefault)
+          );
+
+          -- The monthly version
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003346,
+               v_earned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003446,
+               v_unearned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003546,
+               v_written_policy_cost
+          );
+
+          -- The daily version
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32002946,
+               v_earned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003046,
+               v_unearned_policy_cost
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id,
+               32003146,
+               v_written_policy_cost
+          );
+
+     end if;
+
+     --
+     -- Get the Payments made for the policy
+     --
+
+     select
+           sum (balance)
+     into
+           v_paid_amount
+     from
+           dragon_fitem
+     where
+           policy_id = v_policy_id
+     and
+           fitem_category_id = gFitemCategory_Cash
+     and
+           debit_credit = 'Debit';
+
+     --
+     -- Get the Equity Date for this Policy
+     --
+
+     sp_calculate_equity_date
+     (
+          in_session_id,
+          in_transaction_id,
+          v_policy_id,
+          v_equity_date
+     );
+
+     --
+     -- Get the job ID for this Policy
+     --
+
+     v_job_id  := NULL;
+
+     insert into policy_premium
+     (
+          policy_id,
+          asof_date,
+          earned_policy_cost,
+          unearned_policy_cost,
+          written_policy_cost,
+          policy_trx_count,
+          caused_by_trx_id,
+          policy_term_id,
+          equity_date,
+          job_id,
+          paid_amt
+      )
+     values
+     (
+          v_policy_id,
+          pkg_db_functions.fn_get_policy_current_date
+          (
+               in_session_id,
+               in_transaction_id,
+               v_policy_id
+          ),
+          v_earned_policy_cost,
+          v_unearned_policy_cost,
+          v_written_policy_cost,
+          v_policy_trx_count,
+          v_caused_by_trx_id,
+          v_policy_term_id,
+          v_equity_date,
+          v_job_id,
+          v_paid_amount
+     );
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in Updating policy: ' || v_policy_id || sqlerrm);
+
+end sp_policy_nightly_process;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_policy_asof_dt_earned_prem
+--
+--   %usage
+--        Calculates the Earned Premium for the given date
+--
+--   %algorithm
+
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_action_id                  in_action_id
+--   %param    in_action_object_id           in_action_object_id
+--   %param    in_current_date_time          in_current_date_time
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_asof_dt_earned_prem
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_current_date_time          in             date
+)
+as
+
+     v_procedure_name              constant system_log.program_name%type   :=   pkg_name||'sp_policy_asof_dt_earned_prem';
+     v_session_control             pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_policy_id                   object.object_id%type                   :=   in_action_object_id;
+     v_policy_trx_count            object.object_id%type                   :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_policy_id, 211995);
+     v_caused_by_trx_id            object.object_id%type                   :=   null;
+     v_policy_term_id              object.object_id%type                   :=   null;
+
+     v_job_id                      object.object_id%type;
+     v_earned_policy_cost          number;
+     v_unearned_policy_cost        number;
+     v_written_policy_cost         number;
+     v_paid_amount                 number;
+     v_equity_date                 date;
+     v_policy_current_date         date;
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Calculating Earned Policy Cost and Equity Date for Policy ID: ' || v_policy_id);
+
+     end if;
+
+
+     pkg_os_policy_stat.sp_earned_premium_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_policy_id,
+          to_char(in_current_date_time, pkg_os_constant.DragonDateFormatDefault),
+          v_earned_policy_cost,
+          v_unearned_policy_cost,
+          v_written_policy_cost
+     );
+
+     pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          v_policy_id,
+          32003246,
+          to_char(in_current_date_time, pkg_os_constant.DragonDateFormatDefault)
+     );
+
+     -- The monthly version
+     pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          v_policy_id,
+          32003346,
+          v_earned_policy_cost
+     );
+
+       pkg_os_object_io.sp_object_bv_set
+       (
+             in_session_id,
+             in_transaction_id,
+             v_policy_id,
+             32003446,
+             v_unearned_policy_cost
+       );
+
+       pkg_os_object_io.sp_object_bv_set
+       (
+             in_session_id,
+             in_transaction_id,
+             v_policy_id,
+             32003546,
+             v_written_policy_cost
+       );
+
+     -- The daily version
+       pkg_os_object_io.sp_object_bv_set
+       (
+             in_session_id,
+             in_transaction_id,
+             v_policy_id,
+             32002946,
+             v_earned_policy_cost
+       );
+
+       pkg_os_object_io.sp_object_bv_set
+       (
+             in_session_id,
+             in_transaction_id,
+             v_policy_id,
+             32003046,
+             v_unearned_policy_cost
+       );
+
+       pkg_os_object_io.sp_object_bv_set
+       (
+             in_session_id,
+             in_transaction_id,
+             v_policy_id,
+             32003146,
+             v_written_policy_cost
+       );
+
+
+exception
+     when others then
+
+          pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name,
+               'Error in Updating policy: ' || v_policy_id || sqlerrm);
+
+end sp_policy_asof_dt_earned_prem;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        fn_get_fulfilment_days
+--
+--   %USAGE
+--        This function returns fulfilment days based on payment mode
+--
+--   %ALGORITHM
+--       1. Get preferred payment mode for the policy
+--       2. Get the fulfilment days based on payment mode
+--
+--   %PARAM     in_session_id              session ID
+--   %PARAM     in_transaction_id          transaction ID
+--   %PARAM     in_policy_id               policy  ID
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_fulfilment_days
+(
+      in_session_id                 in          object.object_id%type,
+      in_transaction_id             in          object.object_id%type,
+      in_policy_id                  in          object.object_id%type
+)
+return number
+as
+       v_payment_mode_id             object_bv_value.business_variable_value%type;
+       v_fulfilment_days             number;
+
+begin
+
+     v_payment_mode_id     := pkg_os_object_io.fn_object_bv_path_get
+                                 (
+                                      in_session_id,
+                                      in_transaction_id,
+                                      in_policy_id,
+                                      gbv_Policy_PrefPayPlan_Pth
+                                 );
+
+     if v_payment_mode_id = gPaymentMode_EFT --EFT
+     then
+        v_fulfilment_days :=      NVL(to_number(pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, in_policy_id, gSchWithdrwlEFTAdvanceDays)),0); --add advance days from corresponding property
+
+     elsif v_payment_mode_id = gPaymentMode_CC --CC
+     then
+        v_fulfilment_days :=      NVL(to_number(pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, in_policy_id, gSchWithdrwlCCAdvanceDays)),0); -- @@@ This should be a different constant add advance days from corresponding property
+
+     elsif v_payment_mode_id = gPaymentMode_CashCheck --Cash/Check
+     then
+        v_fulfilment_days := 0;
+
+     else
+        v_fulfilment_days := 0;
+
+     end if;
+
+     return v_fulfilment_days;
+
+end;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        fn_get_aging_bucket_id
+--
+--   %USAGE
+--        This function returns aging status based on no of days past
+--
+--   %PARAM     in_past_days               No of days past
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function fn_get_aging_bucket_id
+(
+      in_past_days                  in          number
+)
+
+return number
+as
+
+v_aging_status_bucket_id number;
+
+begin
+
+     if in_past_days <= 30
+     then
+
+        v_aging_status_bucket_id    := gAgingStatus_Past30;
+
+     elsif in_past_days > 30 and in_past_days <= 60
+     then
+
+           v_aging_status_bucket_id  := gAgingStatus_Past60;
+
+     elsif in_past_days > 60 and in_past_days <= 90
+     then
+
+           v_aging_status_bucket_id    := gAgingStatus_Past90;
+
+     else
+
+           v_aging_status_bucket_id    := gAgingStatus_Past90plus;
+
+     end if;
+
+     return v_aging_status_bucket_id;
+
+ end fn_get_aging_bucket_id;
+
+ -----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+ --
+--   %NAME
+--        fn_get_aging_status_days_id
+--
+--   %USAGE
+--        This function returns aging status based on no of days past
+--
+--   %PARAM     in_past_days               No of days past
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function fn_get_aging_status_days_id
+(
+      in_past_days                  in          number
+)
+
+return number
+     as
+     v_aging_status_days_id number;
+
+Begin
+
+      if in_past_days <= 30
+      then
+
+           v_aging_status_days_id:= gAgingStatus_Past30;
+
+
+      elsif in_past_days > 30 and in_past_days <= 60
+      then
+
+           v_aging_status_days_id:= gAgingStatus_Past60;
+
+
+      elsif in_past_days > 60 and in_past_days <= 90
+      then
+
+           v_aging_status_days_id:= gAgingStatus_Past90;
+
+
+      else
+
+           v_aging_status_days_id:= gAgingStatus_Past90plus;
+
+      end if;
+
+      return v_aging_status_days_id;
+
+ End;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_fitem_aging_status_update
+--
+--   %usage
+--        Updates aging status of passed Fitems
+--
+----------------------------------------------------------------------------------------------
+
+procedure sp_fitem_aging_status_update
+(
+
+      in_session_id                 in         object.object_id%type,
+      in_transaction_id             in         object.object_id%type,
+      in_fitem_id                   in         object.object_id%type,
+      in_fitem_billed_tf            in         number,
+      in_withdrawal_date            in         date,
+      in_due_date                   in         date, -- Due Date or Agency Due date should be passed as per Billing Method
+      in_current_date               in         timezone_date_map.rolled_date%type,
+      in_aging_on_invoice           in         pd_property.pd_property_value%type,
+      in_old_aging_status_id        in         object.object_id%type,
+      in_billingaccounttrxset_id    in out     object.object_id%type,
+      in_cust_billing_acc_id        in         object.object_id%type,
+      in_policy_id                  in         object.object_id%type,
+      in_total_items                in out     number
+
+)
+as
+      v_procedure_name              constant  system_log.program_name%type       :=   pkg_name||'sp_fitem_aging_status_update';
+      v_session_control             pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+      v_fitem_agingstatus_changedt  object_bv_value.business_variable_value%type;
+      v_aging_status_id             object.object_id%type;
+      v_aging_status_days_id        object.object_id%type;
+      v_curr_aging_status_days_id   object.object_id%type;
+      v_days_past                   number;
+      v_bv_table                    pkg_os_object_io.t_bv_table;
+      v_fitransaction_id            object.object_id%type;
+      v_datamart_tf                 char(1)                                      :=   'T';
+      v_fichange_id                 object.object_id%type;
+   v_aging_on_date       pd_property.pd_property_value%type;--OSBILLING-4830
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+      v_fulfilment_days             number;
+      v_fullfillment_with_dt        date;
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+     v_action_outcome_id                outcome.outcome_id%type := 22;--LXPRODUCT-153
+Begin
+
+      if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+
+               '|||||| Entering process for FItem ID: ' || in_fitem_id
+               || ' in_fitem_billed_tf: ' ||in_fitem_billed_tf
+               || ' in_withdrawal_date : '||in_withdrawal_date
+               || ' in_due_date: '||   in_due_date
+               || ' in_current_date: ' || in_current_date
+               || ' in_aging_on_invoice :'|| in_aging_on_invoice
+               || ' in_old_aging_status_id: ' || in_old_aging_status_id
+               || ' in_billingaccounttrxset_id : '|| in_billingaccounttrxset_id
+               || ' in_cust_billing_acc_id : '||  in_cust_billing_acc_id
+               || ' in_policy_id :' || in_policy_id
+               || ' in_total_items :' || in_total_items
+               );
+
+      end if;
+    --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+          v_fulfilment_days := fn_get_fulfilment_days(in_session_id, in_transaction_id,in_policy_id);
+          v_fullfillment_with_dt := pkg_db_functions.fn_substr_business_days(in_session_id, in_transaction_id,in_policy_id,in_withdrawal_date,nvl(v_fulfilment_days,0));
+    --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+      v_aging_status_id := null;
+
+      v_aging_status_days_id        :=   null;
+   --
+      -- DDWIDEV-484: Fetch the date criteria for aging.
+      --
+   v_aging_on_date:= pkg_os_product.fn_product_property_get(in_session_id, in_transaction_id, in_policy_id,pkg_db_constant.gInvoicingDateCriteria);--OSPRODUCT-2561
+
+      if ( in_aging_on_invoice = 'T' and in_fitem_billed_tf is null )
+          or
+         ( in_aging_on_invoice = 'F' and trunc(in_current_date) < trunc(in_withdrawal_date))
+      then
+
+          if v_session_control.gLogging_Full then
+
+             pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                  '............ Policy FItem is not billed yet...Setting aging status to Future Due. ');
+
+          end if;
+
+          v_aging_status_id := gAgingStatus_Future;
+          v_aging_status_days_id   :=   gAgingStatus_Future;
+
+      elsif
+
+          (
+               ( in_aging_on_invoice = 'T' and  in_fitem_billed_tf = 1 and v_aging_on_date = pkg_db_constant.gBillingDueDateInvcCriteria and trunc(in_current_date) <= trunc(in_due_date))
+          or
+            ( in_aging_on_invoice = 'T' and  in_fitem_billed_tf = 1 and v_aging_on_date = pkg_db_constant.gWithdrawalDateInvcCriteria and trunc(in_current_date) <= trunc(in_withdrawal_date)) --OSBILLING-4830 : handled withdrawal Date based aging
+          or
+               ( in_aging_on_invoice = 'F' and  trunc(in_current_date) <= trunc(in_withdrawal_date))
+          )
+          and
+          nvl(in_old_aging_status_id,gAgingStatus_Future) not in (gAgingStatus_Current,gAgingStatus_Past)
+      then
+
+          if v_session_control.gLogging_Full then
+              pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                '......... Policy FItem is billed and future due...Setting aging status to Current Due. ');
+          end if;
+
+
+          v_aging_status_id := gAgingStatus_Current;
+          v_aging_status_days_id   :=   gAgingStatus_Current;
+
+      elsif
+          ( in_aging_on_invoice = 'T' and  in_fitem_billed_tf = 1 and  v_aging_on_date = pkg_db_constant.gBillingDueDateInvcCriteria and trunc(in_current_date) > trunc(in_due_date) )
+          or
+          ( in_aging_on_invoice = 'T' and  in_fitem_billed_tf = 1 and  v_aging_on_date = pkg_db_constant.gWithdrawalDateInvcCriteria and trunc(in_current_date) > trunc(in_withdrawal_date) )--OSBILLING-4830 : handled withdrawal Date based aging
+          or
+          ( in_aging_on_invoice = 'F' and trunc(in_current_date) > trunc(in_withdrawal_date))
+      then
+
+          if v_session_control.gLogging_Full then
+             pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                '............ Policy FItem is billed and current due...Setting aging status to Past Due.');
+          end if;
+
+          v_curr_aging_status_days_id      := pkg_os_object_io.fn_object_bv_get
+                                              (
+                                                     in_session_id,
+                                                     in_transaction_id,
+                                                     in_fitem_id,
+                                                     gbv_FItem_Aging_Status_days
+                                              );
+
+          if in_aging_on_invoice = 'F' or ( v_aging_on_date = pkg_db_constant.gWithdrawalDateInvcCriteria and in_aging_on_invoice = 'T') --OSBILLING-4830 : handled withdrawal Date based aging
+          then
+
+               v_days_past    := trunc(in_current_date) - trunc(in_withdrawal_date);
+
+          else
+
+               v_days_past    := trunc(in_current_date) - trunc(in_due_date);
+
+          end if;
+
+          v_aging_status_id := gAgingStatus_Past;
+
+          v_aging_status_days_id   :=
+                 fn_get_aging_bucket_id
+                  (
+                        v_days_past
+                  );
+
+          if v_session_control.gLogging_Full then
+             pkg_os_logging.sp_log
+             (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '............ Previous aging_status_days_id: '
+                ||v_curr_aging_status_days_id
+                ||' new aging_status_days_id: '
+                ||v_aging_status_days_id
+              );
+          end if;
+
+          if ( v_curr_aging_status_days_id is not null
+               and
+               v_aging_status_days_id <> v_curr_aging_status_days_id
+             )
+          then
+
+                    /*pkg_os_object_io.sp_object_bv_set
+               (
+                      in_session_id,
+                      in_transaction_id,
+                      in_fitem_id,
+                      gbv_FItem_Aging_Status_days,
+                      v_aging_status_days_id
+               );*/
+               
+               -- UTPRODUCT-3679
+               pkg_db_object.sp_ba_object_bv_set
+               (
+                      in_session_id,
+                      in_transaction_id,
+                      in_fitem_id,
+                      gbv_FItem_Aging_Status_days,
+                      v_aging_status_days_id
+               );
+
+               --
+               -- Update the FItem Datamart
+               --
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_fitem_id, v_datamart_tf);
+
+          end if;
+
+          if v_session_control.gLogging_Full then
+
+                pkg_os_logging.sp_log
+                (
+                   in_session_id,
+                   in_transaction_id,
+                   v_procedure_name,
+                   '......... v_days_past: ' || v_days_past
+                   || 'v_aging_status_days_id : '|| v_aging_status_days_id
+                );
+          end if;
+
+
+      end if; -- end of in_fitems.fitem_billed_tf check
+
+      if v_session_control.gLogging_Full then
+            pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '... Aging_status: ' ||v_aging_status_id);
+      end if;
+
+
+      if (v_aging_status_id is not null) and (nvl(v_aging_status_id,0) <> nvl(in_old_aging_status_id,0)) --- OSBILLING-848 added second condtition
+      then
+
+           in_total_items  :=   in_total_items + 1;
+
+          if v_session_control.gLogging_Full then
+            pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '... Total Items added : ' ||in_total_items);
+          end if;
+
+
+          if in_billingaccounttrxset_id is null
+          then
+
+               v_fitem_agingstatus_changedt := to_char(in_current_date, pkg_os_constant.DragonDateFormatDefault);
+
+               -- Create a BillingAccountTrxSet of type Aging Status Update
+
+               pkg_os_object.sp_object_create
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    pkg_db_object.gObjType_BillingAccountTrxSet,
+                    in_cust_billing_acc_id,
+                    in_billingaccounttrxset_id
+               );
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id, 
+                         in_transaction_id, 
+                         v_procedure_name,
+                         '... Billing Account Trx Set created : ' ||in_billingaccounttrxset_id||
+                         ' under Billing Account : '||in_cust_billing_acc_id
+                    );
+               end if;
+
+               --Set the BV's of the BillingAccountTrxSet
+
+               v_bv_table.delete;
+
+               v_bv_table ( pkg_db_object.gbv_FITrxSet_EntryType         ).business_variable_value := pkg_db_object.gBatchEntryMethod_System;
+               v_bv_table ( pkg_db_object.gbv_FITrxSet_DatePosted        ).business_variable_value := v_fitem_agingstatus_changedt;
+               v_bv_table ( pkg_db_object.gbv_FITrxSet_ExternalBatchId   ).business_variable_value := 'Batch'||v_fitem_agingstatus_changedt;
+               v_bv_table ( pkg_db_object.gbv_FITrxSet_BatchType         ).business_variable_value := gSetType_AgingUpdate;
+               v_bv_table ( gbv_BillAcctTrxSet_AssocPolicy               ).business_variable_value := in_policy_id;  --OSBILLING-7696
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_billingaccounttrxset_id,
+                    v_bv_table
+               );
+
+               --  Fetch and set the Accoutning Period for BillingAccounTTrxSet
+               --
+               /* OSBILLING-3884
+               pkg_os_object_io.sp_object_bv_set
+               (
+               in_session_id,
+               in_transaction_id,
+               in_billingaccounttrxset_id,
+               pkg_db_object.gbv_FITrxSet_AccntingPeriod,
+               pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id,in_transaction_id,in_billingaccounttrxset_id)
+               );
+               /* OSBILLING-3884 */
+
+               v_bv_table.delete;
+
+               pkg_db_object.sp_fitransaction_create
+               (
+                    in_session_id                      =>             in_session_id,
+                    in_transaction_id                  =>             in_transaction_id,
+                    in_fitrx_parent_fitrxset_id        =>             in_billingaccounttrxset_id,
+                    out_fitransaction_id               =>             v_fitransaction_id,
+                    in_fitrx_type                      =>             gFITrxType_AgingUpdate,
+                    in_fitrx_ref_billing_account       =>             in_cust_billing_acc_id,
+                    in_fitrx_ref_associatedpolicy      =>             in_policy_id,
+                    in_fitrx_ref_associatedpoltrx      =>             null,
+                    in_fitrx_object_state              =>             pkg_db_cashpost.gFITrxStatus_Processed,
+                    in_fitrx_amount                    =>             0,
+                    in_fitrx_effective_date            =>             v_fitem_agingstatus_changedt,
+                    in_fitrx_gl_date                   =>             v_fitem_agingstatus_changedt,
+                    in_fitrx_process_date              =>             v_fitem_agingstatus_changedt,
+                    in_fitrx_posted_date               =>             v_fitem_agingstatus_changedt,
+                    in_bv_table                        =>             v_bv_table
+               );
+
+               --
+               -- OSBILLING-767 Fetch and set the Accoutning Period for FItransaction
+               --
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitransaction_id,
+                    pkg_db_object.gbv_FITrx_AccntingPeriod,
+                    pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_id)
+               );
+
+               --OSPRODUCT-7330 starts
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_billingaccounttrxset_id,
+                    pkg_db_functions.gbv_BillAcctTrxSet_CurrTrx,
+                    v_fitransaction_id
+               );
+              
+               --LXPRODUCT-153 OSPRODUCT-12721
+               --Call to Document Processing     
+               pkg_db_object.sp_billing_doc_processing
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_billingaccounttrxset_id,    
+                    v_action_outcome_id
+               );
+               --OSPRODUCT-7330 ends
+
+                -- Update datamart of FItransaction
+                /*pkg_os_datamart.sp_datamart_update_row
+                (
+                       in_session_id,
+                       in_transaction_id,
+                       v_fitransaction_id,
+                       v_datamart_tf
+                );*/--OSPRODUCT-8801 moving after fichange creation
+                --  2017-04-05 Cheryl osbilling-3956 if there is alreadya BATS get the fitransaction
+                --  since this is just for the aging we know we only have 1 fitransaction
+                --  add the process date here as well
+
+          else
+                 -- OSPRODUCT-7330 starts
+                /*v_fitransaction_id :=    pkg_os_object_search.fn_object_11_child_get
+                                        (
+                                             in_session_id                       => in_session_id,
+                                             in_transaction_id                   => in_transaction_id,
+                                             in_parent_object_id                 => in_billingaccounttrxset_id,
+                                             in_child_object_type_id             => gObjType_FITransaction
+                                        );*/
+                v_fitransaction_id :=   pkg_os_object_io.fn_object_bv_get
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             in_billingaccounttrxset_id,
+                                             pkg_db_functions.gbv_BillAcctTrxSet_CurrTrx
+                                        );
+              
+
+                if v_session_control.gLogging_Full 
+                then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id, in_transaction_id, v_procedure_name,
+                         'Using BV got v_fitransaction_id '|| v_fitransaction_id ||
+                         ' under batch ' || in_billingaccounttrxset_id 
+                    );
+               end if;
+               
+               
+               -- OSPRODUCT-7330 ends
+               v_fitem_agingstatus_changedt := to_char(in_current_date, pkg_os_constant.DragonDateFormatDefault);
+          
+          end if; -- if v_billingaccounttrxset_id is null
+
+          --
+          -- Update Aging Status and Change Date on FItem
+          -- UTPRODUCT-3679
+          v_bv_table.delete;
+
+          v_bv_table ( gbv_FItem_Aging_Status        ).business_variable_value := v_aging_status_id;
+          v_bv_table ( gbv_FItem_Aging_Status_days       ).business_variable_value := v_aging_status_days_id;
+          v_bv_table ( gbv_FItem_AgingStatusChangeDt   ).business_variable_value := v_fitem_agingstatus_changedt;
+
+          /* pkg_os_object_io.sp_object_bv_set
+          (
+                in_session_id,
+                in_transaction_id,
+                in_fitem_id,
+                v_bv_table
+          );*/
+          
+          -- UTPRODUCT-3679
+          pkg_db_object.sp_ba_object_bv_set
+          (
+                in_session_id,
+                in_transaction_id,
+                in_fitem_id,
+                v_bv_table
+          );
+
+          v_bv_table.delete;
+
+          --
+          -- Update the FItem Datamart
+          --
+
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_fitem_id, v_datamart_tf);
+
+          if v_session_control.gLogging_Full
+          then
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                      '......... Updated Aging Status in dragon_fitem table for FItem ID: ' || in_fitem_id);
+          end if;
+
+          --
+          -- Create FIchange object for the FItem
+          --
+           --OSPRODUCT-7330 
+           -- enclosed sp_fichange_create within if else condition 
+          if v_fitransaction_id is not null
+          then  --OSPRODUCT-7330 
+
+               pkg_db_object.sp_fichange_create
+               (
+                     in_session_id                      =>        in_session_id,
+                     in_transaction_id                  =>        in_transaction_id,
+                     in_parent_fitransaction_id         =>        v_fitransaction_id,
+                     out_fichange_id                    =>        v_fichange_id,
+                     in_fichange_action                 =>        pkg_db_object.gFIChange_FYI,
+                     in_fichange_action_delta           =>        0,
+                     in_fichange_ref_fitem              =>        in_fitem_id,
+                     in_fichange_sum_include            =>        pkg_db_object.gFIChange_Yes,
+                     in_fichange_process_date           =>        v_fitem_agingstatus_changedt,
+                     in_fichange_ref_pol                =>        in_policy_id,
+                     in_fichange_ref_pol_trx            =>        null,
+                     in_fichange_belongs_to             =>        pkg_os_object.fn_object_parent_get(in_session_id, in_transaction_id ,in_cust_billing_acc_id), --OSBilling-5405
+                     in_fitem_lock_tf                   =>        'T' -- UTPRODUCT-3679
+               );
+               
+                -- Update datamart of FItransaction
+                pkg_os_datamart.sp_datamart_update_row
+                (
+                       in_session_id,
+                       in_transaction_id,
+                       v_fitransaction_id,
+                       v_datamart_tf
+                );--OSPRODUCT-8801 moved after fichange creation
+				
+          else  --OSPRODUCT-7330
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                      'There is no fitransaction in BATS, in_billingaccounttrxset_id  ' || in_billingaccounttrxset_id);
+               end if; 
+
+          end if;  --OSPRODUCT-7330
+
+      end if; --  if (v_aging_status_id is not null)
+
+
+end sp_fitem_aging_status_update;
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %name
+--        sp_nightlyprocess_ba_aging_update
+--
+--   %usage
+--        To update aging of the receivables of an Agency Billing Account
+--
+--   %algorithm
+--        To update the aging of  FItems of a Billing Account invoked through Nightly Process
+--
+--        Expected Input Objects - BillingAccount
+--
+--        1. As agecny billing account have many receivables, we need to pick up only open
+--           Agency Account Current Statements /Agency Statement of the Billing Accounts
+--           for performing aging.
+--
+--
+--   %param    in_session_id                 user session id
+--   %param    in_transaction_id             transaction id
+--   %param    in_billing_account_id         billing account id
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_agent_update_aging_status
+(
+      in_session_id                 in         object.object_id%type,
+      in_transaction_id             in         object.object_id%type,
+      in_billing_account_id         in         object.object_id%type,
+      io_action_outcome_id         in out      outcome.outcome_id%type
+)
+as
+      v_procedure_name              constant  system_log.program_name%type       :=   pkg_name||'sp_agent_update_aging_status';
+      v_session_control             pkg_os_session.r_dragon_session_control      :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+      v_aging_on_Invoice            pd_property.pd_property_value%type; --20190124 OSBILLING-6617 Cheryl
+
+     cursor c_batrxset_list
+     is
+          select
+               db.billingaccounttrxset_id
+          from
+               Dragon_Billingaccounttrxset db
+          where
+               db.parent_billing_account_id  = in_billing_account_id
+          and
+               db.batch_type_id in (g_SetType_Statement,gBatch_PCAS_PolicyTrx,gBatch_PCAS_Policy,gBatch_PCAS_DueMonth)
+          and
+               db.batch_status_id not in (39846); -- Processed
+
+     --20190124 OSBILLING-6617 Cheryl
+     cursor c_policies_list
+     is
+          select
+               a.policy_id
+          from
+               dragon_policy a
+          where
+              a.billing_method_id = gBillingMethod_Agency
+          and
+              a.responsible_billing_account = in_billing_account_id;
+
+begin
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| Entering process sp_nightlyprocess_ba_aging_update for billing account oject ID:'||in_billing_account_id );
+
+     end if;
+
+     --20190124 OSBILLING-6617 Cheryl add process to update aging not already on a statement
+     v_aging_on_Invoice  := nvl( pkg_os_product.fn_product_property_get
+                                ( 0, --product all
+                                  null, --filing
+                                  gAgeingBasedOnInvoice
+                                  ), 'T' ); -- If True, this means that we only start aging a particular receivable if it has been invoiced.
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '|||||| aging on invoice: '||v_aging_on_Invoice );
+
+     end if;
+
+     if v_aging_on_Invoice = 'T' then
+     for batrxset in c_batrxset_list
+     loop
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                  ' .... Invoking aging for the batrxset   '||batrxset.billingaccounttrxset_id );
+
+          end if;
+
+          sp_update_aging_status
+          (
+               in_session_id,
+               in_transaction_id,
+               batrxset.billingaccounttrxset_id
+          );
+
+
+     end loop;
+     else
+          for cpol in c_policies_list
+          loop
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                       ' .... Invoking aging for the policies   '||cpol.policy_id );
+
+               end if;
+
+               sp_update_aging_status
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    cpol.policy_id
+               );
+
+
+          end loop;
+      end if;
+
+     io_action_outcome_id     :=   pkg_os_constant.gOutcome_OK;
+
+end sp_agent_update_aging_status;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+end PKG_DB_NIGHTLY_PROCESS;
+/
+

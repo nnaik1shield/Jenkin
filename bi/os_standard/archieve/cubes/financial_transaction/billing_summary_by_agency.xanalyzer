@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2012-02-13T12:23:02" created="2012-02-13T12:22:27" description="" updatedBy="joe" createdBy="joe">
+        <path folder="" name="Billing Summary by Agency"/>
+    </commonStorageAttributes>
+    <report freezeRows="false" freezeColumns="false" autoRefresh="true" version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="BILLING_TRANSACTION_CUBE" catalog="Dragon Billing Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[FIChange_Amount]"/>
+        </measures>
+        <columnAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Debit_Credit].[Debit_Credit]"/>
+        </columnAttributes>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Producer].[Agency]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths>
+            <labelWidth index="0">
+                <width>-116</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

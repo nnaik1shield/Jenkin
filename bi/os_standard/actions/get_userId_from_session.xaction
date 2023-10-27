@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action-sequence> 
+  <title>GetUserIdFromSession</title>
+  <version>1</version>
+  <logging-level>ERROR</logging-level>
+  <documentation> 
+    <author/>  
+    <description>Empty blank action sequence document</description>  
+    <help/>  
+    <result-type/>  
+    <icon/> 
+  </documentation>
+
+  <inputs>
+    <userSessionId type="long">
+      <sources>
+        <request>userSessionId</request>
+      </sources>
+    </userSessionId>
+  </inputs>
+
+  <outputs>
+    <USERID_ACTOR_ROLE_CURSOR type="result-set">
+      <destinations>
+        <response>USERID_ACTOR_ROLE_CURSOR</response>
+      </destinations>
+    </USERID_ACTOR_ROLE_CURSOR>
+  </outputs>
+
+  <resources/>
+  
+  <actions> 
+    <action-definition>
+      <component-name>SQLExecute</component-name>
+      <action-type>SQL Commands</action-type>
+      <action-inputs>
+        <userSessionId type="string"/>
+      </action-inputs>
+      <action-outputs>
+        <query-result type="result-set" mapping="USERID_ACTOR_ROLE_CURSOR"/>
+      </action-outputs>
+      <component-definition>
+        <jndi><![CDATA[OneshieldData]]></jndi>
+        <query><![CDATA[call PKG_OS_REPORT.sp_bi_partner_roles_get(?,?,?) USING {PREPARE:userSessionId}, {PREPARE:userSessionId}, USERID_ACTOR_ROLE_CURSOR]]></query>
+        <force_single_statement><![CDATA[true]]></force_single_statement>
+      </component-definition>
+    </action-definition>
+
+  </actions> 
+</action-sequence>

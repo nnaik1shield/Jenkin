@@ -1,0 +1,1118 @@
+CREATE OR REPLACE PACKAGE PKG_PC_FUNCTIONS
+  IS
+
+-------------
+-- $Workfile:   PKG_PC_FUNCTIONS.sql  $
+-- $Revision: 60188 $
+--   $Author: anverma@OSHQ.ONESHIELD.COM $
+--     $Date: 2019-11-06 21:17:18 +0530 (Wed, 06 Nov 2019) $
+-------------
+
+ -- This package contains Product specific SQL functions and
+ -- procedures.  
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+
+gbv_ReAssignmentDate                         constant business_variable.business_variable_id%type := 32593908;
+gbv_AssignedUserId                           constant business_variable.business_variable_id%type := 32593608;
+gbv_AssignedUserName                         constant business_variable.business_variable_id%type := 32593708;
+gbv_AssignmentActionEnum                     constant business_variable.business_variable_id%type := 32594008;
+gbv_AssignmentActionName                     constant business_variable.business_variable_id%type := 32594108;
+gbv_PolicyExpirationDate                     constant business_variable.business_variable_id%type    := 499;
+gbv_PolicyCancellationDate                   constant business_variable.business_variable_id%type    := 22612005;
+gRef_BORd_Policy                  constant  business_variable.business_variable_id%type   := 32651648;           -- Reference from old Policy to New one and vice a versa
+gbv_Person_NameFirst                         constant     number(12) := 5122;
+gbv_Person_NameLast                          constant     number(12) := 5124;
+
+g_AssignmentActionEnum                       constant business_variable.business_variable_id%type  := 5;
+g_AssignmentActionName                       constant lookup_list_value.LOOKUP_TEXT%type		    := 'Manual';
+
+
+gbv_IntegReq_RequestObject              constant             business_variable.business_variable_id%type    := 32514508;
+gbv_IntegReq_ResponseParentObj          constant             business_variable.business_variable_id%type    := 32514608;
+gobj_Type_IntegrationReq                constant             object.object_type_id%type    := 3343508;
+gobj_Type_IntegrationRes                constant             object.object_type_id%type    := 3343608;
+
+bor_already_scheduled exception;
+
+gObjType_PolicyNamedInsured                  constant     number(12) := 2313714;                --UTPRODUCT-1415
+
+g_TrxType_Audit               constant        number(12) :=11;
+g_TrxType_BOR                 constant        number(12) :=10;
+g_TrxType_CancellationInsurd  constant        number(12) :=1;
+g_TrxType_Cancellation        constant        number(12) :=2;
+g_TrxType_Endorsement         constant        number(12) :=4;
+g_TrxType_Payment             constant        number(12) :=5;
+g_TrxType_SameDayVoid         constant        number(12) :=7;
+g_TrxType_Reinstatement       constant        number(12) :=3;
+g_TrxType_NonRenewal          constant        number(12) :=2207;
+g_TrxType_NonRenewalByMember  constant        number(12) :=2307;
+g_TrxType_EliminateNonRenewl  constant        number(12) :=2507;
+g_TrxType_ReminderLetter      constant        number(12) :=5719;
+g_TrxType_Rewrite             constant        number(12) :=3604;
+g_TrxType_Renewal             constant        number(12) :=8;
+g_TrxType_IntentToNonRenew    constant        number(12) :=4010;
+g_TrxType_PendingCancelation  constant        number(12) :=4212;
+g_TrxType_NewBusinessRewrite  constant        number(12) :=5099;
+g_TrxType_Invoice             constant        number(12) :=6;
+g_TrxType_RescindPenCancel    constant        number(12) :=5046;
+g_TrxType_ChangeWithdrwDate   constant        number(12) :=6040;
+g_TrxType_IssueFinalBonds     constant        number(12) :=5546;
+g_TrxType_InstalmentOption    constant        number(12) :=5746;
+g_TrxType_ERPQuote            constant        number(12) :=6146;
+g_TrxType_Loan                constant        number(12) :=6946;
+g_TrxType_Withdrawal          constant        number(12) :=7046;
+g_TrxType_Investment          constant        number(12) :=7146;
+g_TrxType_PolicySurrender     constant        number(12) :=7246;
+g_TrxType_SrvcTransaction     constant        number(12) :=7346;
+g_TrxType_ClaimTransaction    constant        number(12) :=7446;
+g_TrxType_ComplianceTrx      constant        number(12) :=7546;
+g_TrxType_ClaimSettlement     constant        number(12) :=7746;
+g_TrxType_StatementReport     constant        number(12) :=8446;
+g_TrxType_AutoWriteOff        constant        number(12) :=5446;-- OSDEMO-15652
+g_TrxType_LateNotice		constant        number(12) :=5146;-- OSDEMO-15652
+g_TrxType_LateNotice2		constant        number(12) :=8646;-- OSDEMO-15652
+g_TrxType_InspectionReport    constant        number(12) :=6548; --OSPAS-650
+g_TrxType_DoNotReinstate    		constant        number(12) :=7048; --UTPRODUCT-1244
+g_TrxType_RescindDoNotReinstate    constant        number(12) :=7148; --UTPRODUCT-1244
+g_TrxType_RescindIntentToNonRenew     constant        number(12) :=7448;
+g_TrxType_PreRenewalNotice     constant        number(12) :=6331;
+g_TrxType_NewBusiness         constant        number(12) := 9;
+g_TrxType_ERPNewPolicy        constant        number(12) := 6431;
+gbv_serviceSource             constant 		  business_variable.business_variable_id%type := 33838548;
+gbv_Generic_Instance_Number   constant        number(12) := 211662;
+
+gObjState_Processed           constant        object_type.object_type_id%TYPE := 106;
+gObjState_Rolledback          constant        object_type.object_type_id%TYPE := 27502;
+--UTPRODUCT-1486
+g_TrxType_conditionalRenew   constant        number(12) := 7548;  
+g_Outcome_conditionalRenew   constant        number(12) := 85048; 
+--UTPRODUCT-1486
+g_TrxType_RescindConditionalRenew   constant        number(12) := 17848;
+g_Outcome_RescindConditionalRenew   constant        number(12) := 147148;
+g_Outcome_TrxBOR              constant        number(12) :=8602;
+g_Outcome_TrxPayment          constant        number(12) :=8702;
+g_Outcome_TrxCancellation     constant        number(12) :=8802;
+g_Outcome_TrxVoid             constant        number(12) :=8902;
+g_Outcome_TrxEndorsement      constant        number(12) :=9002;
+g_Outcome_TrxReinstatement    constant        number(12) :=9105;
+g_Outcome_TrxNonrenewal       constant        number(12) :=11107;
+g_Outcome_TrxElmnatNonrenwl   constant        number(12) :=11207;
+g_Outcome_TrxCancelRewrite    constant        number(12) :=13707;
+g_Outcome_TrxRenewal          constant        number(12) :=21409;
+g_Outcome_TrxRenewalFlag      constant        number(12) :=27402;
+g_Outcome_TrxNewBusnesRewrte  constant        number(12) :=29599;
+g_Outcome_TrxPendCancelation  constant        number(12) :=29812;
+g_Outcome_TrxAudit            constant        number(12) :=30201;
+g_Outcome_TrxInvoice          constant        number(12) :=33046;
+g_Outcome_TrxLate          	constant        number(12) :=37646;--OSDEMO-15652
+g_Outcome_TrxAutoWriteOff     constant        number(12) :=40046;-- OSDEMO-15652
+g_Outcome_TrxRescind          constant        number(12) :=37546;
+g_Outcome_TrxChgWithdrwDate   constant        number(12) :=57240;
+g_Outcome_TrxIssueFinalBonds  constant        number(12) :=44246;
+g_Outcome_TrxInstalmentOption constant        number(12) :=47646;
+g_Outcome_TrxReminderLetter   constant        number(12) :=44919;
+g_Outcome_TrxERPQuote         constant        number(12) :=49246;
+g_Outcome_TransactionLoan     constant        number(12) :=56646;
+g_Outcome_TrxWithdrawal       constant        number(12) :=56746;
+g_Outcome_TrxInvestment       constant        number(12) :=57546;
+g_Outcome_TrxPolicySurrender  constant        number(12) :=59646;
+g_Outcome_TrxPolicySrvcTrx    constant        number(12) :=61646;
+g_Outcome_TrxPolicyClaim      constant        number(12) :=63546;
+g_Outcome_TrxCompliance       constant        number(12) :=64946;
+g_Outcome_TrxClaimSettlement  constant        number(12) :=65246;
+g_Outcome_TrxStatementReport  constant        number(12) :=67546;
+g_Outcome_TrxInspectionReport constant        number(12) :=52848; --OSPAS-650
+g_Outcome_TrxDoNotReinstate 		constant        number(12) :=57248; --UTPRODUCT-1244
+g_Outcome_TrxRescindDoNotReinstate constant        number(12) :=57348; --UTPRODUCT-1244
+gOutcome_OK                   constant	      number(12) := 22;
+--UTPRODUCT-1483
+g_Outcome_TrxRescindIntentToNonRenew  constant        number(12) :=66448;
+g_Outcome_TrxPreRenewalNotice     constant        number(12) :=66848;
+-----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2752 start
+
+gObjType_PolicyCommercial                       constant    object_type.object_type_id%type := 363901;
+gObjType_PolicyBOP                              constant    object_type.object_type_id%type := 365301;
+gObjType_PolicyCAU                              constant    object_type.object_type_id%type := 3532848;
+gObjType_PolicyCAUVehicleCoverages              constant    object_type.object_type_id%type := 3554648;
+gObjType_PolicyCAUAdditionalInterest            constant    object_type.object_type_id%type := 2613546; 
+gObjType_Assetpayer                             constant    object_type.object_type_id%type := 3364248;
+gObjType_PolicyBOPAdditionalInsured             constant    object_type.object_type_id%type := 2240805;
+gObjType_PolicyBOPLocationAdditionalInsured     constant    object_type.object_type_id%type := 3363948;
+gObjType_PolicyBOPAdditionalInterest            constant    object_type.object_type_id%type := 381501;
+gObjType_PolicyBOPLocationAdditionalInterest    constant    object_type.object_type_id%type := 380601;
+gObjType_PolicyCPPAdditionalInsured             constant    object_type.object_type_id%type := 3347246;
+gObjType_PolicyCPPLocationAdditionalInsured     constant    object_type.object_type_id%type := 3380548;
+gObjType_PolicyCPPAdditionalInterest            constant    object_type.object_type_id%type := 3380448;
+gObjType_PolicyCPPLocationAdditionalInterest    constant    object_type.object_type_id%type := 2250309;
+gObjType_Partner                                constant    object_type.object_type_id%type := 63;
+gbv_AssetPayerInterest              constant    varchar2(50) := '32809248';
+gbv_InsuredAssoFinancialEntity       constant    varchar2(50) := '32813948';
+gbv_InsuredAssoCustomerEntity        constant    varchar2(50) := '32813248';
+gbv_InterestAssoFinancialEntity       constant    varchar2(50) := '32694324';
+gbv_InterestAssoCustomerEntity        constant    varchar2(50) := '32813848';
+gbv_AdditionalInsuredType           constant    varchar2(50) := '32808848';
+gbv_AdditionalInterestType           constant    varchar2(50) := '29393514';
+gbv_AssetPayerEntity                constant    varchar2(50) := 32816648;
+gbv_AssetPayerType                  constant    varchar2(50) := 32817948;
+gbv_PolicyGLAdditionalInsured       constant    varchar2(50) := 2242809;
+gbv_PolicyGLAdditionalInterest      constant    varchar2(50) := 2193805;
+gbv_PolicyCFAdditionalInterest      constant    varchar2(50) := 2191105;
+gbv_PolicyGLLocationAdditionalInterest          constant    varchar2(50) := 2193905;
+gbv_PolicyCFLocationAdditionalInterest          constant    varchar2(50) := 3377448;
+
+gbv_PrimaryNamedInsuredEntity        constant    varchar2(50) := '29359313';
+gbv_PrimaryNamedInsuredType          constant    varchar2(50) := '29359313.32506748.34026746';
+
+gbv_PartnerRoleType                      constant    varchar2(50) := '32506748.34026746';
+
+--UTPRODUCT-2752 start
+
+----UTPRODUCT-3131 Start
+
+gObjType_UserIdentityRole           constant object_type.object_type_id%TYPE := 3455408;
+gObjectType_customer                constant object_type.object_type_id%TYPE := 12;
+gbv_Email                           constant business_variable.business_variable_id%type := 30028946;
+gbv_PhoneNumber                     constant business_variable.business_variable_id%type := 30589146;
+gBv_UserIdentity_Username           constant business_variable.business_variable_id%type := 32774508;
+gBv_UserIdentity_Email              constant business_variable.business_variable_id%type := 32774608;
+gBv_UserIdentity_PhoneNumber        constant business_variable.business_variable_id%type := 32774708;
+gBv_AssociatedEntity                constant business_variable.business_variable_id%type := 32778108;
+gBv_UserIdentityRole_Role           constant business_variable.business_variable_id%type := 32776008;
+gBv_DragonUserUsername              constant business_variable.business_variable_id%type := 10047;
+gBv_DragonUserEmailObject           constant business_variable.business_variable_id%type := 31687846;
+gBv_DragonUserPhoneObject           constant business_variable.business_variable_id%type := 31687746;
+gBv_EntityPhoneNumberCode           constant business_variable.business_variable_id%type := 32611446;
+gbv_Ref_Active_Email                constant business_variable.business_variable_id%type := 32681746;
+gbv_Ref_Active_Phone                constant business_variable.business_variable_id%type := 32681846;
+----UTPRODUCT-3131 End
+gbv_TrxMailDate                     constant business_variable.business_variable_id%type := 33005948;--UTPRODUCT-3770 
+-----------------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-3968
+gBv_Generic_ObjectState             CONSTANT business_variable.business_variable_id%type := 210153; 
+g_ObjState_Created                  CONSTANT number(12) := 23;
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+g_ObjState_Rejected                  CONSTANT number(12) := 28905;
+
+------------------------------
+--OSPRODUCT-6811 start
+gObjType_Entityrole                               constant    object_type.object_type_id%type := 3340048;
+gbv_EntityRoleType                      		      constant    business_variable.business_variable_id%type := '34026746';
+--OSPRODUCT-6811 end
+----------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-3664 start
+gObjType_delpref                                constant    object_type.object_type_id%type := 3144746;
+gbv_DeliveryAddress              				        constant    varchar2(50) := '32692046.211882';
+--UTPRODUCT-3664 end
+-----------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-12207 start
+gbv_Ref_Coverages			constant	business_variable.business_variable_id%type := 212318;
+gbv_ptp_ChildprimaryEntity          constant    varchar2(100) := '27360105.29253414'; --PolicyTransactionPolicy --_Reference_Account Information._Reference_Primary Entity
+gbv_GenericProducingAgency          constant    number(12) := 26590907;
+gObjectType_policy                  constant    object_type.object_type_id%TYPE := 24;
+gObjectType_qt                      constant    object_type.object_type_id%TYPE := 2356809;
+--OSPRODUCT-12207 end
+-----------------------------------------------------------------------------------------------------------------------------------
+g_exclude_obj_pd_attribute_type  constant pd_attribute.pd_attribute_type_id%type := 26048;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-12610 start
+gObjType_CustomerEmail                       constant    object_type.object_type_id%type := 2385346;
+gObjType_Customerphonenumber                 constant    object_type.object_type_id%type := 2601546;
+gbv_orm                                      constant    business_variable.business_variable_id%type := 32234146;
+--OSPRODUCT-12610 end
+
+---- OSPRODUCT-22282 Start ------
+gObjType_GenericTransaction            constant  object_type.object_type_id%type := 3176901;
+gObjType_GenericTransactionAddress     constant  object_type.object_type_id%type := 3179301;
+gObjType_GenericTransactionEntity      constant  object_type.object_type_id%type := 3177001;
+gbv_CustEntityMailingAddress           constant  business_variable.business_variable_id%type := 29254114;
+gbv_RefUltimateTemplateID              constant  business_variable.business_variable_id%type := 26725601;
+gbv_RefMasterCustomerEntity            constant  business_variable.business_variable_id%type := 32086746;
+gbv_GenericEntityAssocEntity           constant  business_variable.business_variable_id%type := 31922201;
+gBv_Reference_AssociatedAddress        constant  business_variable.business_variable_id%type := 31943601;
+---- OSPRODUCT-22282 End ------
+
+gobjtypepolicycustomer                 constant object_type.object_type_id%type := 383005;
+gbv_jurisdictionstatecode              constant business_variable.business_variable_id%type := 21768101;
+gobjtype_customerjurisdiction          constant object_type.object_type_id%type := 204;
+-----------------------------------------------------------------------------------------------------------------------------------
+
+-----------------OSPRODUCT-33333:START-----------------
+gbv_prop_lob_ind          constant business_variable.business_variable_id%type := 26464505;
+gbv_prop_loc_buil_ind     constant business_variable.business_variable_id%type := 27761709;
+gobj_policycfbc            constant object_type.object_type_id%TYPE := 2191305;
+-----------------OSPRODUCT-33333:END-------------------
+
+
+procedure sp_underwriting_correct_app(in_session_id        in object.object_id%type,
+                                in_transaction_id    in object.object_id%type,
+                                in_policyquote_id    in object.object_id%type,
+                                io_action_outcome_id in out outcome.outcome_id%type);
+-----------------------------------------------------------------------------------------------------------------
+
+procedure sp_validate_product
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_action_object_id           in        object.object_id%type,
+     in_action_object_type_id      in        object.object_type_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+  
+-- UTPRODUCT-363  
+function fnc_validate_cicular_relation
+     (
+         in_current_partner_id   object.object_id%type,
+         in_parent_object_id   object.object_id%type
+     )
+return varchar2;    
+      
+	     -------------------------------- 
+function fn_check_notify_subscriber 
+         (in_session_id object.object_id%type,
+         in_transaction_id  object.object_id%type,
+         in_subscriber_id  object.object_id%type)
+return char;
+--------------------------
+function fn_get_associated_messageentity_object
+(
+    in_session_id           in object.object_id%type,
+    in_transaction_id       in object.object_id%type,
+    in_orm_id               in varchar2
+)
+return number;
+---------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_delete_policycust_objects
+(
+          in_session_id number,
+          in_transaction_id number,
+          in_policyquote_id number,
+          io_outcome_id in out outcome.outcome_id%type
+);
+------------------------------------------------------------------------------------
+function fn_check_unique_username_tf
+(
+    in_user_id      in number,
+    in_user_name        in varchar2,
+    in_exchange_id  in number,
+    in_agency_code  in varchar2 default '0'
+)
+return char;
+------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------
+
+--UTPRODUCT-994
+
+procedure sp_update_queue_object_detail
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type,
+     in_action_object_id      in        object.object_id%type
+);
+
+------------------------------------------------------------------------------------
+
+--UTPRODUCT-1122
+function fn_aplus_token_generator
+(
+          in_session_id object.object_id%type,
+          in_transaction_id object.object_id%type,
+          in_action_object_id object.object_id%type
+) 
+return varchar;
+
+function fn_get_policycancel_target_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_pol_trx_id                 in             object.object_id%type   
+)
+
+ return date;
+
+
+-----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
+--UTPRODUCT-1186 start
+procedure sp_update_AssetPayerEntity
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+   
+);
+
+function fn_get_addinsuredinterest_list
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type,
+     in_business_variable_id     in         business_variable.business_variable_id%type,
+     in_business_variable_path   in         varchar2,
+     io_enum_list                in out nocopy pkg_os_lookup.t_enum_list,
+     in_current_value            in         varchar2
+
+)   return char;
+--UTPRODUCT-1186 end
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
+--UTPRODUCT-1262 start
+procedure sp_add_insuredinterest
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+   
+);
+--UTPRODUCT-1262 end
+
+procedure sp_add_insuredinterest_bop
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+
+);
+
+procedure sp_add_insuredinterest_gl
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type,
+    in_policycommercial_count number              --LXPRODUCT-202
+
+);
+
+procedure sp_add_insuredinterest_cf
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+
+);
+procedure sp_add_insuredinterest_cpp
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+
+);
+----------------------------------------------------------------------------------------------
+---------------------------------UTPRODUCT-1415-START-----------------------------------------
+procedure sp_associate_named_cust_entity
+(
+     in_session_id        in     object.object_id%type,
+     in_transaction_id    in     object.object_id%type,
+     in_object_id         in     object.object_id%type,
+     io_action_outcome_id in out outcome.outcome_id%type
+);
+function fn_validate_namedinsured_entity_del
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type
+	 
+)   return char;
+function fn_primary_namedinsured_exist
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type
+	 
+)   return char;
+--------------------------------UTPRODUCT-1415-END--------------------------------------------
+function fn_get_policy_trx_outcome
+(
+     in_transaction_type_id         in     pd_transaction_type.pd_transaction_type_id%type
+)
+return number;
+---------------------------------UTPRODUCT-1510-START-----------------------------------------
+function fn_check_child_objects
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type,
+	 in_condition				 in			number
+	 
+)   
+return number;
+--------------------------------UTPRODUCT-1510-END---------------------------------------------
+procedure sp_create_integration_req_resp
+(
+    in_session_id       in      object.object_id%type,
+    in_transaction_id   in      object.object_id%type,
+    in_action_object_id in      object.object_id%type,
+    io_outcome_id       in out  outcome.outcome_id%type,
+    out_object_id       out     object.object_id%type
+);
+
+----------------------- UTPRODUCT-1695-------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------
+function fn_address_list_get
+(
+     in_session_id               in               object.object_id%type,
+     in_transaction_id           in               object.object_id%type,
+     in_object_id                in               object.object_id%type,
+     in_business_variable_id     in               business_variable.business_variable_id%type,
+     in_business_variable_path   in               varchar2,
+     io_enum_list                in out nocopy    pkg_os_lookup.t_enum_list,
+     in_current_value            in               varchar2
+
+)
+return char;
+
+-----------------------------------------------------------------------------------------------------------------------------------
+PROCEDURE SP_CREATE_UPDATE_USERIDENTITY
+( in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_action_object_id    IN        object.object_id%type,
+  io_action_outcome_id   IN OUT   outcome.outcome_id%type 
+);
+--------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2140 start
+procedure sp_update_entityrole
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id    in object.object_id%type
+);
+--UTPRODUCT-2140 End
+-----------------------------------------------------------------------------------------------------------------------------------
+procedure sp_update_objects_numeration
+(
+     in_session_id                       in          object.object_id%type,
+     in_transaction_id                   in          object.object_id%type,
+     in_parent_object_id          in        object.object_id%type,
+     in_child_object_type_id      in        object.object_id%type,
+     in_numeration_bv_id          in        object.object_id%type
+);
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2541
+function FN_CHECK_FLAG_ON_USERIDENTITY 
+(
+in_session_id             IN   object.object_id%type, 
+in_transaction_id         IN   object.object_id%type,
+in_customerEntity_object  IN   object.object_id%type
+)
+return VARCHAR2;
+
+----------------------------------------------------------------------------------------------------------------------------------
+function fn_check_pto_against_task_due
+( 
+    task_assigned_to_id in number,
+    calender_start_date in date,
+    calender_end_date   in date
+) return char;
+----------------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-2579
+function fn_get_content_type_name
+(
+  in_object_id                in  object.object_id%type,
+  in_enum_id                  in  all_us_0_content_type.enum_number%type,
+  in_context_object_type_id   in  all_us_0_content_type.context_object_type_id%type
+)
+return  all_us_0_content_type.display_text_ui%type;
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2974
+function fn_check_actorrole_email_combination
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type,
+  in_object_actorType IN  number
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-5109
+function fn_integration_service_cache_exists
+(
+  in_session_id              in object.object_id%type,
+  in_service_id              in service.service_id%type,
+  in_service_operation_id  in service_operation.service_operation_id%type,
+  in_cache_key               in integration_service_cache.cache_key%type,
+  in_cache_expiry_sec        in number default 0
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-1387
+procedure sp_sync_useridentity_roles
+(
+    in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_action_object_id    IN        object.object_id%type,
+  io_action_outcome_id   IN OUT   outcome.outcome_id%type 
+);
+
+function fn_check_dragon_email_on_UserIdentity
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-3015
+function fn_check_unique_username_in_useridentity
+(
+in_session_id                    IN   object.object_id%type, 
+in_transaction_id                IN   object.object_id%type,
+in_dragonuser_object             IN   object.object_id%type,
+in_username                      IN   VARCHAR2
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-1387
+function fn_check_if_useridentity_exist
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type
+) 
+return varchar2;
+----------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-6811 start
+function fn_concat_entity_role
+(	in_session_id   	in        object.object_id%type, 
+	in_transaction_id  	in        object.object_id%type,
+	in_object_id    	in        object.object_id%type
+)
+return varchar2;
+--OSPRODUCT-6811 end
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2480
+FUNCTION fn_check_unique_email_in_useridentity
+(
+in_session_id                    IN   object.object_id%type, 
+in_transaction_id                IN   object.object_id%type,
+in_associatedUserIdentityRole    IN   object.object_id%type,
+in_emailID                       IN   VARCHAR2
+)
+RETURN VARCHAR2;
+----------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-3664 start
+function fn_check_del_pref_placeholder
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type
+
+)   return char;
+--UTPRODUCT-3664 end
+----------------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-3677
+function fn_ivans_prt_policy_trx_count
+(
+  in_partner_id              in object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-1695
+ 
+procedure sp_del_empty_customer_address
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_action_object_id      in        object.object_id%type,
+     io_action_outcome_id     in out    outcome.outcome_id%type
+);
+-------------------------------------------------------------------------------------------------------
+function fn_ba_type_by_enity_type_get
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_role_type_id          in        role_type.role_type_id%type
+)
+return role_type.role_account_type_id%type;
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+--Start UTPRODUCT-3951
+function fn_set_ptp_wholesalermanager
+(
+         in_session_id     in object.object_id%type,
+         in_transaction_id in object.object_id%type,
+         in_ptp_id     in object.object_id%type
+)return number;
+--end UTPRODUCT-3951
+-------------------------------------------------------------------------------------------------------
+--begin UTPRODUCT-4200
+ procedure sp_partner_assignment_init(in_session_id       in object.object_id%type,
+                                   in_transaction_id   in object.object_id%type,
+                                   in_action_id         in     action.action_id%type,
+                                   in_action_object_id in object.object_id%type
+                                   );
+--end UTPRODUCT-4200
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_pol_max_policy_num_get
+(
+         in_session_id                  object.object_id%type,
+         in_transaction_id              object.object_id%type,
+         in_policy_id                   object.object_id%type
+)return varchar2;
+-----------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-13764
+function fn_pol_most_recnt_func_trx_get
+(
+         in_session_id                  object.object_id%type,
+         in_transaction_id              object.object_id%type,
+         in_policy_id                   object.object_id%type
+) return number;
+function fn_pol_most_recnt_func_trx_get_old
+(
+         in_session_id                  object.object_id%type,
+         in_transaction_id              object.object_id%type,
+         in_policy_id                   object.object_id%type
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-13989
+function fn_pol_most_recnt_trx_term_get
+(
+         in_session_id                  object.object_id%type,
+         in_transaction_id              object.object_id%type,
+         in_term_id                   object.object_id%type
+) return number;
+--end OSPRODUCT-13989
+--------------------
+--LIOPRODUCT-517
+function fn_get_actortype_user_cnt 
+(
+     in_session_id                   in         object.object_id%type,
+     in_transaction_id               in         object.object_id%type,
+     in_actor_type_set_id            in         object.object_id%type,
+     in_partner_object_id            in         object.object_id%type
+)
+return number;  
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+--UTPRODUCT-4730 start
+function fn_check_role_for_search
+(
+    in_session_id            in object.object_id%type,
+    in_transaction_id        in object.object_id%type,
+    in_role_bv_values      in varchar2,
+    in_indicator         in varchar2
+)
+return char;
+--UTPRODUCT-4730 end
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_object_currency_get
+(
+     in_session_id          in     object.object_id%type,
+     in_transaction_id         in   object.object_id%type,
+     in_object_id          in    object.object_id%type
+
+)
+return currency.currency_id%type;
+----------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------
+--OSPRODUCT-12207 start
+function fn_check_existing_customer(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_pt_id     in object.object_id%type)
+  
+return char;
+--OSPRODUCT-12207 end
+--UTPRODUCT-1485
+function fn_get_trxmailing_date(in_session_id     in object.object_id%type,
+                                 in_transaction_id in object.object_id%type,
+                                 in_pol_trx_id     in object.object_id%type
+
+                                )
+ return date;
+----------------------------------------------------------------------------------------------------------
+----LXPRODUCT-175 Start
+
+function fn_get_max_expiration_date(in_session_id     object.object_id%type,
+                                    in_transaction_id object.object_id%type,
+                                    in_policy_id      object.object_id%type)
+  return varchar2;
+----------------------------------------------------------------------------------------------------------
+--------------UTPRODUCT-4807---------
+
+function fn_check_pending_trx
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type
+)
+return varchar2;
+---------------------------------------------------
+function fn_check_compare_detail
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type
+)
+return varchar2;
+---------------------------------------------------
+--------------UTPRODUCT-4807 END---------
+
+-----------------OSPRODUCT-13607 START---------
+ function fn_check_delpref_delivery_mode_email (in_session_id      in object.object_id%type,
+                                           in_transaction_id  in object.object_id%type,
+                                           in_object_id       in object.object_id%type
+                                            ) 
+ return varchar2;
+ -----------------OSPRODUCT-13607 END---------
+ 
+ function fn_validate_queue_assignment_type_tf(in_session_id      in object.object_id%type,
+                                              in_transaction_id  in object.object_id%type,
+                                              in_queue_id       in object.object_id%type,
+                                              in_assignment_type number
+                                       )
+    return char; 
+	
+  ---------------------------OSPRODUCT-12526----------------------------------------
+ 
+  function fn_get_policy_insurance_line(   in_session_id      in object.object_id%type,
+                                           in_transaction_id  in object.object_id%type,
+                                           in_object_id       in object.object_id%type
+                                            ) 
+ return varchar2; 
+
+ -- UTPRODUCT-4766
+ function fn_effective_renewal_exists_tf (in_session_id       in object.object_id%type,
+                                           in_transaction_id  in object.object_id%type,
+                                           in_policy_id       in object.object_id%type
+
+                                          ) 
+ return char; 
+ 
+-----OSPRODUCT-14151 Start ----------------------------------------------------------------
+
+function fn_check_if_multi_useridentity_roles_exist
+(in_session_id   IN              object.object_id%type, 
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type
+) 
+return varchar2;
+
+-----OSPRODUCT-14151 End ------------------------------------------------------------------
+ --OSPRODUCT-15381
+  function fn_most_latest_trx_term_get(in_session_id     object.object_id%type,
+                                       in_transaction_id object.object_id%type,
+                                       in_term_id      object.object_id%type)
+    return number;
+  --OSPRODUCT-15381
+  ----------------------------------------------------------------------------------------------------------------------------------
+function fn_check_external_actorrole_email_combination
+(in_session_id   IN              object.object_id%type,
+  in_transaction_id  IN          object.object_id%type,
+  in_object_id    IN        object.object_id%type,
+  in_object_actorType IN  number
+)
+return varchar2;
+-----OSPRODUCT-15604 Start ------------------------------------------------------------------
+function fn_check_any_referencer_obj(in_session_id             in object.object_id%type,
+											in_transaction_id         in object.object_id%type,
+											in_relation_object_id     in object.object_id%type,
+											in_parent_hiearchy_obj_id in object.object_id%type) 
+return char;
+-----OSPRODUCT-15604 End ------------------------------------------------------------------
+
+----- UTXPRODUCT-314 Start -----
+function fn_check_agent_association
+(
+   in_session_id                 in    object.object_id%type,
+   in_transaction_id             in    object.object_id%type,
+   in_producing_agency_id        in    object.object_id%type,
+   in_agent_parent_producer_id   in    object.object_id%type
+)
+return char ;
+----- UTXPRODUCT-314 End -----
+
+---- UTXPRODUCT-187 Start -----
+function fn_object_bv_raw_get(in_session_id     in object.object_id%type,
+                              in_transaction_id in object.object_id%type,
+                              in_object_id      in object.object_id%type,
+                              in_bv_id          in business_variable.business_variable_id%type
+                              )
+return object_bv_value.business_variable_value%type;
+---- UTXPRODUCT-187 End -----
+--LXPRODUCT-463
+----------
+function fn_check_CustomerAddress_LocatedAt
+         (in_session_id object.object_id%type,
+         in_transaction_id  object.object_id%type,
+         in_CustomerAddress_id  object.object_id%type)
+return char;
+--------------------------
+function fn_check_active_duplicate_jobs
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_async_job_def_id         in         object.object_id%type,
+     in_job_object_id            in         object.object_id%type
+)   return char;
+
+---------------------------OSPRODUCT-20795-----------------------------------------
+ 
+ function fn_get_insurance_line_short_code
+     (
+          in_session_id      in object.object_id%type,
+          in_transaction_id  in object.object_id%type,
+          v_insurance_line   insurance_line.insurance_line_id%type
+      )
+ return varchar2;
+---------------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT2-10 start
+function fn_check_address_against_orm_address
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type  -- customer entity
+
+)   return char;
+--UTPRODUCT2-10 end 
+---------------------------------------------------------------------------------------------------------------------------------------                                             
+
+
+
+------------OSPRODUCT-20801
+function fn_rescind_basis_image_get
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_id                  in        object.object_id%type,
+     in_transaction_class_id       in        number,
+     in_effective_date             in        varchar2,
+     in_after_tf                   in        char,
+     in_exclude_transaction_id     in        object.object_id%type,
+     out_transaction_id            out       object.object_id%type
+
+) RETURN CHAR;
+--OSPRODUCT-20801 end 
+---------------------------------------------------------------------------------------------------------------------------------------                                             
+function fn_get_no_of_processed_trxs
+(
+     in_session_id                 in          object.object_id%type,
+     in_transaction_id             in          object.object_id%type,
+     in_object_id                    in          object.object_id%type
+)
+return  number;
+---------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-12610 start
+function fn_check_email_against_orm_email
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type  -- customer entity
+
+)   return char;
+function fn_check_phone_against_orm_phone
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type  -- customer entity
+
+)   return char;
+--OSPRODUCT-12610 end
+-------------------------------------------------
+function fn_check_discard_can
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+)
+return char;
+---------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------  OSPRODUCT-22282 Start -------------------------------------
+
+FUNCTION fn_check_trx_values_updated(in_session_id     IN dragon_session.user_session_id%TYPE,
+                                     in_transaction_id IN dragon_transaction.transaction_id%TYPE,
+                                     in_trx_id IN object.object_id%TYPE)
+RETURN CHAR;
+
+------------------------------------------------  OSPRODUCT-22282 End ---------------------------------------
+-------------------------------------  OSPRODUCT-23943 Start -------------------------------------------------------
+function  fn_object_ref_owners_cnt_get
+(
+     in_session_id                in   object.object_id%type,
+     in_transaction_id            in   object.object_id%type,
+	 in_object_id			      in   object.object_id%type,
+	 in_reference_bv_id		      in   business_variable.business_variable_id%type default null,
+     in_relation_object_type_id   in   object_type.object_type_id%type default null,
+     in_object_type_id            in   object_type.object_type_id%type default null
+)
+return number;
+-------------------------------------  OSPRODUCT-23943 End -------------------------------------------------------
+
+---------------------------------UTXPRODUCT-801 start------------------
+FUNCTION fn_call_object_valid_tf
+(
+	 in_session_id            in     object.object_id%type,
+     in_transaction_id        in     object.object_id%type,
+     in_object_id             in     object.object_id%type,
+     in_actor_id              in     actor_type.actor_type_id%type
+)
+return char;
+---------------------------------UTXPRODUCT-801 end--------------------
+
+-------------------------------------  OSPRODUCT-23645 Start -------------------------------------------------------
+
+FUNCTION fn_get_policy_state_list
+(
+   in_session_id     IN object.object_id%TYPE,
+   in_transaction_id IN object.object_id%TYPE,
+   in_ptp_id         IN object.object_id%TYPE
+)
+RETURN VARCHAR2;
+ 
+-------------------------------------  OSPRODUCT-23645 End -------------------------------------------------------
+
+-------------------------------------  OSPRODUCT-22881 Start -----------------------------------------------------
+
+function fn_get_entity_OOO_message
+(
+       in_session_id        in                object.object_id%type,
+       in_transaction_id    in                object.object_id%type,
+       in_task_reassigned_user_id            in                object.object_id%type
+) return varchar2;
+
+-------------------------------------  OSPRODUCT-22881 End --------------------------------------------------------
+
+------------------------------------------------ OSPRODUCT-26192 Start -------------------------------------------------
+function fn_get_current_effective_trx(in_session_id     in object.object_id%type,
+                                      in_transaction_id in object.object_id%type,
+                                      in_policy_id      in object.object_id%type,
+                                      in_trx_set_id     in number default null)
+return object.object_id%type;
+------------------------------------------------ OSPRODUCT-26192 End ---------------------------------------------------
+function fn_get_custEntity_transform(in_session_id                   in object.object_id%type,
+                                      in_transaction_id              in object.object_id%type,
+                                      in_maps_to_object_id           in object.object_id%type,
+                                      in_business_variable_id        in business_variable.business_variable_id%type)
+return object.object_id%type;
+----------------------------------------
+function fn_get_bw_property_id
+(
+    in_session_id            in     object.object_id%type,
+    in_transaction_id        in     object.object_id%type,
+    in_location_id           in     object.object_id%type
+)
+return  varchar2;
+----------------------------------------  
+function fn_get_consent_flag(in_session_id     in object.object_id%type,
+                             in_transaction_id in object.object_id%type,
+                             in_object_id      in object.object_id%type)
+return varchar2;
+----------------------------------------
+function fn_check_reports_ordered(in_session_id     in object.object_id%type,
+                                  in_transaction_id in object.object_id%type,
+                                  in_object_id      in object.object_id%type)
+return varchar2;
+---------------------------------------- 
+function fn_chk_order_eligiblity
+(
+    in_session_id            in     object.object_id%type,
+    in_transaction_id        in     object.object_id%type,
+    in_master_cust_loc_id    in     object.object_id%type
+)
+return  number;
+---------------------------------------- 
+function fn_chk_eligble_docs_to_render
+(
+    in_session_id            in     object.object_id%type,
+    in_transaction_id        in     object.object_id%type,
+    in_policy_trx_id    in     object.object_id%type
+)
+return  number;
+
+---------------------------------------- 
+
+function fn_get_report_order_attr
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_master_cust_loc_id             in     object.object_id%type,
+    in_policy_id                      in     object.object_id%type
+)
+return varchar2;
+---------------------------------------- 
+
+function fn_set_tpr_report_id
+(
+    in_session_id            in     object.object_id%type,
+    in_transaction_id        in     object.object_id%type,
+    in_tpr_report_object_id   in     object.object_id%type
+)
+return  varchar2;
+
+--------------OSPRODUCT-32433 Start--------------
+function fn_partner_agreement_validity
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_agreement_id                   in     object.object_id%type
+)
+return varchar2;
+
+function fn_partner_agrmt_policy_quote_count
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_agreement_id                   in     object.object_id%type
+)
+return varchar2;
+
+function fn_partner_agreement_policy_quote_count --- Deprecate
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_agreement_id                   in     object.object_id%type,
+	in_partner_agreement_product_id   in     object.object_id%type
+)
+return varchar2;
+------------------------OSPRODUCT-32433 End -----------
+
+----------------------------------------
+procedure sp_get_executor_session_id
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_action_object_id               in     object.object_id%type
+    
+);
+----------------------------------------
+------------OSPRODUCT-30828:START----------------------------
+function fn_get_cnt_rolled_back_trxn
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_policy_id                      in     object.object_id%type
+)
+return number;
+
+------------OSPRODUCT-32008:START----------------------------
+function fn_trx_to_be_roll_back
+(
+    in_session_id                     in     object.object_id%type,
+    in_transaction_id                 in     object.object_id%type,
+    in_policy_id                      in     object.object_id%type,
+    in_rule_id                        in     object.object_id%type
+)
+return char;
+
+-----------------OSPRODUCT-33333:START-----------------
+function fn_propsec_uwques_disp
+(
+       in_session_id        in     object.object_id%type,
+       in_transaction_id    in     object.object_id%type,
+       in_policycpp   		in     object.object_id%type
+) return char ;
+-----------------OSPRODUCT-33333:END-------------------
+PROCEDURE SP_UPDATE_ASSET_PAYER_DM(in_session_id       in object.object_id%type,
+                                 in_transaction_id   in object.object_id%type,
+                                 in_action_object_id in object.object_id%type,
+                                 io_action_outcome_id in out outcome.outcome_id%type);
+END PKG_PC_FUNCTIONS;
+/

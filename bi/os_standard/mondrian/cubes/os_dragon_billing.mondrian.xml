@@ -1,0 +1,1544 @@
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 December 2020  $
+-->
+<Schema name="Dragon Billing Cubes">
+  <Dimension highCardinality="false" name="Line of Business" caption="Line of Business">
+    <Hierarchy hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+      <Table name="BI_DIM_PRODUCT_DETAIL">
+      </Table>
+      <Level name="Line of Business" column="PD_LOB_NAME" nameColumn="PD_LOB_NAME" ordinalColumn="PD_LOB_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Line of Business" description="Line of Business">
+      </Level>
+      <Level name="Product" column="PD_PRODUCT_NAME" nameColumn="PD_PRODUCT_NAME" ordinalColumn="PD_PRODUCT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Product" description="Product Name">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Producer" caption="Associated Policy&#39;s Agency" description="The Associated Policy&#39;s Broker">
+    <Hierarchy hasAll="true" allMemberName="All Producers" primaryKey="PP_PRODUCER_ID">
+      <Table name="BI_DIM_PRODUCER_PARTNER">
+      </Table>
+      <Level name="Producer Name" column="PP_PRODUCER_NAME" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Name">
+	<Property name="Partner Code" column="PP_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Partner Name" column="PP_PARTNER_NAME" type="String">
+        </Property>
+	<Property name="Partner Parent Name" column="PP_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Partner Type" column="PP_PARTNER_TYPE" type="String">
+        </Property>
+</Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Customer">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE" nameColumn="CD_INSURED_TYPE" ordinalColumn="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Carrier Branch" caption="Carrier Branch">
+    <Hierarchy hasAll="true" allMemberName="All Carrier Branches" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Carrier_Branch">
+      </Table>
+      <Level name="Carrier Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Name">
+	  <Property name="Carrier Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Carrier Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+	<Property name="Carrier Effective Date" column="PE_PARTNER_EFF_DATE" type="String">
+        </Property>
+	<Property name="Carrier Expiry Date" column="PE_PARTNER_EXP_DATE" type="String">
+        </Property>	
+</Level>
+<Level name="Carrier Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Status">
+</Level>
+<!--<Level name="Carrier Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Effective Date">
+</Level>
+<Level name="Carrier Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Expiry Date">
+</Level> -->
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Writing Company">
+    <Hierarchy hasAll="true" allMemberName="All Writing Companies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Writing_Company">
+      </Table>
+      <Level name="Writing Company" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Name">
+	  <Property name="Writing Company Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Writing Company Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+	<Property name="Writing Company Effective Date" column="PE_PARTNER_EFF_DATE" type="String">
+        </Property>
+    <Property name="Writing Company Expiry Date" column="PE_PARTNER_EXP_DATE" type="String">
+        </Property> 
+</Level>
+<Level name="Writing Company Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Status">
+</Level>
+<!-- OSPRODUCT-22153 
+<Level name="Writing Company Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Effective Date">
+</Level>
+<Level name="Writing Company Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Expiry Date"> 
+</Level> -->
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Partner/Agent">
+    <Hierarchy hasAll="true" allMemberName="Partner/Agent" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Partner_Agent">
+      </Table>
+      <Level name="Partner/Agent Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner/Agent Type">
+	  <Property name="Partner/Agent Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Partner/Agent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+	<Property name="Partner/Agent Effective Date" column="PE_PARTNER_EFF_DATE" type="String">
+        </Property>
+	<Property name="Partner/Agent Expiry Date" column="PE_PARTNER_EXP_DATE" type="String">
+        </Property>
+	  </Level>
+	<Level name="Partner/Agent Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner/Agent Status">
+	</Level>
+	<!--OSPRODUCT-21949
+	<Level name="Partner/Agent Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner/Agent Effective Date">
+	</Level>
+	<Level name="Partner/Agent Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner/Agent Expiry Date">
+	</Level> -->
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Associated_Policy_Dim" caption="Associated Policy">
+    <Hierarchy hasAll="true" allMemberName="All Associated Policies" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL" alias="ASSOC_POLICY_DIM">
+      </Table>
+      <Level name="Policy Number" column="POD_POLICY_NUMBER" nameColumn="POD_POLICY_NUMBER" ordinalColumn="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+      </Level>
+      <Level name="Policy Term" column="POD_POLICY_TERM" nameColumn="POD_POLICY_TERM" ordinalColumn="POD_POLICY_TERM" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Term">
+      </Level>
+      <Level name="Policy Primary Risk Address" column="POD_PRIMARY_RISK_STATE" nameColumn="POD_PRIMARY_RISK_STATE" ordinalColumn="POD_PRIMARY_RISK_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Primary Risk State">
+	   <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Billing_Account_Dim" caption="Billing Account">
+    <Hierarchy hasAll="true" allMemberName="All Billing Accounts" primaryKey="BA_BILLING_ACCOUNT_ID">
+      <Table name="BI_DIM_BILLING_ACCOUNT">
+      </Table>
+      <Level name="Account Type" column="BA_BILLING_ACCOUNT_TYPE" nameColumn="BA_BILLING_ACCOUNT_TYPE" ordinalColumn="BA_BILLING_ACCOUNT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The type of Billing Account">
+      </Level>
+      <Level name="Account Holder Name" column="BA_BILLING_ACCOUNT_HOLDER_NAME" nameColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" ordinalColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Account Holder">
+      </Level>
+      <Level name="Billing Account Number" column="BA_BILLING_ACCOUNT_NUMBER" nameColumn="BA_BILLING_ACCOUNT_NUMBER" ordinalColumn="BA_BILLING_ACCOUNT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Billing Account Number">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Policy_Transaction_Type_Dim" caption="Policy Transaction Type">
+    <Hierarchy hasAll="true" allMemberName="All Policy Transaction Types" primaryKey="PT_ID">
+      <Table name="BI_FACT_POLICY_TRX_DETAIL">
+      </Table>
+      <Level name="Policy Transaction Type" column="PT_TYPE_NAME" nameColumn="PT_TYPE_NAME" ordinalColumn="PT_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Transaction Type">
+        <Property name="Policy Transaction Effective Date" column="PT_EFF_DT" type="String">
+        </Property>
+        <Property name="Policy Transaction Processed Date" column="PT_PROCESSED_DT" type="String">
+        </Property>
+      </Level>
+	  <Level name="Policy Sub Transaction Type" column="PT_TRX_SUB_TYPE_NAME" nameColumn="PT_TRX_SUB_TYPE_NAME" ordinalColumn="PT_TRX_SUB_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Sub Transaction Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Policy_Transaction_BillingType_Dim" caption="Billing Type">
+    <Hierarchy hasAll="true" allMemberName="All Billing Types" primaryKey="POLT_ID">
+      <Table name="BI_DIM_POLICY_TERM_DETAIL" alias="PT_POLICYTRX_BTYPE">
+      </Table>
+      <Level name="Billing Type" column="POLT_BILLING_METHOD" nameColumn="POLT_BILLING_METHOD" ordinalColumn="POLT_BILLING_METHOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Agency Bill or Direct Bill">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Policy_Transaction_PaymentPlan_Dim" caption="Payment Plan">
+    <Hierarchy hasAll="true" allMemberName="All Payment Plans" primaryKey="PT_ID">
+      <Table name="BI_FACT_POLICY_TRX_DETAIL" alias="PT_POLICYTRX_PPLAN">
+      </Table>
+      <Level name="Payment Plan" column="PT_PAYMENT_PLAN" nameColumn="PT_PAYMENT_PLAN" ordinalColumn="PT_PAYMENT_PLAN" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Plan">
+        <Property name="Number of Installments" column="PT_CHOSEN_PPLAN_INSTALLMENTS" type="Numeric">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Billing_Transaction_Payment_Type_Dim" caption="Payment Type">
+    <Hierarchy hasAll="true" allMemberName="All Payment Types" primaryKey="BT_ID">
+      <Table name="BI_DIM_BILLING_TRX">
+      </Table>
+      <Level name="Payment Type" column="BT_PAYMENT_TYPE" nameColumn="BT_PAYMENT_TYPE" ordinalColumn="BT_PAYMENT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Type">
+      </Level>
+      <Level name="Payment Details" column="BT_PAYMENT_TYPE_DETAIL" nameColumn="BT_PAYMENT_TYPE_DETAIL" ordinalColumn="BT_PAYMENT_TYPE_DETAIL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Details">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Billing_Transaction_Dim" caption="Billing Transaction">
+    <Hierarchy hasAll="true" allMemberName="All Billing Transactions" primaryKey="BT_ID">
+      <Table name="BI_DIM_BILLING_TRX">
+      </Table>
+      <Level name="Transaction Type" column="BT_TYPE" nameColumn="BT_TYPE" ordinalColumn="BT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Billing Transaction Type">
+      </Level>
+      <Level name="Transaction Post Status" column="BT_POST_STATUS" ordinalColumn="BT_POST_STATUS" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Post Status">
+      </Level>
+      <Level name="Transaction ID" column="BT_ID" internalType="long" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique Identifier for Billing Transaction">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" highCardinality="false" name="Policy_Transaction_PolicyEffDate_Dim" caption="Time (Associated Policy Effective Date)">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="POD_POLICY_ID" primaryKeyTable="BI_DIM_POLICY_DETAIL">
+      <Join leftKey="POD_POLICY_EFF_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_POLICY_DETAIL">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="PT_POL_EFF_DT">
+        </Table>
+      </Join>
+      <Level name="Policy Effective Date Year" table="PT_POL_EFF_DT" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Year)" description="Policy Effective Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Quarter" table="PT_POL_EFF_DT" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Month" table="PT_POL_EFF_DT" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	  <Level name="Policy Effective Date Day" table="PT_POL_EFF_DT" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Day)" description="Effective Day of the Associated Policy">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" highCardinality="false" name="Policy_Transaction_PolicyExpDate_Dim" caption="Time (Associated Policy Expiration Date)">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="POD_POLICY_ID" primaryKeyTable="BI_DIM_POLICY_DETAIL">
+      <Join leftKey="POD_POLICY_EXP_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_POLICY_DETAIL">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="PT_POL_EXP_DT">
+        </Table>
+      </Join>
+      <Level name="Policy Expiration Date Year" table="PT_POL_EXP_DT" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Year)" description="Policy Expiration Date Year">
+	  <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	</Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Quarter" table="PT_POL_EXP_DT" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Month" table="PT_POL_EXP_DT" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	   <Level name="Policy Expiration Day" table="PT_POL_EXP_DT" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Day)" description="Expiration Day of the Associated Policy">
+	   <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Billing_Batch_Dim" caption="Billing Batch Details">
+    <Hierarchy hasAll="true" allMemberName="All Billing Batches" primaryKey="BB_ID">
+      <Table name="BI_DIM_BILLING_BATCH">
+      </Table>
+      <Level name="Batch ID" column="BB_ID" internalType="long" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique Identifier for Billing Batch">
+      </Level>
+      <Level name="Batch Ref. No." column="BB_BATCH_REF_NO" ordinalColumn="BB_BATCH_REF_NO" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Ref. No.">
+      </Level>
+      <Level name="External Batch No." column="BB_EXTERNAL_BATCH_NO" ordinalColumn="BB_EXTERNAL_BATCH_NO" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="External Batch No.">
+      </Level>
+      <Level name="Batch Type" column="BB_BATCH_TYPE" ordinalColumn="BB_BATCH_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Type">
+      </Level>
+      <Level name="Batch Entry Method" column="BB_BATCH_ENTRY_METHOD" ordinalColumn="BB_BATCH_ENTRY_METHOD" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Entry Method">
+      </Level>
+	  <Level name="Batch Entered By" column="BB_BATCH_ENTERED_BY" ordinalColumn="BB_BATCH_ENTERED_BY" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Entered By">
+      </Level>
+      <Level name="Batch Status" column="BB_BATCH_STATUS" ordinalColumn="BB_BATCH_STATUS" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Status">
+      </Level>
+	  <Level name="Check Number" column="BB_CHECK_NUMBER" ordinalColumn="BB_CHECK_NUMBER" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Check Number">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" highCardinality="false" name="Billing_Batch_PostedDate_Dim" caption="Batch Posted Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="BB_ID" primaryKeyTable="BI_DIM_BILLING_BATCH">
+      <Join leftKey="BB_BATCH_POSTED_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_BILLING_BATCH">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="BT_BATCHPOSTED_TIME">
+        </Table>
+      </Join>
+      <Level name="Batch Posted Date Year" table="BT_BATCHPOSTED_TIME" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Batch Posted Date (Year)" description="Batch Posted Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Date Quarter" table="BT_BATCHPOSTED_TIME" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Batch Posted Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Date Month" table="BT_BATCHPOSTED_TIME" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Batch Posted Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Day" table="BT_BATCHPOSTED_TIME" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Posted Date (Day)" description="Batch Posted Date">  
+ 	<Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" highCardinality="false" name="Billing_Batch_ProcessedDate_Dim" caption="Batch Processed Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="BB_ID" primaryKeyTable="BI_DIM_BILLING_BATCH">
+      <Join leftKey="BB_BATCH_PROCESSED_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_BILLING_BATCH">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="BT_BATCHPROCESSED_TIME">
+        </Table>
+      </Join>
+      <Level name="Batch Processed Date Year" table="BT_BATCHPROCESSED_TIME" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Batch Processed Date (Year)" description="Batch Processed Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Batch Processed Date Quarter" table="BT_BATCHPROCESSED_TIME" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Batch Processed Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Processed Date Month" table="BT_BATCHPROCESSED_TIME" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Batch Processed Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	  <Level name="Batch Processed Day" table="BT_BATCHPROCESSED_TIME" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Processed Day (Day)" description="Batch Processed Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+	  </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" highCardinality="false" name="Billing_Transaction_GLedgerDate_Dim" caption="General Ledger Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="BT_ID" primaryKeyTable="BI_DIM_BILLING_TRX">
+      <Join leftKey="BT_GLEDGER_DT" rightKey="TD_DATE">
+        <Table name="BI_DIM_BILLING_TRX">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="BT_GL_TIME">
+        </Table>
+      </Join>
+      <Level name="GL Date Year" table="BT_GL_TIME" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="GL Date (Year)" description="General Ledger Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="GL Date Quarter" table="BT_GL_TIME" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="GL Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	</Annotations>
+      </Level>
+      <Level name="GL Date Month" table="BT_GL_TIME" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="GL Date (Month)" description="Name of the Month">
+	   <Annotations>
+	 <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	 </Annotations>
+      </Level>
+	  <Level name="GL Day" table="BT_GL_TIME" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="GL Date (Day)" description="Effective Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="BILLING_FICHANGE_CUBE" caption="Billing Ledger Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_FICHANGE_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_FICHANGE_DETAIL.PE_POLICY_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Line of Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Dim" name="Billing_Transaction_Dim" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Payment_Type_Dim" name="Billing_Transaction_Payment_Type_Dim" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <!--<DimensionUsage source="Billing_Transaction_GLedgerDate_Dim" name="Billing_Transaction_GLedgerDate_Dim" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage> -->
+    <DimensionUsage source="Policy_Transaction_BillingType_Dim" name="Policy_Transaction_BillingType_Dim" foreignKey="POLT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PaymentPlan_Dim" name="Policy_Transaction_PaymentPlan_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_Type_Dim" name="Policy_Transaction_Type_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Associated_Policy_Dim" name="Associated_Policy_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <!--<DimensionUsage source="Policy_Transaction_PolicyEffDate_Dim" name="Policy_Transaction_PolicyEffDate_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage> 
+    <DimensionUsage source="Policy_Transaction_PolicyExpDate_Dim" name="Policy_Transaction_PolicyExpDate_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+
+    </DimensionUsage> -->
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+	<Dimension visible="true" highCardinality="false" name="Last Updated Date" caption="Last Updated Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Last Updated Dates">
+        <Level name="Last Updated Date" visible="true" column="FCD_LAST_UPDATED_DT" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Last Updated Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Debit_Credit" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+      <Hierarchy hasAll="true">
+        <Level name="Debit_Credit" column="FCD_FITEM_TYPE" nameColumn="FCD_FITEM_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="Acct_Yr_Period" caption="Accounting Period" description="Accounting Period">
+      <Hierarchy hasAll="true">
+        <Level name="Acct_Yr_Period" column="FCD_ACCT_YR_PERIOD" nameColumn="FCD_ACCT_YR_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Accounting Period" description="Accounting Period">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Change_Type" caption="Change Type" description="Is this change a Create, Change or a FYI type">
+      <Hierarchy hasAll="true">
+        <Level name="Change_Type" column="FCD_CHANGE_ACTION_TYPE" nameColumn="FCD_CHANGE_ACTION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Change Type" description="Is this change a Create, Change or a FYI type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Billing Status" caption="Billing Status">
+      <Hierarchy hasAll="true">
+        <Level name="Billing Status" column="FCD_BILLING_STATUS_IND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Status of the Billing Transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Installment_Number_Dim" caption="Installment Number">
+      <Hierarchy hasAll="true">
+        <Level name="Installment Number" column="FCD_INSTALLMENT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Installment Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="FItem_Category" caption="Category" description="The Category this Financial Transaction belongs to">
+      <Hierarchy hasAll="true">
+        <Level name="FItem_Category" column="FCD_CATEGORY_NAME" nameColumn="FCD_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Category" description="The Category this Financial Transaction belongs to">
+        </Level>
+        <Level name="FItem_Sub_Category" column="FCD_SUB_CATEGORY_NAME" nameColumn="FCD_SUB_CATEGORY_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="Sub Category" description="The Sub-Category this Financial Transaction belongs to">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FCD_FICHANGE_ID" highCardinality="false" name="Time (Payment Due Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+         <View alias="vw_fcd_agency_due_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 fcd_fichange_id,
+			 EXTRACT(YEAR FROM fcd_agency_due_dt)       td_year,
+			 to_number(to_char(fcd_agency_due_dt, 'Q')) td_quarter,
+			 'Q' || to_char(fcd_agency_due_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fcd_agency_due_dt)      td_month,
+			 to_char(fcd_agency_due_dt, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fcd_agency_due_dt)        td_day,
+			 fcd_agency_due_dt					    td_date
+		  FROM
+			 bi_fact_fichange_detail
+	     </SQL>
+        </View>
+        <Level name="Agency Due Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Agency Due Date" description="Agency Due Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FCD_FICHANGE_ID" highCardinality="false" name="Time(Invoice Due Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+        <View alias="vw_fcd_installment_due_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 fcd_fichange_id,
+			 EXTRACT(YEAR FROM fcd_installment_due_dt)       td_year,
+			 to_number(to_char(fcd_installment_due_dt, 'Q')) td_quarter,
+			 'Q' || to_char(fcd_installment_due_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fcd_installment_due_dt)      td_month,
+			 to_char(fcd_installment_due_dt, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fcd_installment_due_dt)        td_day,
+			 fcd_installment_due_dt					    td_date
+		  FROM
+			 bi_fact_fichange_detail
+	     </SQL>
+        </View>
+        <Level name="Installment Due Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Day" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Installment Due Date" description="Installment Due Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FCD_FICHANGE_ID" highCardinality="false" name="Time (Calendar Processing Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+        <View alias="vw_fcd_cal_processing_dt">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fcd_fichange_id,
+			 EXTRACT(YEAR FROM fcd_processing_dt)       td_year,
+			 to_number(to_char(fcd_processing_dt, 'Q')) td_quarter,
+			 'Q' || to_char(fcd_processing_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fcd_processing_dt)      td_month,
+			 to_char(fcd_processing_dt, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fcd_processing_dt)        td_day,
+			 fcd_processing_dt					    td_date
+		  FROM
+			 bi_fact_fichange_detail
+	     </SQL>
+        </View>
+        <Level name="Calendar Year Processed" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Calendar Quarter Processed" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Calendar Month Processed" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Calendar Day Processed" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Calendar Date Processed" description="Calendar Date Processed">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FCD_FICHANGE_ID" highCardinality="false" name="Time (Financial Processing Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+        <View alias="vw_fcd_fin_processing_dt">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fcd_fichange_id,
+			 EXTRACT(YEAR FROM fcd_processing_dt)       td_year,
+			 to_number(to_char(fcd_processing_dt, 'Q')) td_quarter,
+			 'Q' || to_char(fcd_processing_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fcd_processing_dt)      td_month,
+			 to_char(fcd_processing_dt, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fcd_processing_dt)        td_day,
+			 fcd_processing_dt					    td_date
+		  FROM
+			 bi_fact_fichange_detail
+	     </SQL>
+        </View>
+        <Level name="Financial Year Processed" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Financial Quarter Processed" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Financial Month Processed" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Financial Day Processed" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Financial Date Processed" description="Financial Date Processed">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+     <Dimension type="TimeDimension" highCardinality="false" name="Policy_Transaction_PolicyEffDate_Dim" foreignKey="FCD_FICHANGE_ID" caption="Time (Associated Policy Effective Date)">
+     <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID" >
+        <View alias="vw_PT_PolicyEffDate_Dim">
+          <SQL dialect="generic">    
+			   SELECT
+				 FI.FCD_FICHANGE_ID,
+				 EXTRACT(YEAR FROM POD.POD_POLICY_EFF_DATE)       td_year,
+				 to_number(to_char(POD.POD_POLICY_EFF_DATE, 'Q')) td_quarter,
+				 'Q' || to_char(POD.POD_POLICY_EFF_DATE, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM POD.POD_POLICY_EFF_DATE)      td_month,
+				 to_char(POD.POD_POLICY_EFF_DATE, 'Mon')          td_month_name,
+				 EXTRACT(DAY FROM POD.POD_POLICY_EFF_DATE)        td_day,
+				 pod.pod_policy_eff_date					    	td_date
+			  FROM
+			  BI_DIM_POLICY_DETAIL POD, BI_FACT_FICHANGE_DETAIL FI
+			  WHERE POD.POD_POLICY_ID = FI.POD_POLICY_ID
+		</SQL>
+        </View>
+      <Level name="Policy Effective Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Year)" description="Policy Effective Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	  <Level name="Policy Effective Date Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Day)" description="Effective Day of the Associated Policy">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Effective Date" description="Policy Effective Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>	
+    <Dimension type="TimeDimension" highCardinality="false" foreignKey="FCD_FICHANGE_ID" name="Policy_Transaction_PolicyExpDate_Dim" caption="Time (Associated Policy Expiration Date)">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+        <View alias="vw_PT_PolicyExpDate_Dim">
+          <SQL dialect="generic">    
+			   SELECT
+				 FI.FCD_FICHANGE_ID,
+				 EXTRACT(YEAR FROM POD.POD_POLICY_EXP_DATE)       td_year,
+				 to_number(to_char(POD.POD_POLICY_EXP_DATE, 'Q')) td_quarter,
+				 'Q' || to_char(POD.POD_POLICY_EXP_DATE, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM POD.POD_POLICY_EXP_DATE)      td_month,
+				 to_char(POD.POD_POLICY_EXP_DATE, 'Mon')          td_month_name,
+				 EXTRACT(DAY FROM POD.POD_POLICY_EXP_DATE)        td_day,
+				 pod.pod_policy_exp_date					    	td_date
+			  FROM
+			  BI_DIM_POLICY_DETAIL POD, BI_FACT_FICHANGE_DETAIL FI
+			  WHERE POD.POD_POLICY_ID = FI.POD_POLICY_ID
+		</SQL>
+        </View>
+      <Level name="Policy Expiration Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Year)" description="Policy Expiration Date Year">
+	  <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	</Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	   <Level name="Policy Expiration Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Day)" description="Expiration Day of the Associated Policy">
+	   <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	</Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Expiration Date" description="Policy Expiration Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+   <Dimension type="TimeDimension" highCardinality="false" foreignKey="FCD_FICHANGE_ID" name="Billing_Transaction_GLedgerDate_Dim" caption="General Ledger Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FCD_FICHANGE_ID">
+        <View alias="vw_bt_GLedgerDate_Dim">
+          <SQL dialect="generic">    
+			   SELECT
+				 FI.FCD_FICHANGE_ID,
+				 EXTRACT(YEAR FROM BT.BT_GLEDGER_DT)       td_year,
+				 to_number(to_char(BT.BT_GLEDGER_DT, 'Q')) td_quarter,
+				 'Q' || to_char(BT.BT_GLEDGER_DT, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM BT.BT_GLEDGER_DT)      td_month,
+				 to_char(BT.BT_GLEDGER_DT, 'Mon')          td_month_name,
+				 EXTRACT(DAY FROM BT.BT_GLEDGER_DT)        td_day,
+				 bt.bt_gledger_dt					   td_date
+			  FROM
+			  BI_DIM_BILLING_TRX BT, BI_FACT_FICHANGE_DETAIL FI
+			  WHERE BT.BT_ID = FI.BT_FITRANSACTION_ID
+		</SQL>
+       </View>
+      <Level name="GL Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="GL Date (Year)" description="General Ledger Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="GL Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="GL Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	</Annotations>
+      </Level>
+      <Level name="GL Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="GL Date (Month)" description="Name of the Month">
+	   <Annotations>
+	 <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	 </Annotations>
+      </Level>
+	  <Level name="GL Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="GL Date (Day)" description="Effective Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="GL Date" description="GL Date">
+        </Level>
+    </Hierarchy>
+  </Dimension> 
+    <Measure name="FIChange_Count" column="FCD_FICHANGE_ID" internalType="long" datatype="Numeric" formatString="#,###" aggregator="count" caption="Transaction Count">
+    </Measure>
+    <Measure name="FIChange_Amount" column="FCD_CHANGE_AMT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Transaction Amount">
+    </Measure>
+  </Cube>
+  
+  <Cube name="BILLING_FITRANSACTION_CUBE" caption="Billing Financial Transaction Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_FITRANSACTION_DETAIL">
+	<SQL dialect="generic">
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_FITRANSACTION_DETAIL.PA_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Billing_Batch_Dim" name="Billing_Batch_Dim" foreignKey="BB_BATCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Partner/Agent" name="Partner/Agent" foreignKey="PA_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_Type_Dim" name="Policy_Transaction_Type_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Associated_Policy_Dim" name="Associated_Policy_Dim" foreignKey="PT_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    
+
+   <!-- <DimensionUsage source="Billing_Batch_PostedDate_Dim" name="Billing_Batch_PostedDate_Dim" foreignKey="BB_BATCH_ID" highCardinality="false">
+    </DimensionUsage> 
+    <DimensionUsage source="Billing_Batch_ProcessedDate_Dim" name="Billing_Batch_ProcessedDate_Dim" foreignKey="BB_BATCH_ID" highCardinality="false">
+
+    </DimensionUsage> -->
+	<Dimension visible="true" highCardinality="false" name="Last Updated Date" caption="Last Updated Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Last Updated Dates">
+        <Level name="Last Updated Date" visible="true" column="FT_LAST_UPDATED_DT" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Last Updated Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="FINANCIAL_TRANSACTION" caption="Financial Transactions" description="Financial Transactions">
+      <Hierarchy hasAll="true">
+        <Level name="FT_TRANSACTION_TYPE" column="FT_TRANSACTION_TYPE" nameColumn="FT_TRANSACTION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Transaction Type" description="Type of Transaction( Cash Post/Cash Apply/Write Off etc.)">
+        </Level>
+        <Level name="FT_PAYMENT_TYPE" column="FT_PAYMENT_TYPE" nameColumn="FT_PAYMENT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Payment Type" description="Type of Payment (Cash/Check/CC/EFT etc.)">
+        </Level>
+        <Level name="FT_PAYMENT_DETAILS" column="FT_PAYMENT_DETAILS" nameColumn="FT_PAYMENT_DETAILS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Payment Details" description="Reference Details of ther Payment">
+        </Level>
+        <Level name="FT_POSTED_STATUS" column="FT_POSTED_STATUS" nameColumn="FT_POSTED_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Posted Status" description="Status of the Transaction">
+        </Level>
+        <Level name="FT_APPLY_STATUS" column="FT_APPLY_STATUS" nameColumn="FT_APPLY_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Apply Status" description="Apply Status of the Transaction">
+        </Level>
+        <Level name="FT_ID" column="FT_ID" type="Numeric" internalType="long"  uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Transaction ID" description="Unique Identifier for this Transaction">
+        </Level>
+	   <Level name="FT_DISBURSEMENT_TYPE" column="FT_DISBURSEMENT_TYPE" nameColumn="FT_DISBURSEMENT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Disbursement Type" description="Type of the Disbursement Transaction">
+        </Level>
+		<Level name="FT_ACCOUNTING_PERIOD" column="FT_ACCOUNTING_PERIOD" nameColumn="FT_ACCOUNTING_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Accounting Period" description="Accounting Period">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FT_ID" highCardinality="false" name="FT Effective Date" description="Financial Transaction Effective Date based on Calendar Year">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FT_ID">
+        <View alias="vw_ft_effective_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 ft_id,
+			 EXTRACT(YEAR FROM ft_effective_date)       td_year,
+			 to_number(to_char(ft_effective_date, 'Q')) td_quarter,
+			 'Q' || to_char(ft_effective_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM ft_effective_date)      td_month,
+			 to_char(ft_effective_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM ft_effective_date)        td_day,
+			 ft_effective_date                          td_date
+		  FROM
+			 bi_fact_fitransaction_detail
+	     </SQL>
+        </View>
+        <Level name="Effective Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Effective Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		 <Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Effective Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+		 <Level name="Effective Date Day" column="TD_DAY" type="Numeric" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+		</Level>
+        <Level name="Effective Date Date" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="TimeDimension" foreignKey="FT_ID" highCardinality="false" name="GL Posted Date" description="General Ledger Posted Date based on Calendar Year">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FT_ID">
+        <View alias="vw_ft_cal_gl_post_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 ft_id,
+			 EXTRACT(YEAR FROM ft_gl_post_date)       td_year,
+			 to_number(to_char(ft_gl_post_date, 'Q')) td_quarter,
+			 'Q' || to_char(ft_gl_post_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM ft_gl_post_date)      td_month,
+			 to_char(ft_gl_post_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM ft_gl_post_date)        td_day,
+			 ft_gl_post_date					  td_date
+		  FROM
+			 bi_fact_fitransaction_detail
+	     </SQL>
+        </View>		 
+        <Level name="GL Posted Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        <Annotations>
+ 	<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	</Annotations>
+	</Level>
+        <Level name="GL Posted Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+       
+	</Level>
+        <Level name="GL Posted Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+	</Annotations>
+	</Level>
+        <Level name="GL Posted Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="GL Posted Date" description="GL Posted Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+
+    <Dimension type="TimeDimension" foreignKey="FT_ID" highCardinality="false" name="FT Posted Date (Financial Year)" description="Financial Transaction Posted Date based on Financial Year">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FT_ID">
+        <View alias="vw_ft_fin_posted_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 ft_id,
+			 EXTRACT(YEAR FROM ft_posted_date)       td_year,
+			 to_number(to_char(ft_posted_date, 'Q')) td_quarter,
+			 'Q' || to_char(ft_posted_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM ft_posted_date)      td_month,
+			 to_char(ft_posted_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM ft_posted_date)        td_day,
+			 ft_posted_date					 td_date
+		  FROM
+			 bi_fact_fitransaction_detail
+	     </SQL>
+        </View>
+        <Level name="Posted Date (Financial Year)" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Financial Transaction Posted Date based on Financial Year">
+        <Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+		</Level>
+        <Level name="Posted Date (Financial Quarter)" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Financial Transaction Posted Date based on Financial Year">
+        <Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+		</Level>
+        <Level name="Posted Date (Financial Month)" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Financial Transaction Posted Date based on Financial Year">
+        <Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+		</Level>
+        <Level name="Posted Date (Financial Day)" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Financial Transaction Posted Day based on Financial Year">
+			<Annotations>
+	     <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	    </Annotations>
+        </Level>
+		<Level name="Posted Date (Financial Date)" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" foreignKey="FT_ID" highCardinality="false" name="FT Posted Date (Calendar Year)" description="Financial Transaction Posted Date based on Calendar Year">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FT_ID">
+        <View alias="vw_ft_cal_posted_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 ft_id,
+			 EXTRACT(YEAR FROM ft_posted_date)       td_year,
+			 to_number(to_char(ft_posted_date, 'Q')) td_quarter,
+			 'Q' || to_char(ft_posted_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM ft_posted_date)      td_month,
+			 to_char(ft_posted_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM ft_posted_date)        td_day,
+			 ft_posted_date 					 td_date
+		  FROM
+			 bi_fact_fitransaction_detail
+	     </SQL>
+        </View>
+        <Level name="Posted Date (Calendar Year)" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Posted Date (Calendar Quarter)" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Posted Date (Calendar Month)" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Posted Day (Calendar Day)" column="TD_DAY"  type="Numeric" uniqueMembers="false" levelType="TimeDays" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+	    </Level>
+	    <Level name="Posted Date (Calendar Date)" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Financial Transaction Posted Date based on Calendar Year">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+   <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="FT_ID"  name="Billing_Batch_PostedDate_Dim" caption="Batch Posted Date" >
+     <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="FT_ID" >
+        <View alias="vw_BB_PostedDate_Dim">
+         <SQL dialect="generic">    
+		  SELECT
+			 FI.FT_ID,
+			 EXTRACT(YEAR FROM BB.BB_BATCH_POSTED_DATE)       td_year,
+			 to_number(to_char(BB.BB_BATCH_POSTED_DATE, 'Q')) td_quarter,
+			 'Q' || to_char(BB.BB_BATCH_POSTED_DATE, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM BB.BB_BATCH_POSTED_DATE)      td_month,
+			 to_char(BB.BB_BATCH_POSTED_DATE, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM BB.BB_BATCH_POSTED_DATE)        td_day,
+			 bb.bb_batch_posted_date					    	td_date
+		  FROM
+		  BI_DIM_BILLING_BATCH BB, bi_fact_fitransaction_detail FI
+		  WHERE BB.BB_ID = FI.BB_BATCH_ID
+		 </SQL>
+        </View>
+      <Level name="Batch Posted Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Batch Posted Date (Year)" description="Batch Posted Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Batch Posted Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Batch Posted Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Posted Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Posted Date (Day)" description="Batch Posted Date">  
+ 	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Posted Date" description="Batch Posted Date">
+        </Level>
+     </Hierarchy>
+    </Dimension>
+	 <Dimension type="TimeDimension" highCardinality="false" foreignKey="FT_ID" name="Billing_Batch_ProcessedDate_Dim" caption="Batch Processed Date">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FT_ID" >
+      <View alias="vw_bb_ProcessedDate_Dim">
+         <SQL dialect="generic">    
+		  SELECT
+			 FI.FT_ID,
+			 EXTRACT(YEAR FROM BB.BB_BATCH_PROCESSED_DATE)       td_year,
+			 to_number(to_char(BB.BB_BATCH_PROCESSED_DATE, 'Q')) td_quarter,
+			 'Q' || to_char(BB.BB_BATCH_PROCESSED_DATE, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM BB.BB_BATCH_PROCESSED_DATE)      td_month,
+			 to_char(BB.BB_BATCH_PROCESSED_DATE, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM BB.BB_BATCH_PROCESSED_DATE)        td_day,
+			 bb.bb_batch_processed_date					   td_date
+		  FROM
+		  BI_DIM_BILLING_BATCH BB, bi_fact_fitransaction_detail FI
+		  WHERE BB.BB_ID = FI.BB_BATCH_ID
+		 </SQL>
+        </View>
+      <Level name="Batch Processed Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Batch Processed Date (Year)" description="Batch Processed Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Batch Processed Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Batch Processed Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Batch Processed Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Batch Processed Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	  <Level name="Batch Processed Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Processed Day (Day)" description="Batch Processed Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+	  </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Batch Processed Date" description="Batch Processed Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+    <Measure name="FT_AMOUNT" column="FT_AMOUNT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Transaction Amount">
+    </Measure>
+    <Measure name="Batch Total Items" column="BB_BATCH_TOTAL_ITEMS" datatype="Numeric" formatString="#,###" aggregator="count" caption="Batch Transactions Count">
+    </Measure>
+    <!-- <Measure name="Batch Total Amount" column="BB_BATCH_TOTAL_AMOUNT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Batch Total Amount">
+    </Measure> -->
+	<Measure name="Total Posted Amount" column="BB_POSTED_AMOUNT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Total Posted Amount">
+    </Measure>
+  </Cube>
+  <Cube name="BILLING_SNAPSHOT_CUBE" caption="Billing Snapshot Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_BILLING_SNAPSHOT">
+    </Table>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing Account" caption="Billing Account" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" highCardinality="false" name="Snapshot Date">
+      <Hierarchy hasAll="true">
+        <Level name="Snapshot Date" column="BS_SNAPSHOT_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Policy Transaction Type">
+      <Hierarchy hasAll="true">
+        <Level name="Policy Transaction Type" column="BS_TRANS_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Policy Number">
+      <Hierarchy hasAll="true">
+        <Level name="Policy Number" column="BS_POLICY_NBR" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Billable Amount" column="BS_TOTAL_BILL" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Billable Amount" visible="true">
+    </Measure>
+    <Measure name="Current Due" column="BS_CURRENT_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Current Due" visible="true">
+    </Measure>
+    <Measure name="Past Due" column="BS_PAST_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Past Due" visible="true">
+    </Measure>
+    <Measure name="Total Due" column="BS_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Total Due" visible="true">
+    </Measure>
+    <Measure name="Overdue 0-30" column="BS_OVERDUE_0_30" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 0-30" visible="true">
+    </Measure>
+    <Measure name="Overdue 31-60" column="BS_OVERDUE_31_60" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 31-60" visible="true">
+    </Measure>
+    <Measure name="Overdue 61-90" column="BS_OVERDUE_61_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 61-90" visible="true">
+    </Measure>
+    <Measure name="More than 90" column="BS_OVERDUE_BEYOND_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="More than 90" visible="true">
+    </Measure>
+    <Measure name="Future Due" column="BS_FUTURE_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Future Due" visible="true">
+    </Measure>
+    <Measure name="Unapplied Cash" column="BS_UNAPPLIED_CASH" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Unapplied Cash" visible="true">
+    </Measure>
+    <Measure name="Statutory Billable Amount" column="BS_STAT_TOTAL_BILL" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Current Due" column="BS_STAT_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Past Due" column="BS_STAT_PAST_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Total Due" column="BS_STAT_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 0-30" column="BS_STAT_OVERDUE_0_30" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 31-60" column="BS_STAT_OVERDUE_31_60" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 61-90" column="BS_STAT_OVERDUE_61_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 90+" column="BS_OVERDUE_BEYOND_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+  </Cube>
+  <Cube name="BILLING_FITEM_CUBE" caption="Billing Debit-Credit Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_FITEM_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_FITEM_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Line of Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Dim" name="Billing_Transaction_Dim" foreignKey="BT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Payment_Type_Dim" name="Billing_Transaction_Payment_Type_Dim" foreignKey="BT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_BillingType_Dim" name="Policy_Transaction_BillingType_Dim" foreignKey="POLT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PaymentPlan_Dim" name="Policy_Transaction_PaymentPlan_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_Type_Dim" name="Policy_Transaction_Type_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Associated_Policy_Dim" name="Associated_Policy_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+   <!-- <DimensionUsage source="Policy_Transaction_PolicyEffDate_Dim" name="Policy_Transaction_PolicyEffDate_Dim" foreignKey="POD_POLICY_ID" highCardinality="false"> 
+    </DimensionUsage> 
+    <DimensionUsage source="Policy_Transaction_PolicyExpDate_Dim" name="Policy_Transaction_PolicyExpDate_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage> -->
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Partner/Agent" name="Partner/Agent" foreignKey="PE_POLICY_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+	<Dimension visible="true" highCardinality="false" name="Last Updated Date" caption="Last Updated Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Last Updated Dates">
+        <Level name="Last Updated Date" visible="true" column="FID_LAST_UPDATED_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Last Updated Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Debit_Credit" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+      <Hierarchy hasAll="true">
+        <Level name="Debit_Credit" column="FID_DEBIT_CREDIT" nameColumn="FID_DEBIT_CREDIT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Aging Status" caption="Aging Status">
+      <Hierarchy hasAll="true">
+        <Level name="Aging Status" column="FID_AGING_STATUS_DAYS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description=" Aging Status of the Financial">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Earning Status" caption="Earning Status">
+      <Hierarchy hasAll="true">
+        <Level name="Earning Status" column="FID_EARNING_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description=" Earning Status of the Financial">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Installment_Number_Dim" caption="Installment Number">
+      <Hierarchy hasAll="true">
+        <Level name="Installment Number" column="FID_INSTALLMENT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Installment Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="FItem_Category" caption="Category" description="The Category this Financial Transaction belongs to">
+      <Hierarchy hasAll="true">
+        <Level name="FItem_Category" column="FID_CATEGORY_NAME" nameColumn="FID_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Category" description="The Category this Financial Transaction belongs to">
+        </Level>
+        <Level name="FItem_Sub_Category" column="FID_SUB_CATEGORY_NAME" nameColumn="FID_SUB_CATEGORY_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="Sub Category" description="The Sub-Category this Financial Transaction belongs to">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" foreignKey="FID_FITEM_ID" highCardinality="false" name="Time (Agency Due Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID">
+        <View alias="vw_fid_agency_due_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fid_fitem_id,
+			 EXTRACT(YEAR FROM fid_agency_due_date)       td_year,
+			 to_number(to_char(fid_agency_due_date, 'Q')) td_quarter,
+			 'Q' || to_char(fid_agency_due_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fid_agency_due_date)      td_month,
+			 to_char(fid_agency_due_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fid_agency_due_date)        td_day,
+			 fid_agency_due_date					 td_date
+		  FROM
+			 bi_fact_fitem_detail
+	     </SQL>
+        </View>
+        <Level name="Agency Due Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Agency Due Date Day" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	    <Level name="Agency Due Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Agency Due Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" foreignKey="FID_FITEM_ID" highCardinality="false" name="Time(Billing Due Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID">
+        <View alias="vw_fid_installment_due_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fid_fitem_id,
+			 EXTRACT(YEAR FROM fid_installment_due_date)       td_year,
+			 to_number(to_char(fid_installment_due_date, 'Q')) td_quarter,
+			 'Q' || to_char(fid_installment_due_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fid_installment_due_date)      td_month,
+			 to_char(fid_installment_due_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fid_installment_due_date)        td_day,
+			 fid_installment_due_date					 td_date
+		  FROM
+			 bi_fact_fitem_detail
+	     </SQL>
+        </View>
+        <Level name="Installment Due Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Installment Due Date Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Installment Due Date" description="Installment Due Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" foreignKey="FID_FITEM_ID" highCardinality="false" name="Time (Actual Due Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID">
+        <View alias="vw_fid_actual_due_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fid_fitem_id,
+			 EXTRACT(YEAR FROM fid_actual_due_date)       td_year,
+			 to_number(to_char(fid_actual_due_date, 'Q')) td_quarter,
+			 'Q' || to_char(fid_actual_due_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fid_actual_due_date)      td_month,
+			 to_char(fid_actual_due_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fid_actual_due_date)        td_day,
+			 fid_actual_due_date					 td_date
+		  FROM
+			 bi_fact_fitem_detail
+	     </SQL>
+        </View>
+        <Level name="Actual Due Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Actual Due Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Actual Due Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Actual Due Date Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	    <Level name="Actual Due Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Actual Due Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" foreignKey="FID_FITEM_ID" highCardinality="false" name="Time (Invoice Date)">
+      <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID">
+        <View alias="vw_fid_billed_date">
+		 <SQL dialect="generic">    
+		   SELECT
+			 fid_fitem_id,
+			 EXTRACT(YEAR FROM fid_billed_date)       td_year,
+			 to_number(to_char(fid_billed_date, 'Q')) td_quarter,
+			 'Q' || to_char(fid_billed_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM fid_billed_date)      td_month,
+			 to_char(fid_billed_date, 'Mon')          td_month_name,
+			 EXTRACT(DAY FROM fid_billed_date)        td_day,
+			 fid_billed_date					  td_date
+		  FROM
+			 bi_fact_fitem_detail
+	     </SQL>
+        </View>
+        <Level name="Processing Date Year" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Processing Date Quarter" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Processing Date Month" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+		</Annotations>
+        </Level>
+        <Level name="Processing Date Day" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+		<Annotations>
+		<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+		</Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Processing Date" description="Processing Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" name="Effective Date" caption="Effective Date" description="Effective Date of the Financial">
+      <Hierarchy hasAll="true">
+      <Level name="Financial Effective Date" column="FID_EFF_DATE" type="Date" levelType="Regular" hideMemberIf="Never" description="Effective Date of the Financial">
+        </Level>
+		</Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" name="Accounting Period" caption="Accounting Period" description="Accounting Period of the Financial">
+      <Hierarchy hasAll="true">
+      <Level name="FID_ACCOUNTING_PERIOD" column="FID_ACCOUNTING_PERIOD" nameColumn="FID_ACCOUNTING_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Accounting Period" description="Accounting Period">
+        </Level>
+		</Hierarchy>
+    </Dimension>
+	 <Dimension type="TimeDimension" highCardinality="false" name="Policy_Transaction_PolicyEffDate_Dim" foreignKey="FID_FITEM_ID" caption="Time (Associated Policy Effective Date)">
+     <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID" >
+        <View alias="vw_pt_fitem_PolicyEffDate_Dim">
+          <SQL dialect="generic">    
+			   SELECT
+				 FI.FID_FITEM_ID,
+				 EXTRACT(YEAR FROM POD.POD_POLICY_EFF_DATE)       td_year,
+				 to_number(to_char(POD.POD_POLICY_EFF_DATE, 'Q')) td_quarter,
+				 'Q' || to_char(POD.POD_POLICY_EFF_DATE, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM POD.POD_POLICY_EFF_DATE)      td_month,
+				 to_char(POD.POD_POLICY_EFF_DATE, 'Mon')          td_month_name,
+				 EXTRACT(DAY FROM POD.POD_POLICY_EFF_DATE)        td_day,
+				 pod.pod_policy_eff_date					    	td_date
+			  FROM
+			  BI_DIM_POLICY_DETAIL POD, BI_FACT_FITEM_DETAIL FI
+			  WHERE POD.POD_POLICY_ID = FI.POD_POLICY_ID
+		</SQL>
+        </View>
+      <Level name="Policy Effective Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Year)" description="Policy Effective Date Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Effective Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	  <Level name="Policy Effective Date Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Effective Date (Day)" description="Effective Day of the Associated Policy">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Effective Date" description="Policy Effective Date">
+        </Level>
+    </Hierarchy>
+    </Dimension>	
+     <Dimension type="TimeDimension" highCardinality="false" foreignKey="FID_FITEM_ID" name="Policy_Transaction_PolicyExpDate_Dim" caption="Time (Associated Policy Expiration Date)">
+    <Hierarchy hasAll="true" allMemberName="All Periods" primaryKey="FID_FITEM_ID">
+        <View alias="vw_pt_fitem_PolicyExpDate_Dim">
+          <SQL dialect="generic">    
+			   SELECT
+				 FI.FID_FITEM_ID,
+				 EXTRACT(YEAR FROM POD.POD_POLICY_EXP_DATE)       td_year,
+				 to_number(to_char(POD.POD_POLICY_EXP_DATE, 'Q')) td_quarter,
+				 'Q' || to_char(POD.POD_POLICY_EXP_DATE, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM POD.POD_POLICY_EXP_DATE)      td_month,
+				 to_char(POD.POD_POLICY_EXP_DATE, 'Mon')          td_month_name,
+				 EXTRACT(DAY FROM POD.POD_POLICY_EXP_DATE)        td_day,
+				 pod.pod_policy_exp_date					    	td_date
+			  FROM
+			  BI_DIM_POLICY_DETAIL POD, BI_FACT_FITEM_DETAIL FI
+			  WHERE POD.POD_POLICY_ID = FI.POD_POLICY_ID
+		</SQL>
+        </View>
+      <Level name="Policy Expiration Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Year)" description="Policy Expiration Date Year">
+	  <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	</Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Quarter)" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Policy Expiration Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Month)" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+	   <Level name="Policy Expiration Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Expiration Date (Day)" description="Expiration Day of the Associated Policy">
+	   <Annotations>
+	<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	</Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Assoc. Policy Expiration Date" description="Policy Expiration Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+    <Measure name="FItem_Count" column="FID_FITEM_ID" internalType="long" datatype="Numeric" formatString="#,###" aggregator="count" caption="Financial Count">
+    </Measure>
+    <Measure name="FItem_Initial_Amount" column="FID_INITIAL_DUE_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Initial Amount">
+    </Measure>
+    <Measure name="FItem_Balance_Amount" column="FID_BALANCE_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Balance Amount">
+    </Measure>
+    <Measure name="FItem_Earned_Amount" column="FID_EARNED_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Earned Amount">
+    </Measure>
+    <Measure name="FItem_Unearned_Amount" column="FID_UNEARNED_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Unearned Amount">
+    </Measure>
+    <Measure name="FItem_Paid_Amount" column="FID_PAID_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Paid Amount">
+    </Measure>
+  </Cube>
+  <Cube name="BILLING_FITEM_AGING_CUBE" caption="Aging Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_FITEM_DETAIL">
+    </Table>
+    <DimensionUsage source="Line of Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Dim" name="Billing_Transaction_Dim" foreignKey="BT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Payment_Type_Dim" name="Billing_Transaction_Payment_Type_Dim" foreignKey="BT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_BillingType_Dim" name="Policy_Transaction_BillingType_Dim" foreignKey="POLT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PaymentPlan_Dim" name="Policy_Transaction_PaymentPlan_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_Type_Dim" name="Policy_Transaction_Type_Dim" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Associated_Policy_Dim" name="Associated_Policy_Dim" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Partner/Agent" name="Partner/Agent" foreignKey="PE_POLICY_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" highCardinality="false" name="Debit_Credit" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+      <Hierarchy hasAll="true">
+        <Level name="Debit_Credit" column="FID_DEBIT_CREDIT" nameColumn="FID_DEBIT_CREDIT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Aging Status" caption="Aging Status">
+      <Hierarchy hasAll="true">
+        <Level name="Aging Status" column="FID_AGING_STATUS_DAYS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description=" Aging Status of the Financial">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Installment_Number_Dim" caption="Installment Number">
+      <Hierarchy hasAll="true">
+        <Level name="Installment Number" column="FID_INSTALLMENT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Installment Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="FItem_Category" caption="Category" description="The Category this Financial Transaction belongs to">
+      <Hierarchy hasAll="true">
+        <Level name="FItem_Category" column="FID_CATEGORY_NAME" nameColumn="FID_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Category" description="The Category this Financial Transaction belongs to">
+        </Level>
+        <Level name="FItem_Sub_Category" column="FID_SUB_CATEGORY_NAME" nameColumn="FID_SUB_CATEGORY_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="Sub Category" description="The Sub-Category this Financial Transaction belongs to">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="FItem_Count" column="FID_FITEM_ID" internalType="long" datatype="Numeric" formatString="#,###" aggregator="count" caption="Financial Count">
+    </Measure>
+    <Measure name="FItem_Initial_Amount" column="FID_INITIAL_DUE_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Initial Amount">
+    </Measure>
+    <Measure name="FItem_Balance_Amount" column="FID_BALANCE_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Balance Amount">
+    </Measure>
+    <Measure name="FItem_Earned_Amount" column="FID_EARNED_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Earned Amount">
+    </Measure>
+    <Measure name="FItem_Unearned_Amount" column="FID_UNEARNED_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Unearned Amount">
+    </Measure>
+    <Measure name="FItem_Paid_Amount" column="FID_PAID_AMT" datatype="Numeric" formatString="$#,###,###.#####" aggregator="sum" caption="Paid Amount">
+    </Measure>
+  </Cube>
+</Schema>

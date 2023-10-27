@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dashboard>
+<title>BIAssetAnalysisEntityDashboard</title>
+<heading/>
+<enableWidgetPrinting>false</enableWidgetPrinting>
+<documentation>
+<author>admin</author>
+<description/>
+<icon/>
+</documentation>
+<template-ref>xul/10-3-by-3.xul</template-ref>
+<theme-ref>0-Sapphire</theme-ref>
+<layout>
+<overlay xmlns:pho="http://www.pentaho.com" pho:fixie="withme">
+<box id="Panel_1" pho:title="Untitled 1" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_2" pho:title="Untitled 2" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_3" pho:title="Untitled 3" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_4" pho:title="Untitled 4" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_5" pho:title="Untitled 5" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_6" pho:title="Untitled 6" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_7" pho:title="Untitled 7" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_8" pho:title="Untitled 8" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_9" pho:title="Untitled 9" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_10" pho:title="Untitled 10"/>
+<box id="Label_1" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_2" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_3" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_4" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_5" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_6" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_7" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_8" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_9" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_10" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="titlebar" hidden="false" collapsed="false" width="0" type="pagetitle" title="" height="23"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="FilterPanel" hidden="true" collapsed="false" width="0" type="povpanel" title="" height="100"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="hbox3" flex="1"/><box id="hbox3" type="layout"/></overlay>
+</layout>
+<parameters>
+</parameters>
+<widgetJavascript><![CDATA[%5B%5D]]></widgetJavascript>
+<widgets/></dashboard>

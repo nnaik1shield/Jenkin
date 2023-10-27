@@ -1,0 +1,4 @@
+1. Store the files - /home/oracle/scripts/DataValidationObjectvsDataMart/..
+2. Update the variable '%_API%' to the API Schema name of the Enviroment (Eg - BASEINT_API) for the file - create_dr_data_reconcile_datamart_table.sql
+3. Update the variable '%OSSCHEMA_%' to the schema header of the Enviroment for data_validation_process_datamart.sql (Eg - BASEINT_)
+4. Configure datavalidation.sh file to run as per cron specifications. 

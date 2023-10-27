@@ -1,0 +1,427 @@
+<Schema name="Claim_Transaction_Cubes">
+ <Dimension visible="true" highCardinality="false" name="Customer">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Policy">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL">
+      </Table>
+	  <Level name="Policy Status" column="POD_POLICY_STATUS"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Status">
+      </Level>
+      <Level name="Policy Number" column="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+	   <Property name="Policy Risk State" column="POD_PRIMARY_RISK_STATE" type="String">
+        </Property>
+		 <Property name="Policy Effective Date" column="POD_POLICY_EFF_DATE" type="String">
+        </Property>
+		 <Property name="Policy Expiration Date" column="POD_POLICY_EXP_DATE" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+ 
+ <Dimension visible="true" highCardinality="false" name="Creator">
+    <Hierarchy hasAll="true" allMemberName="Creator" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL">
+      </Table>
+	  <Level name="Creator Role" column="UD_USER_ROLE"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Creator Role">
+      </Level>
+	  <Level name="Creator Name" column="UD_USER_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Creator Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+<Dimension visible="true" highCardinality="false" name="Inspection Done By">
+    <Hierarchy hasAll="true" allMemberName="Inspector" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL">
+      </Table>
+      <Level name="Inspector Role" column="UD_USER_ROLE"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Inspector Role">
+      </Level>
+	  <Level name="Inspector Name" column="UD_USER_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Inspector Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+<Dimension visible="true" highCardinality="false" name="Processed By">
+    <Hierarchy hasAll="true" allMemberName="Creator" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL">
+      </Table>
+      <Level name="Processor Role" column="UD_USER_ROLE"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Processor Role">
+      </Level>
+	  <Level name="Processor Name" column="UD_USER_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Processor Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>
+ 
+ <Dimension visible="true" highCardinality="false" name="Assigned To Vendor">
+    <Hierarchy hasAll="true" allMemberName="Assigned To Vendor" primaryKey="ETD_ENTITY_ID">
+      <Table name="BI_DIM_OC_ENTITY_DETAIL">
+      </Table>
+      <Level name="Vendor Type Name" column="ETD_ENTITY_TYPE_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Vendor Type Name">
+      </Level>
+	  <Level name="Vendor Name" column="ETD_ENTITY_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Vendor Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+ <Dimension visible="true" highCardinality="false" name="Payor">
+    <Hierarchy hasAll="true" allMemberName="Payor" primaryKey="ETD_ENTITY_ID">
+      <Table name="BI_DIM_OC_ENTITY_DETAIL">
+      </Table>
+      <Level name="Payor Type Name" column="ETD_ENTITY_TYPE_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payor Type Name">
+      </Level>
+	  <Level name="Payor Name" column="ETD_ENTITY_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payor Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>  
+  
+ <Dimension visible="true" highCardinality="false" name="Payee">
+    <Hierarchy hasAll="true" allMemberName="Payee" primaryKey="ETD_ENTITY_ID">
+      <Table name="BI_DIM_OC_ENTITY_DETAIL">
+      </Table>
+      <Level name="Payee Type Name" column="ETD_ENTITY_TYPE_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payee Type Name">
+      </Level>
+	  <Level name="Payee Name" column="ETD_ENTITY_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payor Name">
+      </Level>
+      </Hierarchy>
+  </Dimension>    
+  
+<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Last Update Date" caption="Last Update Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Last Update Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Last Update Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Last Update Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Last Update Day" description="Creation Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Creation Date" caption="Creation Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Creation Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+ 
+ <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Effective Date" caption="Effective Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Effective Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Effective Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Effective Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Effective Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Recovery Check Date" caption="Recovery Check Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Recovery Check Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Recovery Check Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Recovery Check Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Recovery Check Day" description="Recovery Check Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Process Date" caption="Process Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Process Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Process Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Process Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Process Day" description="Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Inspection Date" caption="Inspection Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Inspection Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Inspection Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Inspection Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Inspection Day" description="Day of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Payment Invoice Date" caption="Payment Invoice Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Payment Invoice Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Payment Invoice Quarter" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Payment Invoice Month" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Payment Invoice Day" description="Day of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="claim_transaction_cube" caption="Claim Transaction Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_OC_CLAIM_TRX_DETAIL">
+    </Table>
+    <DimensionUsage source="Customer" name="Customer" caption="Customer" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Policy" name="Policy" caption="Customer" visible="true" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Creator" name="Creator" caption="Creator" visible="true" foreignKey="CT_CREATOR_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Inspection Done By" name="Inspection Done By" caption="Inspection Done By" visible="true" foreignKey="CT_INSPECTION_DONE_BY_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Processed By" name="Processed By" caption="Processed By" visible="true" foreignKey="CT_PROCESSED_BY_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Assigned To Vendor" name="Assigned To Vendor" caption="Assigned To Vendor" visible="true" foreignKey="CT_ASSIGNED_TO_VENDOR_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Payor" name="Payor" caption="Payor" visible="true" foreignKey="CT_PAYOR_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Payee" name="Payee" caption="Payee" visible="true" foreignKey="CT_PAYEE_ID" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Last Update Date" name="Last Update Date" caption="Last Update Date" visible="true" foreignKey="CT_LAST_UPD_DT" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Creation Date" name="Creation Date" caption="Creation Date" visible="true" foreignKey="CT_CREATION_DATE" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Effective Date" name="Effective Date" caption="Effective Date" visible="true" foreignKey="CT_EFF_DATE" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Recovery Check Date" name="Recovery Check Date" caption="Recovery Check Date" visible="true" foreignKey="CT_RECOVERY_CHECK_DATE" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Process Date" name="Process Date" caption="Process Date" visible="true" foreignKey="CT_PROCESS_DATE" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Inspection Date" name="Inspection Date" caption="Inspection Date" visible="true" foreignKey="CT_INSPECTION_DATE" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Payment Invoice Date" name="Payment Invoice Date" caption="Payment Invoice Date" visible="true" foreignKey="CT_PAYMENT_INVOICE_DATE" highCardinality="false">
+    </DimensionUsage>
+	<Dimension type="StandardDimension" highCardinality="false" name="Claim Number" caption="Claim Number">
+      <Hierarchy hasAll="true">
+        <Level name="Claim Number" column="CT_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="Payment Class Code" caption="Payment Class Code">
+      <Hierarchy hasAll="true">
+        <Level name="Payment Class Code" column="CT_PAYMENT_CLASS_CODE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Class Code">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="State" caption="State">
+      <Hierarchy hasAll="true">
+        <Level name="State" column="CT_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="State of the claim transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Type Name" caption="Type Name">
+      <Hierarchy hasAll="true">
+        <Level name="Type Name" column="CT_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Type Name">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Financial Category" caption="Financial Category">
+      <Hierarchy hasAll="true">
+        <Level name="Financial Category" column="CT_TRANSACTION_AMOUNT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Financial Category">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Sub Category" caption="Sub Category">
+      <Hierarchy hasAll="true">
+        <Level name="Sub Category" column="CT_SUB_CATEGORY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Sub Category">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	
+	<Measure name="Outstanding Reserve" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Outstanding Reserve" description="Outstanding Reserve" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_OUTSTANDING_RESERVE IS NULL THEN 0 ELSE CT_OUTSTANDING_RESERVE END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Estimated Loss Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Estimated Loss Amount" description="Estimated Loss Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_ESTIMATED_LOSS_AMOUNT IS NULL THEN 0 ELSE CT_ESTIMATED_LOSS_AMOUNT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Payments" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Payments" description="Payments" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_PAYMENTS IS NULL THEN 0 ELSE CT_PAYMENTS END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Recoveries" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Recoveries" description="Recoveries" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_RECOVERIES IS NULL THEN 0 ELSE CT_RECOVERIES END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Outstanding Recoveries" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Outstanding Recoveries" description="Outstanding Recoveries" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_OUTSTANDING_RECOVERIES IS NULL THEN 0 ELSE CT_OUTSTANDING_RECOVERIES END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	<Measure name="Incurred Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Incurred Amount" description="Incurred Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_INCURRED IS NULL THEN 0 ELSE CT_INCURRED END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Transaction Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Transaction Amount" description="Transaction Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_TRANSACTION_AMOUNT IS NULL THEN 0 ELSE CT_TRANSACTION_AMOUNT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Previous Outstanding Reserve" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Previous Outstanding Reserve" description="Previous Outstanding Reserve" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CT_PREV_OUTSTANDING_RESERVE IS NULL THEN 0 ELSE CT_PREV_OUTSTANDING_RESERVE END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+  </Cube>
+ </Schema>

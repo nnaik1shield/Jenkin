@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="joe" updatedBy="admin" created="2013-07-13T13:29:41" update="2020-05-29T07:15:48.131-04:00">
+        <path name="Financial Ledger Cube" folder="/home/OneShield/Cubes/Billing/Financial Ledger Cube.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Dragon Billing Cubes" cube="BILLING_FICHANGE_CUBE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyCells="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[FIChange_Amount]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Writing Company].[Writing Company]" showSubtotal="true" sortOrderEnum="ASC"/>
+            <attribute formula="[Billing_Account_Dim].[Account Type]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[FItem_Category].[FItem_Category]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="false" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="210,164,143"/>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

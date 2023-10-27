@@ -1,0 +1,701 @@
+create or replace package PKG_DB_BILLING_PAYABLE
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_BILLING_PAYABLE.PSK  $
+-- $Revision:   1.9  $
+--   $Author:   temithal  $
+--     $Date:   30 Dec 2011 13:26:34  $
+-------------
+
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+type t_fitem_billingaccount_tab is table of object.object_id%type index by varchar2(500);   --OSPRODUCT-11625
+
+-- LXPRODUCT-449
+type r_payable_fitem is record
+(
+     earned_amt         number, 
+     unearned_amt       number,
+     fitem_signage      number,
+     balance_amt        number, 
+     installment_id     number,
+     earning_status     number,
+     policy_trx_id      object.object_id%type,
+     billing_acc_id     object.object_id%type,
+     earning_date       varchar2(500)
+);
+
+type t_payable_fitem is table of r_payable_fitem index by varchar2(100);
+-- end LXPRODUCT-449
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Objects
+gObjType_FITransaction        constant object_type.object_type_id%type               :=   2365046;
+gObjType_FItem                constant object_type.object_type_id%type               :=   2365246;
+gObjType_FIChange             constant object_type.object_type_id%type               :=   2365146;
+gObjType_BillingAccount       constant object_type.object_type_id%type               :=   2365346;
+gObjType_BillingAccountTrxSet constant object_type.object_type_id%type               :=   2365946;
+gObjTypeDisbursementProfile   constant object_type.object_type_id%type               :=   2384646;
+gObjTypeAgencyRecon           constant object_type.object_type_id%type               :=   2367646;
+gObjType_ReconRollup          constant object_type.object_type_id%type               :=   2367746;
+gObjType_ReconRollupMember    constant object_type.object_type_id%type               :=   2367846;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccountTransactionSet/FITransactionSet
+gbv_BATrxSet_RefDisbProfile   constant business_variable.business_variable_id%type   :=   31711146;
+gbv_BillAccTrxSet_ParentAcc   constant business_variable.business_variable_id%type   :=   29713046;
+gbv_FITrxSetBatchType         constant business_variable.business_variable_id%type   :=   29707346;
+gbv_FITrxSetEntryType         constant business_variable.business_variable_id%type   :=   29707546;
+gbv_FITrxSetEnteredby         constant business_variable.business_variable_id%type   :=   32264940;
+gbv_FITrxSetDatePosted        constant business_variable.business_variable_id%type   :=   29707646;
+gbv_FITrxSetExternalBatchId   constant business_variable.business_variable_id%type   :=   29707446;
+gbv_FITrxSetPayableReviewed   constant business_variable.business_variable_id%type   :=   33873346;
+gbv_FITrxSetPayableReviewDt   constant business_variable.business_variable_id%type   :=   33873446;
+-- Generic Object Status BV added for OSBILLING-61 GCNA requiremen
+gbv_BillAcc_Status            constant business_variable.business_variable_id%type   :=   210153;
+gbv_BatrxsetCreatedBatch      constant business_variable.business_variable_id%type   :=   31756446;
+gbv_BillAcc_CurrSuspension    constant business_variable.business_variable_id%type   :=   33914946;
+gbv_FITrxSetSubType           constant business_variable.business_variable_id%type   :=   34072646; --osbilling-4901
+gbv_BillAccTrxSet_Description constant business_variable.business_variable_id%type        :=   31875346;
+gbv_BATrxSet_PmntCollctedbySrc constant business_variable.business_variable_id%type  :=   34057046;
+
+--Task OSPRODUCT-1141 start
+gbv_TaskAssociatedObjValue     constant    business_variable.business_variable_id%type  := 32262546;
+gbv_TaskTypeID_SecTrigger      constant    task_type.task_type_id%type :=14546;
+--Task OSPRODUCT-1141 end
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FItransaction
+gbv_FITransaction_ProcessDate constant business_variable.business_variable_id%type   :=   29708446;
+gbv_FITrxRefAssociatedFItem   constant business_variable.business_variable_id%type   :=   31689946;
+gbv_FITrx_AssociateFItem      constant business_variable.business_variable_id%type   :=   31689946;
+gbv_FITransaction_Type        constant business_variable.business_variable_id%type   :=   29708346;
+gbv_FITrxTransferReason    constant business_variable.business_variable_id%type   :=   31756546;--OSPRODUCT-406
+
+--OSBILLING-7635
+gbv_FITransactionType         constant business_variable.business_variable_id%type   :=   29708346;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccount
+gbv_BillingAccountParent      constant business_variable.business_variable_id%type   :=   29704546;
+gbv_BillingAccountType        constant business_variable.business_variable_id%type   :=   29711346;
+gbv_BA_PreferredDisbProf      constant business_variable.business_variable_id%type   :=   31705546;
+gbv_BA_RefMstRecntDisbBatch   constant business_variable.business_variable_id%type   :=   33844246;
+gbv_BA_RefMstRecntDisbDate    constant business_variable.business_variable_id%type   :=   34110046;  --20180725 Cheryl vaultdev-9710
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--FIChange
+
+gbv_FIChange_RelatedFitem     constant business_variable.business_variable_id%type   :=   29704046;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--FItem
+gbv_Fitem_processing_status   constant business_variable.business_variable_id%type   :=   29711146;
+gbv_fitem_amount_due          constant business_variable.business_variable_id%type   :=   29710546;
+gbv_fitem_InitialAmountDue    constant business_variable.business_variable_id%type   :=   30749646;
+gbv_fitem_earned_amount       constant business_variable.business_variable_id%type   :=   31706446;
+gbv_fitem_unearned_amount     constant business_variable.business_variable_id%type   :=   31706546;
+gbv_fitem_payable_due_date    constant business_variable.business_variable_id%type   :=   31709046;
+gbv_fitem_EarningStatus       constant business_variable.business_variable_id%type   :=   31709146;
+gbv_fitem_ParentAccount       constant business_variable.business_variable_id%type   :=   29704146;
+gbv_fitem_paid_amount         constant business_variable.business_variable_id%type   :=   31710246;
+gbv_FItem_associatedBatch     constant business_variable.business_variable_id%type   :=   32005946;
+gbv_FItem_RefOffsetFitem      constant business_variable.business_variable_id%type   :=   32039646;
+gbv_FItem_RefCreatrFIChnge    constant business_variable.business_variable_id%type   :=   31754446;
+gbv_FItem_associatedPolicy    constant business_variable.business_variable_id%type   :=   29721246;
+gbv_FItem_associatedPolicyTRX constant business_variable.business_variable_id%type   :=   29748446;
+gbv_FItem_belongsTo           constant business_variable.business_variable_id%type   :=   29748546;
+gbv_FItem_Debit_Credit        constant business_variable.business_variable_id%type   :=   29710046;
+gbv_FItem_Category            constant business_variable.business_variable_id%type   :=   29710146;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Usersession
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- DragonUser
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Policy
+gbv_WritingCompany                constant business_variable.business_variable_id%type   :=   29789401;
+
+--OSBilling:1397 Added below constants for Object State and Policy Term
+gPolicy_ObjState_Active           constant number                                        :=   71;
+gPolicyTerm_credit_disburs        constant business_variable.business_variable_id%type   :=   29789401;
+gPolicyTerm_billing_method        constant business_variable.business_variable_id%type   :=   33820346;  --OSBILLING-6957
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Suspension
+gbv_Susp_Stop_All             constant business_variable.business_variable_id%type   := 32427931;
+gbv_Susp_Stop_All_Billing     constant business_variable.business_variable_id%type   := 32619548;--OSBILLING-7492
+gbv_Susp_Stop_Credit_Disb     constant business_variable.business_variable_id%type   := 32220846;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTransaction
+gbv_PolTrxRefBillingAccTrxSet constant business_variable.business_variable_id%type        :=   31866546;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PartnerReconciliationRollup
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--PartnerReconciliationRollupMember
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--DisbursementProfile
+gbv_Disbursement_Type         constant business_variable.business_variable_id%type   :=   30013746;
+gbv_Insurance_Line            constant business_variable.business_variable_id%type   :=   30013846;
+gbv_Writing_Company           constant business_variable.business_variable_id%type   :=   30013946;
+gbv_DisbursementSchedule      constant business_variable.business_variable_id%type   :=   31688446;
+gbv_DisbursementDayofWeek     constant business_variable.business_variable_id%type   :=   31690646;
+gbv_DisbursementDateofMonth   constant business_variable.business_variable_id%type   :=   31690746;
+gbv_DisbursementMode          constant business_variable.business_variable_id%type   :=   31690846;
+gbv_RefDisbursementAddress    constant business_variable.business_variable_id%type   :=   31692346;
+gbv_Disburse_Monthly_DayType  constant business_variable.business_variable_id%type   :=   32861640;
+gbv_Disbursement_Payee_Name  constant business_variable.business_variable_id%type   :=   33860146;
+gbv_Disb_ctf_object_used     constant business_variable.business_variable_id%type   :=   30013446;
+gbv_payment_ctf_object_used     constant business_variable.business_variable_id%type   :=   30013046;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Payment profile
+gbv_Ref_Chosen_PayPlan        constant business_variable.business_variable_id%type   :=   32204446;  -- _Ref_Chosen_PayPlan
+
+
+
+
+--  Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gGenericStatus_Created        constant lookup_list_value.lookup_enum%type            :=   23;
+
+gFItemType_Debit              constant db_fitem_type.db_fitem_type_id%type           :=   146;
+gFItemType_Credit             constant db_fitem_type.db_fitem_type_id%type           :=   246;
+gFItemBillStatus_Active       constant lookup_list_value.lookup_enum%type            :=   38246;
+gFItemProcStatus_Created      constant lookup_list_value.lookup_enum%type            :=   39246;
+gFItem_Category_Cash          constant lookup_list_value.lookup_enum%type            :=   646;
+gFItem_Category_Writeoff      constant lookup_list_value.lookup_enum%type            :=   1546;
+gFitemStatus_Created          constant lookup_list_value.lookup_enum%type            :=   39246;
+gFitemStatus_Processed        constant lookup_list_value.lookup_enum%type            :=   39346;
+gFitemStatus_InProcess        constant lookup_list_value.lookup_enum%type            :=   39946;
+gFitemStatus_ReqSentToAP      constant lookup_list_value.lookup_enum%type            :=   51946;
+
+gFItem_Category_Comm          constant lookup_list_value.lookup_enum%type            :=   946;
+gFItem_Category_Fee           constant lookup_list_value.lookup_enum%type            :=   546;
+gFItem_Category_Tax           constant lookup_list_value.lookup_enum%type            :=   346;
+gFItem_Category_Surcharge     constant lookup_list_value.lookup_enum%type            :=   446;
+gFItem_Category_Disburse      constant lookup_list_value.lookup_enum%type            :=   5046;
+gFItem_Category_Premium          constant lookup_list_value.lookup_enum%type         :=   246;
+gFitem_Category_Claim         constant lookup_list_value.lookup_enum%type            :=   5146;  --osbilling-4901
+gFitem_sub_type_Comm          constant lookup_list_value.lookup_enum%type            :=   10;  --osbilling-4901
+gFitem_sub_type_Tax           constant lookup_list_value.lookup_enum%type            :=   20;  --osbilling-4901
+gFitem_sub_type_Fee           constant lookup_list_value.lookup_enum%type            :=   30;  --osbilling-4901
+gFitem_sub_type_Surcharge     constant lookup_list_value.lookup_enum%type            :=   40;  --osbilling-4901
+gFitem_sub_type_Claim         constant lookup_list_value.lookup_enum%type            :=   50;  --osbilling-4901
+gFitem_sub_type_Misc          constant lookup_list_value.lookup_enum%type            :=   60;  --osbilling-4901
+
+
+gFItem_SubCategory_Refund     constant lookup_list_value.lookup_enum%type            :=   53146;
+
+gFIChange_Create              constant lookup_list_value.lookup_enum%type            :=   101;
+gFIChange_Change              constant lookup_list_value.lookup_enum%type            :=   201;
+gFIChange_Yes                 constant lookup_list_value.lookup_enum%type            :=   1;
+gPaymentSettled_Yes           constant lookup_list_value.lookup_enum%type            :=   1;
+gPaymentSettled_No            constant lookup_list_value.lookup_enum%type            :=   2;
+
+gFITrxStatus_Processed        constant lookup_list_value.lookup_enum%type            :=   37646;
+gFITrxStatus_Completed        constant lookup_list_value.lookup_enum%type            :=   40246;
+gFITrxStatus_InProcess        constant lookup_list_value.lookup_enum%type            :=   38146;
+
+gFITrxType_Disbursement       constant lookup_list_value.lookup_enum%type            :=   901;
+gFITrxType_CashPost           constant lookup_list_value.lookup_enum%type            :=   603;
+
+gBatchStatus_Processed        constant lookup_list_value.lookup_enum%type            :=   39846;
+--gBatchStatus_RequestSentToAP added for updateing the ststaus as RequestSentToAP for amount < 25
+gBatchStatus_RequestSentToAP  constant lookup_list_value.lookup_enum%type            :=   52046;
+gBatchStatus_InProcess        constant lookup_list_value.lookup_enum%type            :=   39946;
+gBatchStatus_Referred         constant lookup_list_value.lookup_enum%type            :=   49346;
+gBatchStatus_Deleted          constant lookup_list_value.lookup_enum%type            :=   48746;
+gBatchStatus_Discarded        constant lookup_list_value.lookup_enum%type            :=   61546;
+gBatchEntryMethod             constant lookup_list_value.lookup_enum%type            :=   101;
+gBatchType                    constant lookup_list_value.lookup_enum%type            :=   601;
+gBatchEntryMethod_Manual      constant lookup_list_value.lookup_enum%type            :=   101;
+gBatchEntryMethod_System      constant lookup_list_value.lookup_enum%type            :=   401;
+gBatchStatus_Created          constant lookup_list_value.lookup_enum%type            :=   23;
+gBatchDisburseMode_EFT        constant lookup_list_value.lookup_enum%type            :=   1;
+
+gBatch_PayablesDisbBatch      constant lookup_list_value.lookup_enum%type            :=   2301;
+gBatch_CashTransfer           constant lookup_list_value.lookup_enum%type            :=   2401;
+-- Kiran end OSPRODUCT-34429
+gBatch_PayableEarning         constant lookup_list_value.lookup_enum%type            :=   1846;
+-- Kiran end OSPRODUCT-34429
+
+gEarning_Type_AtBooking       constant lookup_list_value.lookup_enum%type            :=   146;
+gEarning_Type_InstClr         constant lookup_list_value.lookup_enum%type            :=   246;
+gEarning_Type_PremiumClr      constant lookup_list_value.lookup_enum%type            :=   546;
+gEarning_Type_ProRateInst     constant lookup_list_value.lookup_enum%type            :=   746;
+gEarning_Type_Never           constant lookup_list_value.lookup_enum%type            :=   2148 ;  --OSBILLING-7409
+
+gFitem_Earned                 constant lookup_list_value.lookup_enum%type            :=   1;
+gFitem_Unearned               constant lookup_list_value.lookup_enum%type            :=   2;
+gFitem_PartiallyEarned        constant lookup_list_value.lookup_enum%type            :=   3;
+gFitem_NotApplicable          constant lookup_list_value.lookup_enum%type            :=   4; --OSPRODUCT-6102
+
+--- OSBILLING-5574
+gProduct_All                  constant lookup_list_value.lookup_enum%type            :=   0;
+
+g_DisburseFreq_Daily          constant lookup_list_value.lookup_enum%type            := 1;
+g_DisburseFreq_Weekly         constant lookup_list_value.lookup_enum%type            := 2;
+g_DisburseFreq_Fortnight      constant lookup_list_value.lookup_enum%type            := 3;
+g_DisburseFreq_Monthly        constant lookup_list_value.lookup_enum%type            := 4;
+g_DisburseFreq_Quarterly      constant lookup_list_value.lookup_enum%type            := 5;
+g_DisburseFreq_Halfyear       constant lookup_list_value.lookup_enum%type            := 6;
+g_DisburseFreq_Yearly         constant lookup_list_value.lookup_enum%type            := 7;
+
+g_DisburseDayType_DateMonth         constant lookup_list_value.lookup_enum%type            := 1;
+g_DisburseDayType_AccPer         constant lookup_list_value.lookup_enum%type             := 0;
+
+g_BAObjectStateSuspended        constant lookup_list_value.lookup_enum%type            := 37346;
+
+
+gRule_ActiveDisburseProfile   constant rule.rule_id%type                             :=   8917946;
+gRule_OverPayFItems           constant rule.rule_id%type                             :=   9322146;
+gRule_EarnedPayables          constant rule.rule_id%type                             :=   9322246;
+
+
+gSecurityStatus_New           constant lookup_list_value.lookup_enum%type            :=   1;
+gSecurityStatus_Review        constant lookup_list_value.lookup_enum%type            :=   2;
+gSecurityStatus_Release       constant lookup_list_value.lookup_enum%type            :=   3;
+
+gRefundWaitNonCashChk           constant pd_property.pd_property_id%type               :=   17948;
+gRefundWaitPeriodCC             constant pd_property.pd_property_id%type               :=   12340;
+gRefundWaitPeriodEFT            constant pd_property.pd_property_id%type               :=   12440;
+gRefundWaitPeriod               constant pd_property.pd_property_id%type               :=   12831;
+gRefundWaitPeriodCheque         constant pd_property.pd_property_id%type               :=   12640;
+gAutoDisbToleranceAmnt          constant pd_property.pd_property_id%type               :=   16346;
+gPayableAtPolicyBooking         constant pd_property.pd_property_id%type               :=   21546;
+gAutoDisbCommToleranceAmnt      constant pd_property.pd_property_id%type               :=   40148; -- UTXPRODUCT-55
+gConsolidatedCommDisbursement   constant pd_property.pd_property_id%type               :=   50148; -- UTXPRODUCT-142
+
+gObjState_ReconReconciled          constant number(12)                               :=   58546;
+gObjState_ReconProcessed           constant number(12)                               :=   43046;
+gObjState_ReconExcluded            constant number(12)                               :=   64146;
+gBatch_PCAS_Policy                 constant lookup_list_value.lookup_enum%type       :=   401;
+gBatch_PCAS_PolicyTrx              constant lookup_list_value.lookup_enum%type       :=   1201;
+gBatch_Agency_Statement            constant lookup_list_value.lookup_enum%type       :=   801;    -- OSPRODUCT-15444
+gStatus_MarkedExclude              constant lookup_list_value.lookup_enum%type       :=   64246;
+gObjState_Created                  constant number(12)                               :=   23;
+gObjState_DisbInProcess            constant number(12)                               :=   70446;
+gfitem_Bank_Charges                constant number(12)                               :=   5246;  --OSBILLING-5827
+gfitem_Claim_Settlement            constant number(12)                               :=   5146;  --OSBILLING-5827
+-- OSPRODUCT-8958 - Start
+gReconciliation_Gross          constant lookup_list_value.lookup_enum%type            := 1;
+gReconciliation_Net            constant lookup_list_value.lookup_enum%type            := 2;
+-- OSPRODUCT-8958 - End
+
+-- OSBILLING-6460 - Start
+gDisbursementProfileSrc         constant pd_property.pd_property_id%type               :=   20546;
+gDisbProfileSrcBillingAct       constant lookup_list_value.lookup_enum%type            :=   1;
+gDisbProfileSrcOrgPayProf       constant lookup_list_value.lookup_enum%type            :=   2;
+gPaymentModeCheque            constant lookup_list_value.lookup_enum%type            :=   1;
+gPaymentModeCC                constant lookup_list_value.lookup_enum%type            :=   2;
+gPaymentModeEFT               constant lookup_list_value.lookup_enum%type            :=   3;
+-- OSBILLING-6460 -- End
+
+--OSBILLING- 7635
+gFITrxType_CashTransfer       constant lookup_list_value.lookup_enum%type            :=   401;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Lookup Lists
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+FITransactionSetBatchType     constant lookup_list.lookup_list_id%type               :=   5366346;
+BillAccTrxSetBatchFunded      constant lookup_list.lookup_list_id%type               :=   5276407;
+FITransactionTypeList         constant lookup_list.lookup_list_id%type               :=   5366546;
+FItemDebitCreditList          constant lookup_list.lookup_list_id%type               :=   5366746;
+BillingAccountTypeList        constant lookup_list.lookup_list_id%type               :=   5367146;
+FIChangeTypeList              constant lookup_list.lookup_list_id%type               :=   5366646;
+PolicyBillingMethodList       constant lookup_list.lookup_list_id%type               :=   5298605;
+FItemPayablesEarningStatus    constant lookup_list.lookup_list_id%type               :=   5385546;
+gDisbursementFreqList         constant lookup_list.lookup_list_id%type               :=   5384446;
+
+gFItem_SubCat_LateFee         constant lookup_list_value.lookup_enum%type            :=   47746;
+gFItem_SubCat_InstalFeeRecv   constant lookup_list_value.lookup_enum%type            :=   47846;
+gFItem_SubCat_InstalmntFee    constant lookup_list_value.lookup_enum%type            :=   47946;
+-- OSBILLING-3962
+g_FITrxType_PayableEarning    constant lookup_list_value.lookup_enum%type            := 801;
+-- OSBILLING-3962
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gFItem_SubCat_Cheque         constant lookup_list_value.lookup_enum%type            :=   52140;
+gFItem_SubCat_EFT            constant lookup_list_value.lookup_enum%type            :=   53346;
+gFItem_SubCat_Cash           constant lookup_list_value.lookup_enum%type            :=   52040;
+gFItem_SubCat_Broker_Chq     constant lookup_list_value.lookup_enum%type            :=   52640;
+gFItem_SubCat_Certified_Chq  constant lookup_list_value.lookup_enum%type            :=   52740;
+gFItem_SubCat_CC             constant lookup_list_value.lookup_enum%type            :=   51940;
+gFItem_SubCat_Internet_Pay   constant lookup_list_value.lookup_enum%type            :=   51840;
+gFItem_SubCat_Money_Order    constant lookup_list_value.lookup_enum%type            :=   52540;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+--OSBILLING-6957 start
+gBillingMethod_Direct        constant lookup_list_value.lookup_enum%type            :=   1;
+gBillingMethod_Agency        constant lookup_list_value.lookup_enum%type            :=   2;
+--OSBILLING-6957 end
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  gOutcomes
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gOutcomeInsufficientBalance   constant Outcome.Outcome_id%type                       :=   32846;
+gOutcomeNoCashProfileExists   constant Outcome.Outcome_id%type                       :=   33446;
+gOutcomeNoValidFitemExists    constant Outcome.Outcome_id%type                       :=   33546;
+gOutcomeNoSelectedRecord      constant Outcome.Outcome_id%type                       :=   35546;
+gOutcomeAllRecordSelected     constant Outcome.Outcome_id%type                       :=   51546;
+gOutcomeNoProfileExists       constant Outcome.Outcome_id%type                       :=   38446;
+gOutcomeNoDueAmountLeft       constant Outcome.Outcome_id%type                       :=   40546;
+gOutcomeSecurityTriggerExists constant Outcome.Outcome_id%type                       :=   42046;
+gOutcomeNoFitransactionExists constant Outcome.Outcome_id%type                       :=   47246;
+gOutcomeRefundWaitPeriod      constant Outcome.Outcome_id%type                       :=   51331;
+gOutcomeMultiplePolicySelected   constant Outcome.Outcome_id%type                    :=   56546;
+gOutcomeBatchDiscarded        constant Outcome.Outcome_id%type                       :=   58346;
+gOutcomeLessThanTolerance     constant Outcome.Outcome_id%type                       :=   52146;
+gOutcomeBASuspensed           constant Outcome.Outcome_id%type                       :=  48446;
+--2018-04-26 OSBILLING-5113
+OutcomeBillingTrxProcessFailed   constant outcome.outcome_id%type                    :=   72746;
+-- OSBILLING-6460 -- Start
+gOutcomePayProfiledExpired       constant Outcome.Outcome_id%type                       :=   72546;
+-- OSBILLING-6460 -- End
+
+gBillingAcType_Customer       constant lookup_list_value.lookup_enum%type            :=   201;   -- OSPRODUCT-3575
+gBillingAcType_FinInst        constant lookup_list_value.lookup_enum%type            :=   1546;  -- OSPRODUCT-3575
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Types
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type      t_fitem_list             is table of varchar2(100)          index by varchar2(500);-- 7817
+type      t_fitransaction_list     is table of varchar2(100)          index by varchar2(100);
+type      t_billing_account_list   is table of number(20)             index by varchar2(100);
+type      t_profile_list           is table of number(20)             index by varchar2(100);
+type      t_term_bill_method_list  is table of object.object_id%type  index by varchar2(50);--7817
+type      t_ba_parententity_list   is table of object.object_id%type  index by varchar2(50);--7817
+type      t_payable_fitem_rec      is table of dragon_fitem%rowtype   index by varchar2(100);--7817
+type      t_payable_earning_inst   is table of db_payable_earning_instr%rowtype  index by varchar2(50);																				   
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Function and Procedure Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_set_payables_amount
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     --in_booking_process_tf              in             char, --OSPRODUCT-2085
+     --in_invoicing_process_tf            in             char, --OSPRODUCT-2085
+     --in_clerance_process_tf             in             char, --OSPRODUCT-2085
+     io_action_outcome_id               in out         outcome.outcome_id%type,
+     in_policy_transaction_id           in             object.object_id%type default null,
+     in_billingacounttrxset_id          in             object.object_id%type default null,
+     -- #MP
+     in_policy_term_payer_id            in             object.object_id%type default null,
+     in_policy_term_id                  in             object.object_id%type default null, --OSBILLING-6793
+     in_installment_id                  in             object.object_id%type default null,  --OSPRODUCT-2520
+     --in_payer_entity_id
+     in_override_bor_tf                 in             char default null -- LXPRODUCT-449, LXPRODUCT-467
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_reverse_payable_earning
+(
+     in_session_id                     in             object.object_id%type,
+     in_transaction_id                 in             object.object_id%type,
+     in_fitransaction_id               in             object.object_id%type,
+     in_fitem_id                       in             object.object_id%type,
+     in_current_date_time              in             date default sysdate,
+     in_create_clawback                in             char default 'T', --LXPRODUCT
+     in_bord_fitransaction_id          in             object.object_id%type default null, -- LXPRODUCT-461
+     in_bord_policy_id                 in             object.object_id%type default null -- LXPRODUCT-461
+);
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_get_disbursement_items
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_billing_account_type            in             lookup_list_value.lookup_enum%type,
+     in_disbursement_item_list          in out nocopy  pkg_os_object.t_object_list,
+     in_policy_id                       in             object.object_id%type  default null, -- OSBILLING-4922
+     in_auto_disburse_tf                   in                char default 'F',
+     in_generation_date                 in             date default null -- UTPRODUCT-4601
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_auto_disburse
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disb_fitrx_create_manual
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billAccTRXset_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_selected_list                   in             pkg_os_object.t_object_list default pkg_os_object.gnull_object_list
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disburse_batch_confirm
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billacctrxset_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disburse_batch_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billAccTRXset_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_reprocess_disbursement_new
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billacctrxset_id                in             object.object_id%type,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out         outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+
+);
+
+--Old
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_auto_disburse
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_current_date_time               in             date default null,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disburse_payables_validate
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disb_fitrx_create_cashpost
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billAccTRXset_id                in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disburse_payable_items
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_reprocess_disbursement
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_decline_disbursement
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_acc_trx_set_id          in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_auto_disburse_policy
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache, -- GCNA Merge
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     -- #MP
+     in_payer_bilingAccount_id          in             object.object_id%type default null  -- OSPRODUCT-3575
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_discard_billacctrxset
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_object_id                       in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_delete_fitrx_check
+
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_object_id                       in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+
+);
+---------------------------------------------------------------------------------------------
+procedure sp_suspense_disbrs_item_search
+(
+     in_session_id                           object.object_id%type ,
+     in_transaction_id                       object.object_id%type,
+     in_action_object_id                     object.object_id%type, -- Batch ID of CashTransferTrxSet that belong to Suspense Account
+     in_object_cache          in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id     in out nocopy  outcome.outcome_id%type
+);
+---------------------------------------------------------------------------------------------
+procedure sp_suspense_disbrs_trx_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billAccTRXset_id                in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+---------------------------------------------------------------------------------------------
+procedure sp_auto_disburse_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_disburse_profile_id             in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default null,
+     in_zero_disb                       in             char default 'F',
+     in_generation_date                 in             date default null, --UTPRODUCT-4601
+     out_billingaccounttrxset_id        out             object.object_id%type --OSPRODUCT-11817
+);
+--------------------------------------------------------------------------------------
+procedure sp_auto_disburse_payables_tf
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_current_date_time               in             date default null,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_get_disbursement_items_old
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_billing_account_type            in             lookup_list_value.lookup_enum%type,
+     in_disbursement_item_list          in out nocopy  pkg_os_object.t_object_list,
+     in_auto_disburse_tf                   in                char default 'F'
+);
+
+--------------------------------------------------------------------------------------
+
+procedure sp_disb_fitrx_create_stmt
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billAccTRXset_id                in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+--------------------------------------------------------------------------------------
+procedure sp_create_earned_fitems
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_fitransaction_id                in             object.object_id%type,
+     in_payable_fitem_id                 in             object.object_id%type,
+     in_earned_amount                    in             number,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--------------------------------------------------------------------------------------
+function fn_disbursement_item_exists_tf
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_fitem_id                        in             object.object_id%type
+) return char;
+--------------------------------------------------------------------------------------
+function fn_is_cc_prof_expired_tf
+(
+     in_session_id       in   object.object_id%type,
+     in_transaction_id   in   object.object_id%type,
+     in_object_id        in   object.object_id%type
+)
+return varchar2;
+--------------------------------------------------------------------------------------
+-- OSPRODUCT-3575
+procedure sp_disburse_multipayer_policy
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache, -- GCNA Merge
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-- OSPRODUCT-3575
+--------------------------------------------------------------------------------------
+-- OSPRODUCT-12611
+procedure sp_payable_adj_trx_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_batch_id                in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_policy_trx_id                   in             object.object_id%type,
+     in_credit_fitem_id                 in             object.object_id%type,
+     in_credit_fichange_amount          in             number
+);
+--------------------------------------------------------------------------------------
+procedure sp_set_payables_wrapper
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+     
+);
+
+end PKG_DB_BILLING_PAYABLE;
+/

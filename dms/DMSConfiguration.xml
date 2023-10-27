@@ -1,0 +1,21 @@
+<Root>
+   <Configuration>
+      <Systemproperties>
+         <Property Name="java.awt.headless" Type="None" Value="true" Deprecated="false" Default="" RegionSpecific="false"/>
+         <Property Name="spring.datasource.jndi-name" Type="None" Value="java:/jdbc/Oneshield\ Datasource" Deprecated="false" Default="" RegionSpecific="false"/>
+         <Property Name="logging.level.org.springframework" Type="None" Value="info" Deprecated="false" Default="" RegionSpecific="false"/>
+         <Property Name="security.user.name" Type="None" Value="osUser" Deprecated="false" Default="osUser" RegionSpecific="true"/>
+         <Property Name="security.user.password" Type="None" Value="-1d8c8fd8af67285d4dfba7a42862e4d1" Deprecated="false" Default="" RegionSpecific="false"/>
+         <Property Name="security.user.roles" Type="None" Value="USER" Deprecated="false" Default="USER" RegionSpecific="true"/>
+         <Property Name="user.optimisticMode" Type="None" Value="false" Deprecated="false" Default="false" RegionSpecific="true"/>
+         <Property Name="user.maximumDocumentContentSize" Type="None" Value="150MB" Deprecated="false" Default="150MB" RegionSpecific="false"/>
+         <Property Name="user.persistError" Type="None" Value="false" Deprecated="false" Default="true" RegionSpecific="true"/>
+		 <Property Name="multipart.maxRequestSize" Type="None" Value="170MB" Deprecated="false" Default="170MB" RegionSpecific="false"/>     
+		 <Property Name="user.documentContentSizeUnit" Type="None" Value="KB" Deprecated="false" Default="KB" RegionSpecific="false"/>
+		 <Property Name="user.calculateMissingFileNameExtension" Type="None" Value="true" Deprecated="false" Default="true" RegionSpecific="false"/>
+		 <Property Name="multipart.enabled" Type="None" Value="true" Deprecated="false" Default="true" RegionSpecific="false"/>
+		 <Property Name="multipart.maxFileSize" Type="None" Value="150MB" Deprecated="false" Default="150MB" RegionSpecific="false"/>
+		 <Property Name="user.email.enabled" Type="None" Value="false" Deprecated="false" Default="false" RegionSpecific="true"/>
+      </Systemproperties>
+   </Configuration>
+</Root>

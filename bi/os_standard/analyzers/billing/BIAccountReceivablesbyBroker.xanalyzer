@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2022-12-06T18:38:08.979+05:30" update="2023-05-03T23:51:57.125+05:30">
+        <path name="BIAccountReceivablesbyBroker" folder="/home/OneShieldBI/analyzers/billing/BIAccountReceivablesbyBroker.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Billing" cube="ACCOUNT_RECEIVABLE" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Receivable_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Total_Receivable_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="DESC" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Partner].[Partner Name]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Partner].[Partner Name]" viewFilterEnum="MULTIPLE">
+                <topBottom formula="[Measures].[Total_Receivable_Amount]" type="TOP" count="10"/>
+            </filter>
+        </filters>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Account Receivable Age].[Receivable Age]</drillColumn>
+            <drillColumn>[Account Receivable Type].[Type of Receivables]</drillColumn>
+            <drillColumn>[Associated Policy State].[Policy Primary Risk Address]</drillColumn>
+            <drillColumn>[Billing Account].[Account Type]</drillColumn>
+            <drillColumn>[Billing Account].[Account Holder Name]</drillColumn>
+            <drillColumn>[Billing Account].[Billing Account Number]</drillColumn>
+            <drillColumn>[Customer].[Customer Type]</drillColumn>
+            <drillColumn>[Customer].[Customer Name]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Line of Business].[Product]</drillColumn>
+            <drillColumn>[Measures].[Total_Paid_Amount]</drillColumn>
+            <drillColumn>[Measures].[Total_Receivable_Amount]</drillColumn>
+            <drillColumn>[Partner].[Partner Name]</drillColumn>
+            <drillColumn>[Partner].[Partner Status]</drillColumn>
+            <drillColumn>[Suspended Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Suspended Policy].[Policy Term]</drillColumn>
+            <drillColumn>[Suspended Policy].[Policy Suspension Reason]</drillColumn>
+            <drillColumn>[Suspended Policy].[Policy Suspension Type]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="210"/>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"inside"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

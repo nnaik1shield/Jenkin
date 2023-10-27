@@ -1,0 +1,47 @@
+create or replace package PKG_CS_DB_AUTO_FUNDS_TRANSFER
+---------------
+-- $Workfile:   PKG_CS_DB_AUTO_FUNDS_TRANSFER.PSK  $
+-------------
+as
+
+gPd_Property_WebService_TF         pd_property_type.pd_property_type_id%type := 19046;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_cs_amount_to_number_get
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_source_amount        in        varchar2
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-862 start
+function fn_get_valid_auto_withdrawal
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type
+)
+return char;
+--OSPRODUCT-862 end
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_populate_stg_tables
+(
+     in_session_id            in   object.object_id%type,
+     in_transaction_id        in   object.object_id%type,
+     in_action_object_id      in   object.object_id%type,
+     in_action_id             in  action.action_id%type,
+     io_action_outcome_id     in   out outcome.outcome_id%type
+);
+---------------------------------------------------------------------------------------------------
+procedure sp_auto_checknum_generate
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_bats_id                    in            object.object_id%type
+);
+---------------------------------------------------------------------------------------------------
+end PKG_CS_DB_AUTO_FUNDS_TRANSFER;
+/
+

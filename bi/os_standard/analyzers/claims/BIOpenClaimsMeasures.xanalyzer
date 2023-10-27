@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-01-10T16:57:55.408+05:30" update="2023-05-04T13:22:19.886+05:30">
+        <path name="BIOpenClaimsMeasures" folder="/home/OneShieldBI/analyzers/claims/BIOpenClaimsMeasures.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="VC_OPEN_SUBMISSIONS_AND_OPEN_INCIDENTS" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Open_Claims]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Total_Incurred_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:5]" gembarId="measures" gembarOrdinal="1"/>
+            <measure formula="[Measures].[Total_Actual_Paid_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="measures" gembarOrdinal="2"/>
+            <measure formula="[Measures].[Open_Claims_with_Litigation]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]" gembarId="measures" gembarOrdinal="3"/>
+            <measure formula="[Measures].[Open_Incidents_with_No_Claims]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]" gembarId="measures" gembarOrdinal="4"/>
+            <measure formula="[Measures].[Open_Claims_with_Catastrophe]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]" gembarId="measures" gembarOrdinal="5"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes/>
+        <filters/>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Claim Number].[Claim Number]</drillColumn>
+            <drillColumn>[Incident].[Incident Number]</drillColumn>
+            <drillColumn>[Measures].[Total_Incurred_Amount]</drillColumn>
+            <drillColumn>[Measures].[Total_Actual_Paid_Amount]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths=""/>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

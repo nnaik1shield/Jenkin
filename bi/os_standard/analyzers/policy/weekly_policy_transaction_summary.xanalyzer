@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-05-09T12:55:21" created="2011-03-28T06:44:25" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Policy Transaction/Daily Policy Transaction Summary.xanalyzer" name="Weekly Policy Transaction Summary"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="POLICYTRANSACTION" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Transaction Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Premium]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="true" formula="[Policy Transaction Type].[Transaction Type]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Producer].[Agency]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Time (Last Updated Date)].[Last Updated Date]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0"/>
+                    </predicate>
+                    <predicate operatorEnum="TIME_RANGE_PREV" ordinal="1">
+                        <member pos="7"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="9">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="10">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="11">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="12">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="13">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="14">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="15">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="16">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="17">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="18">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="19">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="20">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="21">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="22">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="23">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="24">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="25">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="26">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="27">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="28">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="29">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="30">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="31">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="32">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="33">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="34">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="35">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="36">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="37">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="38">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="39">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

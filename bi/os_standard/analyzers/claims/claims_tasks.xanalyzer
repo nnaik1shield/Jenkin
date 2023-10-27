@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="joe" updatedBy="admin" created="2015-10-19T06:59:43" update="2022-08-01T11:55:34.680+05:30">
+        <path name="claims_tasks" folder="/home/OneShieldBI/analyzers/claims/claims_tasks.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Dragon Policy Admin Cubes" cube="TASK_CUBE" reportTypeEnum="JSON" showRowGrandTotal="true" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyCells="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Task_Count]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Percent_Completed_Tasks]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="1"/>
+            <measure formula="[Measures].[Percent_Incomplete_Tasks]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="measures" gembarOrdinal="2"/>
+            <measure formula="[Measures].[Avg_Completion_Time]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]" gembarId="measures" gembarOrdinal="3"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Assigned User].[Assigned User]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0">
+                <link type="FILE" toolTip="Click to open Task Details" target="NEW_TAB" filePath="/home/Oneshield/Cubes/ClaimTasksDetails.xanalyzer" fileLabel="ClaimTasksDetails">
+                    <linkParam name="{Assigned User}" value="{Assigned User}"/>
+                </link>
+            </attribute>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Assigned User].[Assigned Role]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL">
+                        <member formula="[Assigned User].[Adjuster]" caption="Adjuster" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager]" caption="Claim CSR Manager" pos="0"/>
+                        <member formula="[Assigned User].[Claims CSR]" caption="Claims CSR" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="11" backgroundFill="NONE" maxChartsPerRow="4" multiChartRangeScope="GLOBAL" emptyCellMode="GAP" sizeByNegativesMode="NEG_LOWEST" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="false" showFilterPanel="true" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="138"/>
+        <columnDataFieldWidths actualWidths="120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"inside"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

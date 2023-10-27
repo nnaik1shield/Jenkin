@@ -1,0 +1,582 @@
+CREATE OR REPLACE PACKAGE PKG_DB_MULTIPAYER
+-------------
+-- $Workfile: $
+-- $Revision: 120333 $
+--   $Author: rrashmi@OSHQ.ONESHIELD.COM $
+--     $Date: 2019-08-28 03:31:55 -0400 (Wed, 28 Aug 2019) $
+-------------
+AS
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        Package  PKG_DB_MULTIPAYER
+--
+--   %USAGE
+--       The working horse of the multi payer logic.
+--       Its main purposes are:
+--           1. Create Payer objects under inside a Policy Image during Request Issue process
+--           2. Create Payer objects under the Policy Term during Bind process
+--           3. Get list of Payer for Policy Image and Policy Term
+--
+--
+--   %Logic
+--       1.    There are two different object types to represent logically the same Payer object
+--       1.1      PolictyTransactionPolicyPayer (from here on PTPPayer) - represents a payer inside a Policy Image
+--
+--       1.2      PolicyTermAssociatedPayer  - represents a payer inside a Policy Image
+--                This object type is a type of PTPPayer and inherits BVs and Refs.
+--
+--       In the real time object model, the PTPPayer has one or many child objects - payment plans accessible to the payer.
+--       However, the PolicyTermAssociatedPayer does not have any child payment plans.
+--
+--
+--       2. A r_payer record type defined in the PKG_DB_MULTIPAYER - represents a an instance of a payer object in memory.
+--          An in memory table of this record represents a list of payer - a t_payer_tab type defined in the PKG_DB_MULTIPAYER.
+--
+--       3. 'Get payer' functions return a list of type t_payer_tab.
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--      Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+pkg_name constant system_log.program_name%type := 'PKG_DB_MULTIPAYER.';
+
+gObjType_Customer                         constant number       := 12;
+gObjType_Partner                          constant number       := 63;        -- VAULTDEV-13033
+gObjType_PolPHOLocationCoverag            constant number       := 2311314;
+gObjType_PTPPayer                         constant number       := 3347724;
+gObjType_PTPPayerPaymentPlan              constant number       := 3348124;
+gObjType_PolicyTermAccPayer               constant number       := 3349024;
+gObjType_PaymentPlan                      constant number       := 638;
+gObjType_BillingAccount                   constant number       := 2365346;
+gObjType_PolicyTerm                       constant number       := 2389401;
+gObjType_CashTransferProfile              constant number       := 2384446;
+
+gbv_Customr_Ref_Primary_Entity            constant number       := 29253414;
+gbv_PHOLocCov_Ref_BillToPerson            constant number       := 32607324;
+gbv_PTP_Ref_BillToPerson                  constant number       := 32607124;
+gbv_CustEnt_Ref_MasterCustEnt             constant number       := 32086746;
+gbv_PTPPayer_PayerType                    constant number       := 32703124;
+gbv_PTPPayer_Ref_CustmrPartnr             constant number       := 32714824;
+gbv_PTPPayer_Ref_ChosenPayPlan            constant number       := 32705024;
+gbv_PTPPayer_Ref_InvProfile               constant number       := 32726224;
+gbv_PTPPayer_Ref_LocalEntity              constant number       := 33010648;-- UTPRODUCT-3878
+gbv_PTP_Ref_InvoiceProfile                constant number       := 31700346;
+gbv_PaymentPlan_ID                        constant number       := 212015;
+gbv_MultiPayerEnabled_PTP                 constant number       := 32704624;  -- this replaces old  gbv_PolicyMultiPayerEnabled
+gbv_MultiPayerEnabled_Policy              constant number       := 32739124;
+gbv_Installment_Ref_PTermPayer            constant number       := 32726624;
+gbv_Policy_Ref_NBTrx                      constant number       := 26590007;
+gbv_PolicyTerm_Payer_NID                  constant number       := 32738724;
+gbv_PTermPayer_Ref_LastInv                constant number       := 32764524; -- _Reference_Most Recent Invoice
+gbv_PTermPayer_Ref_LastInvTrx             constant number       := 32764724; -- _Reference_Most Recent Invoice TRX for Payer
+
+
+--gbv_EntityCustomer_Role                   constant number       := 6586;
+-- genum_PrimaryEntity                       constant varchar2(10) := '7';
+
+gbv_Entity_BusinessLegalEntity            constant number       := 29236514;
+genum_SoleProprietor                      constant char         := '1';
+genum_AdditionalInsured                   constant char         := '6';
+genum_Yes                                 constant char         := '1';
+genum_No                                  constant char         := '2';
+genum_PayerType_Insured                   constant varchar2(50) := 2146;  --UTPRODUCT-1570 
+
+g_DbPayerType_Insured                     constant number       := 10224;
+g_DbPayerType_Mortgagee                   constant number       := 10424;
+g_DbPayerType_AddInsured                  constant number       := 10624;
+
+g_PayerGet_idx_ChosenPlan                 constant char(1)      := 'P';
+g_PayerGet_idx_ModifiedPlan               constant char(1)      := 'M'; --VAULTDEV-6645
+g_PayerGet_idx_CustmrPartnr               constant char(1)      := 'C';
+g_PayerGet_idx_PTPayer                    constant char(1)      := 'T';
+g_PayerGet_idx_BilingAccount              constant char(1)      := 'B';
+
+-- Profile
+gbv_ProfilePayment_mode                   constant business_variable.business_variable_id%type := 30010546;
+gbv_RefPTPPayerCardPlaceholder            constant business_variable.business_variable_id%type := 32573948;
+gbv_RefPTPPayerEFTPlaceholder             constant business_variable.business_variable_id%type := 32574048;
+gbv_CardExpMonth                          constant business_variable.business_variable_id%type := 30011246;
+gbv_CardExpYear                           constant business_variable.business_variable_id%type := 30011146;
+gbv_ReinstatePayTotalCalAmount            constant business_variable.business_variable_id%type := 32883248; --OSPRODUCT-33530
+gbv_ElementBal                            constant business_variable.business_variable_id%type := 33028848; --OSPRODUCT-33530
+gbv_PTPParentPolTrx                       constant business_variable.business_variable_id%type := 28555404; --OSPRODUCT-33530
+g_Pymnt_Mode_CC                           constant lookup_list_value.lookup_enum%type          := 4;
+g_Pymnt_Mode_EFT                          constant lookup_list_value.lookup_enum%type          := 5;
+g_Pymnt_Mode_CHQ                          constant lookup_list_value.lookup_enum%type          := 2;
+gBillingAcType_Customer                   constant lookup_list_value.lookup_enum%type          :=   201;
+
+-- UTXPRODUCT-817
+g_NotFoundDefualtPayPlan                  constant outcome.outcome_id%type                     := 167148; 
+-- UTXPRODUCT-817
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--    Package Type Defintions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+type r_payer is record
+     (
+          PayerEntity_object_id     object.object_id%type,
+          PayerBillingAccount_id    object.object_id%type,
+          payer_type                number,
+          PTPayer_object_id         object.object_id%type,
+          chosen_payment_plan       object.object_id%type,
+          modified_payment_plan     object.object_id%type,--VAULTDEV-6645
+          scheduled_payment_list    pkg_os_object.t_object_list,
+          invoice_profile           object.object_id%type,        -- invoice profile ID. Got set during Stmt Profile Creation in pkg_db_stmt_profile.sp_create_statement_profile
+          is_new_payer              char,
+          is_valid_payer            char, -- OSPRODUCT-19527
+          -- kiran start OSPRODUCT-29003
+          PTPayer_business_relation_id      number
+          -- kiran start OSPRODUCT-29003
+		  
+     );
+
+type t_payer_tab           is table of r_payer     index by long;  -- list of payers indexed by chosen payment plan ID or Customer/Partner ID
+
+type t_policy_payer_tab    is table of t_payer_tab index by long;  -- list of policies and its payers. Indexed by Policy ID
+
+-- UTXPRODUCT-462
+type r_profile is record
+     (
+          RecurringCardPlchldrProfile     object.object_id%type,
+          RecurringEFTPlchldrProfile      object.object_id%type,
+          RecurringChkPlchldrProfile      object.object_id%type,
+          RecurringExistingProfile        object.object_id%type,
+          DwnPmntCardPlchldrProfile       object.object_id%type,
+          DwnPmntEFTPlchldrProfile        object.object_id%type,
+          DwnPmntChkPlchldrProfile        object.object_id%type,
+          DifferentPrfForDwnPmnt          char(1)
+     );
+type t_profile_tab is table of r_profile index by long;
+-- end UTXPRODUCT-462
+
+-- OSPRODUCT-15248
+     type r_payer_idx_by_entity is record
+          (
+               PTPayer_object_id         object.object_id%type,
+               PayerEntity_object_id     object.object_id%type
+          );
+
+     type t_payer_idx_by_entity_tab      is table of r_payer_idx_by_entity     index by long;  -- list of payers indexed by chosen payment plan ID or Customer/Partner ID
+
+--     type t_pol_payer_idx_by_entity_tab  is table of t_payer_idx_by_entity_tab index by long;  -- list of policies and its payers. Indexed by Policy ID
+-- OSPRODUCT-15248
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--     Package Cursors ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+	--VAULTDEV-6645
+	cursor c_payers
+            (
+                 p_ptp_object_id     number
+            )
+     is
+     select
+          e.payer_billing_account_path,
+          e.rule_to_debit_billing_account,
+          e.debit_billing_account_path,
+          cp.object_id                      as coverage_object_id,
+		  e.payer_type_path,                 --UTPRODUCT-1570
+          --
+          --  need the following for informative error message only
+          --
+          e.db_billing_element_id,
+          cp.pc_coverage_id,
+          cv.pc_coverage_object_type_id
+          -- kiran start OSPRODUCT-29003
+          ,e.business_relation_id
+          -- kiran end OSPRODUCT-29003		  
+     from
+          pr_coverage_premium    cp
+     join
+          db_billing_element_map em on  (cp.pc_coverage_id = em.pc_coverage_id)
+     join
+          db_billing_element     e  on  (em.db_billing_element_id = e.db_billing_element_id)
+     join
+          pc_coverage            cv on  (cp.pc_coverage_id  = cv.pc_coverage_id )
+     where
+          cp.policy_id = p_ptp_object_id -- PTP object ID
+     and
+          e.active_tf= 'T'         -- Keerthi
+     and
+     --     cv.pc_coverage_object_type_id <> gobjType_PolPHOLocationCoverag -- 2311314 -- There is not sense to
+
+            e.create_debit_tf = 'T'     -- Keerthi
+         -- e.debit_billing_account_path is not null -- we are interested only in debit parts
+
+     and
+          e.payment_schedule_tf = 'T'
+     and  
+          (                                                                  -- OSPRODUCT-35635, db_billing_element, apply_rule should return true
+               (pkg_os_exp.fn_evaluate_expression
+                                                    (
+                                                         1,
+                                                         1,
+                                                         p_ptp_object_id,
+                                                         e.apply_rule
+                                                    ) = 'T'
+               ) 
+               or e.apply_rule is null
+          )
+
+and
+nvl(cp.premium_amount,0)  <> 0  -- VAULTDEV-11570 KR
+     ;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--     Function and Procedure Definitions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_print_payer_list
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_payer_list                 in out nocopy  t_payer_tab
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_policy_image_payer_create
+(
+     in_session_id                 in     object.object_id%type,
+     in_transaction_id             in     object.object_id%type,
+     in_ptp_object_id              in     object.object_id%type,
+     io_action_outcome_id          in out outcome.outcome_id%type
+     -- debugging, unit testing
+     , in_set_chosen_plan_tf       in     boolean  default FALSE
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ptp_payers_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_ptp_object_id              in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab, -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+     in_print_list                 in            char     default 'N',
+     in_index_by                   in            varchar2 default g_PayerGet_idx_ChosenPlan -- Possible values: g_PayerGet_idx_ChosenPlan / g_PayerGet_idx_CustmrPartnr
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ptp_payers_cache_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     io_cached_payer_lists         in out nocopy PKG_DB_MULTIPAYER.t_policy_payer_tab,
+     in_ptp_object_id              in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab, -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+     in_print_list                 in            char     default 'N',
+     in_index_by                   in            varchar2 default g_PayerGet_idx_ChosenPlan -- Possible values: g_PayerGet_idx_ChosenPlan / g_PayerGet_idx_CustmrPartnr
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_policy_term_payers_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_policy_term_id             in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab, -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+     in_print_list                 in            char     default 'N',
+     in_index_by                   in            varchar2 default g_PayerGet_idx_ChosenPlan, -- Possible values: g_PayerGet_idx_ChosenPlan / g_PayerGet_idx_CustmrPartnr
+     in_ptp_object_id              in            object.object_id%type default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_policy_term_payer_cache_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     io_cached_payer_lists         in out nocopy PKG_DB_MULTIPAYER.t_policy_payer_tab,
+     in_policy_term_id             in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab, -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+     in_print_list                 in            char     default 'N',
+     in_index_by                   in            varchar2 default g_PayerGet_idx_ChosenPlan, -- Possible values: g_PayerGet_idx_ChosenPlan / g_PayerGet_idx_CustmrPartnr
+     in_ptp_object_id              in            object.object_id%type default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_multipayer_mode_tf
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_object_id                  in  object.object_id%type  -- Policy Image ID or Policy ID
+)
+return boolean;
+--VAULTDEV-6645
+function fn_multipayer_mode
+(
+      in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_object_id                  in  object.object_id%type  -- Policy Image ID or policy term ID or Policy ID
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_default_payer_get
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_ptp_object_id              in  object.object_id%type
+)
+return object_bv_value.business_variable_value%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_policy_term_payer_create
+(
+     in_session_id                 in     object.object_id%type,
+     in_transaction_id             in     object.object_id%type,
+     in_ptp_object_id              in     object.object_id%type default null,
+     io_action_outcome_id          in out outcome.outcome_id%type
+
+     --
+     -- debbuging and test mode
+     --
+     --,io_term_payer_list            in out nocopy PKG_DB_MULTIPAYER.t_payer_tab -- indexed by g_PayerGet_idx_CustmrPartnr
+     ,in_ptp_mode_tf               in     boolean default FALSE
+     ,in_delete_term               in     char default 'Y'
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_mp_mode_policy_merge
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_policy_id                  in  object.object_id%type,
+     in_policy_trx_id              in  object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_mp_mode_policy_set
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_policy_id                  in  object.object_id%type,
+     in_mode_enum                  in  object_bv_value.business_variable_value%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_payer_validate
+(
+     in_session_id                 in              object.object_id%type,
+     in_transaction_id             in              object.object_id%type,
+     io_payer_rec                  in out nocopy   PKG_DB_MULTIPAYER.r_payer,
+     io_inv_multipayer_mode        in out          boolean,
+     in_policy_id                  in              object.object_id%type,
+     in_policy_term_id             in              object.object_id%type,
+     in_payer_entity_id            in              object.object_id%type default null,
+     in_term_payer_id              in              object.object_id%type default null,
+     in_policy_image_id            in              object.object_id%type default null  --VAULTDEV-6645
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_payer_exists
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_related_id                 in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab,
+     out_idx                       out           long
+)
+return boolean;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_payer_list_shrink
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_related_id                 in            object.object_id%type,
+     io_payer_list                 in out nocopy PKG_DB_MULTIPAYER.t_payer_tab
+);
+--VAULTDEV-6645
+procedure sp_policy_image_payer_delete
+(
+     in_session_id                 in     object.object_id%type,
+     in_transaction_id             in     object.object_id%type,
+     in_ptp_object_id              in     object.object_id%type,
+     io_action_outcome_id          in out outcome.outcome_id%type
+);
+
+function fn_get_termpayer_for_ptppayer
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_ptp_payer_id               in            object.object_id%type
+)
+return object.object_id%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_billed_to_payer_type_tf
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type,             --    policy id/term id or PTP ID
+     in_payer_type_id              in             number                             --    payer type
+
+) return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-2334
+function fn_payer_in_set
+(
+     in_payer_type_id          db_payer_type_set_map.db_payer_type_id%type,
+     in_payer_type_set_id      db_payer_type_set_map.db_payer_type_set_id%type
+)
+return char
+$if not dbms_db_version.ver_le_10 $then RESULT_CACHE $end
+;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-4545
+function fn_payer_type_desc_get
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_db_payer_type_id           in  db_payer_type.db_payer_type_id%type
+)
+return varchar2;
+
+--UTPRODUCT-3925
+function fn_payer_effective_date_get
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_ptptpayer_id               in  object.object_id%type
+)
+return date;
+function fn_payer_process_date_get
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_ptptpayer_id               in  object.object_id%type
+)
+return date;
+--OSPRODUCT-9915
+procedure ptppayer_datamart_refresh
+(
+     in_session_id                 in     object.object_id%type,
+     in_transaction_id             in     object.object_id%type,
+     in_policy_transaction_id      in     object.object_id%type,
+     io_action_outcome_id          in out outcome.outcome_id%type     
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_bats_ass_entity_get
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_billingacctrxset_id        in        object.object_id%type,
+     in_billingaccount_id          in        object.object_id%type    
+)    return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-15248 Starts. 
+procedure sp_term_payer_idx_by_entity_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_policy_term_id             in            object.object_id%type,
+     io_payer_list                 in out nocopy pkg_db_multipayer.t_payer_idx_by_entity_tab -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+);
+--OSPRODUCT-15248 Ends.
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-15248 Starts.
+procedure sp_ptp_payer_idx_by_entity_get
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_ptp_id                     in            object.object_id%type,
+     io_payer_list                 in out nocopy pkg_db_multipayer.t_payer_idx_by_entity_tab -- indexed list of payers. List of payer of payer records r_payer inedexed by  in_index_by.
+);
+--OSPRODUCT-15248 Ends.
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-15248 Starts.
+procedure sp_term_payer_status_reset
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type
+);
+--OSPRODUCT-15248 Ends.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-2567
+procedure sp_ptp_payer_payment_schedule_create
+(
+    in_session_id                 in        object.object_id%type,
+    in_transaction_id             in        object.object_id%type,
+    in_action_object_id           in        object.object_id%type,
+    io_action_outcome_id          in out    outcome.outcome_id%type
+);
+------------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-18769
+procedure sp_change_payer_type_failure
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_action_object_id           in            object.object_id%type,
+     io_action_outcome_id          in out        outcome.outcome_id%type
+);
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- -- OSPRODUCT-19116
+function fn_get_term_profile_for_entity
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_term_id                    in            object.object_id%type,
+     in_entity_id                  in            object.object_id%type
+)
+return object.object_id%type;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-19116
+function fn_validate_profile_for_payer
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_ptp_payer_id               in            object.object_id%type,
+     in_policy_id                  in            object.object_id%type,
+     in_entity_id                  in            object.object_id%type,
+     in_prior_term_id              in            object.object_id%type
+)
+return char;
+
+function fn_validate_profile_for_ptp
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_policy_id                  in            object.object_id%type,
+     in_ptp_id                     in            object.object_id%type,
+     in_term_pref_profile          in            object.object_id%type,
+     in_prior_term_profile         in            object.object_id%type,     
+     in_change_bill_plan_flag      in            char,
+     in_change_pay_prf_flag        in            char,
+     in_bill_plan_new_or_existing  in            char,
+     in_chosen_bill_plan_id        in            object.object_id%type,
+     in_chosen_ctf_id              in            object.object_id%type,
+     in_modified_bill_plan_id      in            object.object_id%type,
+     in_modified_ctf_id            in            object.object_id%type
+)
+return char;
+-----------------------------------------------------------------------------------------------------------------
+function fn_valid_payer_tf
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_payer_type_enum            in  db_payer_type.db_payer_type_enum%type
+)
+return char;
+-----------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-33530
+function fn_get_payment_schedule_amt 
+(
+      in_session_id     in  object.object_id%type,
+      in_transaction_id in  object.object_id%type,
+      in_payplan_id     in  object.object_id%type,
+      in_bv_id          in  number
+)
+return number; 
+-----------------------------------------------------------------------------------------------------------------
+--Kiran OSPRODUCT-28998 start
+function fn_billing_account_type_tf
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_ptp_id                     in  object.object_id%type,
+     in_policyterm_payer_id        in  object.object_id%type,
+     in_ptp_payer_id               in  object.object_id%type,
+     in_billing_account_type_id    in  number
+)
+return char;
+--Kiran OSPRODUCT-28998 end
+-----------------------------------------------------------------------------------------------------------------
+
+END PKG_DB_MULTIPAYER;
+/

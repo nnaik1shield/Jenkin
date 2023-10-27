@@ -1,0 +1,723 @@
+<Schema name="Coverage_Level_Cubes">
+  <Dimension visible="true" highCardinality="false" name="Line of Business" caption="Line of Business">
+    <Hierarchy name="Line Of Business" visible="true" hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+      <Table name="BI_DIM_PRODUCT_DETAIL" schema="BASE_ST">
+      </Table>
+      <Level name="Line of Business" visible="true" column="PD_LOB_NAME" nameColumn="PD_LOB_NAME" ordinalColumn="PD_LOB_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Line of Business" description="Line of Business">
+      </Level>
+      <Level name="Product" visible="false" column="PD_PRODUCT_NAME" nameColumn="PD_PRODUCT_NAME" ordinalColumn="PD_PRODUCT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Product" description="Product">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Customer">
+    <Hierarchy name="Customer" visible="true" hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL" schema="BASE_ST">
+      </Table>
+      <Level name="Customer Type" visible="true" column="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" visible="true" column="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+        <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+        <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Policy">
+    <Hierarchy name="Policy" visible="true" hasAll="true" allMemberName="All Customers" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL" schema="BASE_ST">
+      </Table>
+      <Level name="Policy Status" visible="true" column="POD_POLICY_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Status">
+      </Level>
+      <Level name="Policy Number" visible="true" column="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+        <Property name="Policy Risk State" column="POD_PRIMARY_RISK_STATE" type="String">
+        </Property>
+        <Property name="Policy Effective Date" column="POD_POLICY_EFF_DATE" type="String">
+        </Property>
+        <Property name="Policy Expiration Date" column="POD_POLICY_EXP_DATE" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Broker">
+    <Hierarchy name="Broker" visible="true" hasAll="true" allMemberName="All Brokers" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Broker">
+      </Table>
+      <Level name="Broker" visible="true" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Name">
+        <Property name="Broker Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+        <Property name="Broker Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+        <Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+      </Level>
+      <Level name="Broker Status" visible="true" column="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Status">
+      </Level>
+      <Level name="Broker Effective Date" visible="true" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Effective Date">
+      </Level>
+      <Level name="Broker Expiry Date" visible="true" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Expiry Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Writing Company">
+    <Hierarchy name="Writing Company" visible="true" hasAll="true" allMemberName="All Writing Companies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Writing_Company">
+      </Table>
+      <Level name="Writing Company" visible="true" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Name">
+        <Property name="Writing Company Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+        <Property name="Writing Company Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+        <Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+      </Level>
+      <Level name="Writing Company Status" visible="true" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Status">
+      </Level>
+      <Level name="Writing Company Effective Date" visible="true" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Effective Date">
+      </Level>
+      <Level name="Writing Company Expiry Date" visible="true" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Expiry Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Partner">
+    <Hierarchy name="Partner" visible="true" hasAll="true" allMemberName="Partner" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Partner">
+      </Table>
+      <Level name="Partner" visible="true" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Name">
+        <Property name="Partner Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+        <Property name="Partner Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+        <Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+      </Level>
+      <Level name="Partner Status" visible="true" column="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Status">
+      </Level>
+      <Level name="Partner Effective Date" visible="true" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Effective Date">
+      </Level>
+      <Level name="Partner Expiry Date" visible="true" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Expiry Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Producer">
+    <Hierarchy name="Producer" visible="true" hasAll="true" allMemberName="All Brokers" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Producer">
+      </Table>
+      <Level name="Producer" visible="true" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Name">
+        <Property name="Producer Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+        <Property name="Producer Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+        <Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+      </Level>
+      <Level name="Producer Status" visible="true" column="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Status">
+      </Level>
+      <Level name="Producer Effective Date" visible="true" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Effective Date">
+      </Level>
+      <Level name="Producer Expiry Date" visible="true" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Expiry Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Effective Date" caption="Effective Date">
+    <Hierarchy name="Effective Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Effective Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Effective Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Effective Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Effective Day" description="Creation Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Expiration Date" caption="Expiration Date">
+    <Hierarchy name="Expiration Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Expiration Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Expiration Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Expiration Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Expiration Day" description="Expiration Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Last Update Date" caption="Last Update Date">
+    <Hierarchy name="Last Update Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Last Update Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Last Update Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Last Update Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Expiration Day" description="Last Update Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Processed Date" caption="Processed Date">
+    <Hierarchy name="Processed Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Processed Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Processed Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Processed Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Processed Day" description="Processed Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Transaction Effective Date" caption="Transaction Effective Date">
+    <Hierarchy name="Transaction Effective Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Transaction Effective Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Transaction Effective Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Transaction Effective Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Transaction Effective Day" description="Day of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Cube name="Coverage_Level_Cube" caption="Coverage_Level_Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_COVERAGE_LEVEL_TRX" schema="BASE_ST">
+    </Table>
+    <DimensionUsage source="Line of Business" name="Line of Business" caption="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" caption="Customer" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy" name="Policy" caption="Policy" visible="true" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Broker" name="Broker" caption="Broker" visible="true" foreignKey="PE_BROKER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" caption="Writing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" caption="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Partner" name="Partner" caption="Partner" visible="true" foreignKey="PE_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <!--<DimensionUsage source="Effective Date" name="Effective Date" caption="Effective Date" visible="true" foreignKey="CLT_EFFECTIVE_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Expiration Date" name="Expiration Date" caption="Expiration Date" visible="true" foreignKey="CLT_EXPIRATION_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Last Update Date" name="Last Update Date" caption="Last Update Date" visible="true" foreignKey="CLT_LAST_UPDATE_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Processed Date" name="Processed Date" caption="Recovery Check Date" visible="true" foreignKey="CLT_TRX_PROCESSED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Transaction Effective Date" name="Transaction Effective Date" caption="Transaction Effective Date" visible="true" foreignKey="CLT_TRX_EFF_DT" highCardinality="false">
+    </DimensionUsage> -->
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Transaction Type Name" caption="Transaction Type Name">
+      <Hierarchy hasAll="true">
+        <Level name="Transaction Type Name" column="CLT_TRANSACTION_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Transaction Type Name">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="Coverage Change Type" caption="Coverage Change Type">
+      <Hierarchy hasAll="true">
+        <Level name="Coverage Change Type" column="CLT_COVERAGE_CHANGE_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Coverage Change Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="Coverage Jurisdiction" caption="Coverage Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="Coverage Jurisdiction" column="CLT_JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Coverage Jurisdiction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	<Dimension type="StandardDimension" highCardinality="false" name="Coverage LOB" caption="Coverage LOB">
+      <Hierarchy hasAll="true">
+        <Level name="Coverage LOB" column="CLT_LOB" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Coverage LOB">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	 <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CLT_ID" name="Effective Date" caption="Effective Date">
+    <Hierarchy name="Effective Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CLT_ID">
+        <View alias="vw_clt_effective_date">
+          <SQL dialect="generic">    
+			   SELECT
+			   CLT_ID,
+			   EXTRACT(YEAR FROM CLT_EFFECTIVE_DATE)       td_year,
+			   to_number(to_char(CLT_EFFECTIVE_DATE, 'Q')) td_quarter,
+			   'Q' || to_char(CLT_EFFECTIVE_DATE, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM CLT_EFFECTIVE_DATE)      td_month,
+			   to_char(CLT_EFFECTIVE_DATE, 'Mon')          td_month_name,
+			   EXTRACT(DAY FROM CLT_EFFECTIVE_DATE)        td_day,
+			   CLT_EFFECTIVE_DATE						     td_date
+			  FROM
+			   BI_FACT_COVERAGE_LEVEL_TRX 
+	     </SQL>
+       </View>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Effective Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Effective Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Effective Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Effective Day" description="Creation Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Effective Date" description="Effective Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false"  foreignKey="CLT_ID"  name="Expiration Date" caption="Expiration Date">
+    <Hierarchy name="Expiration Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CLT_ID">
+        <View alias="vw_clt_expiration_date">
+          <SQL dialect="generic">    
+			   SELECT
+			   CLT_ID,
+			   EXTRACT(YEAR FROM CLT_EXPIRATION_DATE)       td_year,
+			   to_number(to_char(CLT_EXPIRATION_DATE, 'Q')) td_quarter,
+			   'Q' || to_char(CLT_EXPIRATION_DATE, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM CLT_EXPIRATION_DATE)      td_month,
+			   to_char(CLT_EXPIRATION_DATE, 'Mon')          td_month_name,
+			   EXTRACT(DAY FROM CLT_EXPIRATION_DATE)        td_day,
+			   CLT_EXPIRATION_DATE						    td_date
+			  FROM
+			   BI_FACT_COVERAGE_LEVEL_TRX 
+	     </SQL>
+       </View>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Expiration Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Expiration Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Expiration Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Expiration Day" description="Expiration Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Expiration Date" description="Expiration Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CLT_ID"  name="Last Update Date" caption="Last Update Date">
+    <Hierarchy name="Last Update Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CLT_ID">
+        <View alias="vw_clt_last_update_date">
+          <SQL dialect="generic">    
+			   SELECT
+			   CLT_ID,
+			   EXTRACT(YEAR FROM CLT_LAST_UPDATE_DATE)       td_year,
+			   to_number(to_char(CLT_LAST_UPDATE_DATE, 'Q')) td_quarter,
+			   'Q' || to_char(CLT_LAST_UPDATE_DATE, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM CLT_LAST_UPDATE_DATE)      td_month,
+			   to_char(CLT_LAST_UPDATE_DATE, 'Mon')          td_month_name,
+			   EXTRACT(DAY FROM CLT_LAST_UPDATE_DATE)        td_day,
+			   CLT_LAST_UPDATE_DATE						     td_date
+			  FROM
+			   BI_FACT_COVERAGE_LEVEL_TRX 
+	     </SQL>
+       </View>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Last Update Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Last Update Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Last Update Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Last Update Day" description="Last Update Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Last Update Date" description="Last Update Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CLT_ID"  name="Processed Date" caption="Processed Date">
+    <Hierarchy name="Processed Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CLT_ID">
+        <View alias="vw_clt_trx_processed_dt">
+          <SQL dialect="generic">    
+			   SELECT
+			   CLT_ID,
+			   EXTRACT(YEAR FROM CLT_TRX_PROCESSED_DT)       td_year,
+			   to_number(to_char(CLT_TRX_PROCESSED_DT, 'Q')) td_quarter,
+			   'Q' || to_char(CLT_TRX_PROCESSED_DT, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM CLT_TRX_PROCESSED_DT)      td_month,
+			   to_char(CLT_TRX_PROCESSED_DT, 'Mon')          td_month_name,
+			   EXTRACT(DAY FROM CLT_TRX_PROCESSED_DT)        td_day,
+			   CLT_TRX_PROCESSED_DT						     td_date
+			  FROM
+			   BI_FACT_COVERAGE_LEVEL_TRX 
+	     </SQL>
+       </View>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Processed Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Processed Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Processed Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Processed Day" description="Processed Day">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Processed Date" description="Processed Date">
+        </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CLT_ID" name="Transaction Effective Date" caption="Transaction Effective Date">
+    <Hierarchy name="Transaction Effective Date" visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CLT_ID">
+        <View alias="vw_clt_trx_eff_dt">
+          <SQL dialect="generic">    
+			   SELECT
+			   CLT_ID,
+			   EXTRACT(YEAR FROM CLT_TRX_EFF_DT)       td_year,
+			   to_number(to_char(CLT_TRX_EFF_DT, 'Q')) td_quarter,
+			   'Q' || to_char(CLT_TRX_EFF_DT, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM CLT_TRX_EFF_DT)      td_month,
+			   to_char(CLT_TRX_EFF_DT, 'Mon')          td_month_name,
+			   EXTRACT(DAY FROM CLT_TRX_EFF_DT)        td_day,
+			   CLT_TRX_EFF_DT						   td_date
+			  FROM
+			   BI_FACT_COVERAGE_LEVEL_TRX 
+	     </SQL>
+       </View>
+      <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Transaction Effective Year" description="Year">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Transaction Effective Quarter" description="Name or number of the Quarter">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Transaction Effective Month" description="Name of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+      <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Transaction Effective Day" description="Day of the month">
+        <Annotations>
+          <Annotation name="AnalyzerDateFormat">
+            <![CDATA[[yyyy].['Q'q].[MMM].[d]]]>
+          </Annotation>
+        </Annotations>
+      </Level>
+	 <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Transaction Effective Date" description="Transaction Effective Date">
+        </Level>
+    </Hierarchy>
+    </Dimension>
+	<Measure name="Beginning Reserve Indemnity" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Beginning Reserve Indemnity" description="Beginning Reserve Indemnity" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_BEGINING_RESERVE_INDEMNITY IS NULL THEN 0 ELSE CLT_BEGINING_RESERVE_INDEMNITY END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Loss Paid" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Loss Paid" description="Loss Paid" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_LOSS_PAID IS NULL THEN 0 ELSE CLT_LOSS_PAID END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Ending Reserve Indemnity" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Ending Reserve Indemnity" description="Ending Reserve Indemnity" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_ENDING_RESERVE_INDEMNITY IS NULL THEN 0 ELSE CLT_ENDING_RESERVE_INDEMNITY END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Incurred" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Incurred" description="Incurred" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_INCURRED IS NULL THEN 0 ELSE CLT_INCURRED END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Beginning Reserve Expense" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Beginning Reserve Expense" description="Beginning Reserve Expense" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_BEGINNING_RESERVE_EXPENSE IS NULL THEN 0 ELSE CLT_BEGINNING_RESERVE_EXPENSE END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Loss Expense" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Loss Expense" description="Loss Expense" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_LOSS_EXPENSE IS NULL THEN 0 ELSE CLT_LOSS_EXPENSE END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Ending Reserve Expense" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Ending Reserve Expense" description="Ending Reserve Expense" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_ENDING_RESERVE_EXPENSE IS NULL THEN 0 ELSE CLT_ENDING_RESERVE_EXPENSE END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Expected Recovery" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Expected Recovery" description="Expected Recovery" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_EXPECTED_RECOVERY IS NULL THEN 0 ELSE CLT_EXPECTED_RECOVERY END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Actual Recovery" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Actual Recovery" description="Actual Recovery" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_ACTUAL_RECOVERY IS NULL THEN 0 ELSE CLT_ACTUAL_RECOVERY END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Waived Off Recovery" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Waived Off Recovery" description="Waived Off Recovery" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_WAIVED_OFF_RECOVERY IS NULL THEN 0 ELSE CLT_WAIVED_OFF_RECOVERY END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Premium Written" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Premium Written" description="Premium Written" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_PREMIUM_WRITTEN IS NULL THEN 0 ELSE CLT_PREMIUM_WRITTEN END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Earned Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Earned Amount" description="Earned Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_EARNED_AMT IS NULL THEN 0 ELSE CLT_EARNED_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Current Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Current Amount" description="Current Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_CURRENT_AMT IS NULL THEN 0 ELSE CLT_CURRENT_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Inforce Change Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Inforce Change Amount" description="Inforce Change Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_INFORCE_CHANGE_AMT IS NULL THEN 0 ELSE CLT_INFORCE_CHANGE_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Unearned Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Unearned Amount" description="Unearned Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_UNEARNED_AMT IS NULL THEN 0 ELSE CLT_UNEARNED_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Prior Renewal Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Prior Renewal Amount" description="Prior Renewal Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_PRIOR_RENEWAL_AMT IS NULL THEN 0 ELSE CLT_PRIOR_RENEWAL_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Onset Written Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Onset Written Amount" description="Onset Written Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_ONSET_WRITTEN_AMT IS NULL THEN 0 ELSE CLT_ONSET_WRITTEN_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Offset Written Amount" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Offset Written Amount" description="Offset Written Amount" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_OFFSET_WRITTEN_AMT IS NULL THEN 0 ELSE CLT_OFFSET_WRITTEN_AMT END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	<Measure name="Per Diem Factor" datatype="Numeric" formatString="$ #,###.00" aggregator="sum" caption="Per Diem Factor" description="Per Diem Factor" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN CLT_PER_DIEM_FACTOR IS NULL THEN 0 ELSE CLT_PER_DIEM_FACTOR END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+  </Cube>
+</Schema>

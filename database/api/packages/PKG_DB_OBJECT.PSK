@@ -1,0 +1,1138 @@
+create or replace package PKG_DB_OBJECT
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_OBJECT.PSK  $
+-- $Revision:   1.15  $
+--   $Author:   pmedapati  $
+--     $Date:   28 Oct 2013 11:38:04  $
+
+-------------
+
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_WritingCompany                constant business_variable.business_variable_id%type   :=   29789401;
+gbv_BillingAccountParent          constant business_variable.business_variable_id%type   :=   29704546;
+gbv_AssociatedOffsetFitem         constant business_variable.business_variable_id%type   :=   32039646;
+
+gObjType_FITransaction        constant object_type.object_type_id%type                    :=   2365046;
+gObjType_FItem                constant object_type.object_type_id%type                    :=   2365246;
+gObjType_FIChange             constant object_type.object_type_id%type                    :=   2365146;
+gObjType_BillingAccount       constant object_type.object_type_id%type                    :=   2365346;
+gObjType_PolicyTerm           constant object_type.object_type_id%type                    :=   2389401;
+gObjType_BillingAccountTrxSet constant object_type.object_type_id%type                    :=   2365946;
+gObjType_GenericObject        constant object_type.object_type_id%type                    :=   0;
+gObjType_RollupMember         constant object_type.object_type_id%type                    :=   2367846;
+gObjType_CustomerRecon        constant object_type.object_type_id%type                    :=   2374846;
+gObjType_AgencyRecon          constant object_type.object_type_id%type                    :=   2367646;
+gObjType_PartnerRecon         constant object_type.object_type_id%type                    :=   2367746;
+--OSDEMO-11103
+gObjTypeCustomer              constant object_type.object_type_id%type := 12;
+gObjTypeCustomerEntity        constant object_type.object_type_id%type := 205;
+--OSDEMO-11103
+gObjTypeGBAssetItem              constant object_type.object_type_id%type := 3361046;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccount
+gbv_BillAcc_AccountType       constant business_variable.business_variable_id%type        :=   29711346;
+gbv_BillAcc_ParentObjectID    constant business_variable.business_variable_id%type        :=   29704546;
+gbv_BillAcc_RecentPayTrx      constant business_variable.business_variable_id%type        :=   29995446;
+gbv_BillAcc_RecentFIChange    constant business_variable.business_variable_id%type        :=   31839646;
+gbv_BillAcc_MaxWOffAmtPerTerm constant business_variable.business_variable_id%type        :=   31682646;
+gbv_BillAcc_PrimaryCsr        constant business_variable.business_variable_id%type        :=   31761546;
+gbv_BillAcc_TotalBalance      constant business_variable.business_variable_id%type        :=   29970246;
+gbv_BillAcc_AccountNumber     constant business_variable.business_variable_id%type        :=   29711246;
+gbv_bats_ui_display_name      constant business_variable.business_variable_id%type        :=   33831346;  -- UTPRODUCT-2926
+gdoc_processing_ApplyRule_F   constant db_billing_fee.active_tf%type                      :=  'F';        -- UTPRODUCT-2926
+gdoc_processing_ApplyRule_T   constant db_billing_fee.active_tf%type                      :=  'T';        -- UTPRODUCT-2926
+gbv_BillAccType_WritCompany   constant business_variable.business_variable_id%type        :=   1501;      --OSPRODUCT-37091
+gbv_BillAccType_Carrier       constant business_variable.business_variable_id%type        :=   4;         --OSPRODUCT-37091
+gbv_FinalBrokerCommission     constant business_variable.business_variable_id%type        :=   35103148;  --OSPRODUCT-37091
+
+     
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- BillingAccountTransactionSet/FITransactionSet
+gbv_FITrxSet_DatePosted       constant business_variable.business_variable_id%type        :=   29707646;
+gbv_FITrxSet_TotalItems       constant business_variable.business_variable_id%type        :=   29707846;
+gbv_FITrxSet_TotalAmount      constant business_variable.business_variable_id%type        :=   29707746;
+gbv_FITrxSet_EntryType        constant business_variable.business_variable_id%type        :=   29707546;
+gbv_FITrxSet_ExternalBatchId  constant business_variable.business_variable_id%type        :=   29707446;
+gbv_FITrxSet_BatchType        constant business_variable.business_variable_id%type        :=   29707346;
+gbv_FITrxSet_CashApplyChk     constant business_variable.business_variable_id%type        :=   29748846;
+gbv_FITrxSet_ChildCountFITrx  constant business_variable.business_variable_id%type        :=   29703546;
+gbv_FITrxSet_CreatedbyBatch   constant business_variable.business_variable_id%type        :=   31756346;
+gbv_FITrxSet_RefCreatedBatch  constant business_variable.business_variable_id%type        :=   31756446;
+gbv_FITrxSetEnteredby         constant business_variable.business_variable_id%type        :=   32264940;
+gbv_FITrxSet_AccntingPeriod   constant business_variable.business_variable_id%type        :=   32133240; -- OSBILLING-767
+gbv_FITrxSet_Ass_entity       constant business_variable.business_variable_id%type        :=   33094648; -- UTPRODUCT-4822
+gbv_FITrxSet_BATotalBalance   constant business_variable.business_variable_id%type        :=   33857646;
+
+gbv_BillAccTrxSet_ParentAcc   constant business_variable.business_variable_id%type        :=   29713046;
+gbv_BillAccTrxSet_Funded      constant business_variable.business_variable_id%type        :=   29746346;
+gbv_BillAccTrxSet_ProcessDate constant business_variable.business_variable_id%type        :=   29707246;
+gbv_BillAccTrxSet_ProcessCnt  constant business_variable.business_variable_id%type        :=   29722946;
+gbv_BillAccTrxSet_CurrTrx     constant business_variable.business_variable_id%type        :=   29743646;
+gbv_BillAccTrxSet_EnteredCnt  constant business_variable.business_variable_id%type        :=   29727146;
+gbv_BillAccTrxSet_ReconType   constant business_variable.business_variable_id%type        :=   29751646;
+gbv_BillAccTrxSet_ScrtyStatus constant business_variable.business_variable_id%type        :=   31755646;
+gbv_BillAccTrxSet_FItemBalAmt constant business_variable.business_variable_id%type        :=   31686746;
+gbv_BillAccTrxSet_FItemActAmt constant business_variable.business_variable_id%type        :=   31686946;
+
+gbv_BillAccTrxSet_RefPolTrx   constant business_variable.business_variable_id%type        :=   32502146;
+gbv_FITrxSetEntryType         constant business_variable.business_variable_id%type        :=   29707546;
+gbv_BillAccTrxSet_NOICDuedate constant business_variable.business_variable_id%type        :=   32402146;
+
+gbv_FITrxSet_PaymentReceived  constant business_variable.business_variable_id%type       :=   34220346; ---newly cretaed BV to check Payment received OSBILLING 6090 Satyam 29 Jan2019
+v_bv_path_get                 constant varchar2(100)                                     := '29606209.34220346';  --(QT.BV) ---OSBILLING 6090 Satyam 29 Jan2019
+v_bat_pt_bv_path              constant varchar2(100)                                     := '32502146.34220346'; --(PT.BV) ---OSBILLING 6090 Satyam 29 Jan2019
+gbvPath_account_policy          constant varchar2(500)                                       := '32502146.27919402'||chr(5)||'2365946.629';
+gbv_BillDueDate               constant business_variable.business_variable_id%type        := 33857746; -- OSPRODUCT-13849
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FITransaction
+gbv_FITrx_ParentFITrxSetID    constant business_variable.business_variable_id%type        :=   29703446;
+gbv_FITrx_TransactionType     constant business_variable.business_variable_id%type        :=   29708346;
+gbv_FITrx_ProcessDate         constant business_variable.business_variable_id%type        :=   29708446;
+gbv_FITrx_EffectiveDate       constant business_variable.business_variable_id%type        :=   29709246;
+gbv_FITrx_GLDate              constant business_variable.business_variable_id%type        :=   29755046;
+gbv_FITrx_PostedDate          constant business_variable.business_variable_id%type        :=   29709146;
+gbv_FITrx_Amount              constant business_variable.business_variable_id%type        :=   29708946;
+gbv_FITrx_Remaining_Amount    constant business_variable.business_variable_id%type        :=   31755146;
+gbv_FITrx_ChildFIChangeCnt    constant business_variable.business_variable_id%type        :=   29703946;
+gbv_FITrx_RefBillingAccount   constant business_variable.business_variable_id%type        :=   29745946;
+gbv_FITrx_RefAssociatedPolicy constant business_variable.business_variable_id%type        :=   29721146;
+gbv_FITrx_RefAssociatedPoltrx constant business_variable.business_variable_id%type        :=   29744046;
+gbv_FITrx_RefActionPolicy     constant business_variable.business_variable_id%type        :=   29974046;
+gbv_FITrx_RefActionPolicyTxn  constant business_variable.business_variable_id%type        :=   29974146;
+gbv_FITrx_RefAssociatedFitem  constant business_variable.business_variable_id%type        :=   31689946;
+gbv_FITrx_RefFromAcc          constant business_variable.business_variable_id%type        :=   31755346;
+gbv_FITrx_RefFromPol          constant business_variable.business_variable_id%type        :=   31755446;
+
+gbv_FITrx_RefAssReconTrx      constant business_variable.business_variable_id%type        :=   30002946;
+gbv_FITrx_RefAssReconRollup   constant business_variable.business_variable_id%type        :=   32741346;
+gbv_FITrx_AccntingPeriod      constant business_variable.business_variable_id%type        :=   32133340; -- OSBILLING-767
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FItem
+gbv_FItem_RefInstallment      constant business_variable.business_variable_id%type        :=   29704446;
+gbv_FItem_RefAsset            constant business_variable.business_variable_id%type        :=   29719446;
+gbv_FItem_RefPolicy           constant business_variable.business_variable_id%type        :=   29721246;
+gbv_FItem_RefPolicyTrx        constant business_variable.business_variable_id%type        :=   29748446;
+gbv_FItem_RefPolicyTerm       constant business_variable.business_variable_id%type        :=   32080346;
+gbv_FItem_RefEntityBelongsTo  constant business_variable.business_variable_id%type        :=   29748546;
+gbv_FItem_RefCustomer         constant business_variable.business_variable_id%type        :=   31694846;
+gbv_FItem_RefAssWithFItrx     constant business_variable.business_variable_id%type        :=   31758346;
+
+gbv_FItem_Debit_Credit        constant business_variable.business_variable_id%type        :=   29710046;
+gbv_FItem_Category            constant business_variable.business_variable_id%type        :=   29710146;
+gbv_FItem_Subcategory         constant business_variable.business_variable_id%type        :=   29710246;
+gbv_FItem_Effective_Date      constant  business_variable.business_variable_id%type       :=   29710446;
+gbv_FItem_Billing_Status      constant business_variable.business_variable_id%type        :=   29710946;
+gbv_FItem_Processing_Status   constant business_variable.business_variable_id%type        :=   29711146;
+gbv_FItem_Bill_Status_Date    constant business_variable.business_variable_id%type        :=   29711046;
+gbv_FItem_Amount_Due          constant business_variable.business_variable_id%type        :=   29710546;
+gbv_FItem_Earning_Status      constant business_variable.business_variable_id%type        :=   31709146;
+gbv_FItem_Earning_Date        constant business_variable.business_variable_id%type        :=   33336348; -- OSPRODUCT-15900
+gbv_FItem_Recent_FIChange     constant business_variable.business_variable_id%type        :=   31842046;
+gbv_FItem_Earned_Amount       constant business_variable.business_variable_id%type        :=   31706446;
+gbv_FItem_Unearned_Amount     constant business_variable.business_variable_id%type        :=   31706546;
+gbv_FItem_Paid_Amount         constant business_variable.business_variable_id%type        :=   31710246;
+
+gbv_FItem_LocalBilngDueDate   constant business_variable.business_variable_id%type        :=   32014646; -- OSBILLING-334
+gbv_FItem_InitialAmountDue    constant business_variable.business_variable_id%type        :=   30749646;
+gbv_Fitem_AgingStatus         constant business_variable.business_variable_id%type        :=   30750546;
+gbv_FItem_Billing_Elt_MD_ID   constant business_variable.business_variable_id%type        :=   32199046;
+gbv_FItem_LocalActualDueDate  constant business_variable.business_variable_id%type        :=   32014546;
+
+
+gbv_Fitem_RefCashAssWithID    constant business_variable.business_variable_id%type           :=      31710846;
+-- OSDEMO-10929
+gbv_FItem_RefActionPolicyTrx  constant business_variable.business_variable_id%type        :=   29974746;
+gbv_FItem_RefUltimateTempID  constant business_variable.business_variable_id%type         :=   26725601; --OSBILLING-628
+gbv_fitem_glaccountnumber     constant business_variable.business_variable_id%type        :=   32197546;
+gbv_FItem_AccntingPeriod     constant business_variable.business_variable_id%type         :=   32133440; -- OSBILLING-767
+
+-- 2016-04-22 Cheryl Osbilling-2094
+gbv_FItemBillingDueDate            constant business_variable.business_variable_id%type   := 32014946;
+gbv_FItemAgingStatusChangeDt       constant business_variable.business_variable_id%type   := 30750646;
+gbv_FItem_Billed_TF                constant business_variable.business_variable_id%type   := 29998046;
+gbv_Current_recon_batch_id         constant business_variable.business_variable_id%type   := 32537646;
+gbv_Related_recon_batch_id         constant business_variable.business_variable_id%type   := 32719946;
+gbv_FItem_Billed_Date              constant business_variable.business_variable_id%type   := 29998146;
+gbv_FItem_Withdrawal_Date          constant business_variable.business_variable_id%type   := 29998146;
+gbv_FItem_Security_status          constant business_variable.business_variable_id%type   := 31882246;
+--OSBILLING-4056
+gbv_FItemRefCreatorFiChange       constant business_variable.business_variable_id%type   :=   31754446;
+--2017-12-05 Cheryl osbilling-4773
+gbv_EntityFirstName         constant business_variable.business_variable_id%type          :=   29240914;
+gbv_EntityLastName          constant business_variable.business_variable_id%type          :=   29241114;
+gbv_EntityBusinessName      constant business_variable.business_variable_id%type          :=   29238814;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- FIChange
+gbv_FIChangeProcessDate       constant business_variable.business_variable_id%type        :=   29719346;
+gbv_FIChangeRefFItem          constant business_variable.business_variable_id%type        :=   29704046;
+gbv_FIChange_action           constant business_variable.business_variable_id%type        :=   29709546;
+gbv_FIChange_action_delta     constant business_variable.business_variable_id%type        :=   29709646;
+gbv_FIChange_amnt_fyi         constant business_variable.business_variable_id%type        :=   32403946;
+gbv_FIChange_sum_include      constant business_variable.business_variable_id%type        :=   29709846;
+gbv_FIChangeRefPolicy         constant business_variable.business_variable_id%type        :=   29748246;
+gbv_FIChangeRefPolicyTxn      constant business_variable.business_variable_id%type        :=   29748346;
+gbv_FIChangeRefBelongsTo      constant business_variable.business_variable_id%type        :=   29748646;
+gbv_FIChangeSeqNo             constant business_variable.business_variable_id%type        :=   31839346;
+gbv_FIChangeRunTotPrev        constant business_variable.business_variable_id%type        :=   31839446;
+gbv_FIChangeRunTotFinal       constant business_variable.business_variable_id%type        :=   31839546;
+gbv_FIChangePolicyTotPrev     constant business_variable.business_variable_id%type        :=   31841546;
+gbv_FIChangePolicyTotFinal    constant business_variable.business_variable_id%type        :=   31841646;
+gbv_FIChangeFitemTotPrev      constant business_variable.business_variable_id%type        :=   31841746;
+gbv_FIChangeFitemTotFinal     constant business_variable.business_variable_id%type        :=   31841846;
+-- GCNA-1167
+gbv_FIChangeFitemPrevFIChange     constant business_variable.business_variable_id%type        :=   32856640;
+--GCNA-1167
+
+-- 2016-04-22 Cheryl osbilling-2094
+gbv_FIChangeFitemDueDate       constant business_variable.business_variable_id%type        :=   33831946;
+gbv_FIChangeFitemBillingStatus constant business_variable.business_variable_id%type        :=   33832046;
+gbv_FIChangeFitemProcessStatus constant business_variable.business_variable_id%type        :=   33832146;
+gbv_FIChangeFitemAgingStatus   constant business_variable.business_variable_id%type        :=   33832246;
+gbv_FIChangeFitemAgingChangDt  constant business_variable.business_variable_id%type        :=   33832346;
+gbv_FIChangeFitembilled        constant business_variable.business_variable_id%type        :=   33832446;
+gbv_FIChangeFitembilledDt      constant business_variable.business_variable_id%type        :=   33832546;
+gbv_FIChangeFitemRelatedBtch   constant business_variable.business_variable_id%type        :=   33832646;
+gbv_FIChangeFitemCurrentBtch   constant business_variable.business_variable_id%type        :=   33832746;
+gbv_FIChangeFitemSecuritystat  constant business_variable.business_variable_id%type        :=   33833346;
+gbv_FIChangeWithdrawalDate     constant business_variable.business_variable_id%type        :=   33833446;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Installment
+gbv_installment_due_date      constant business_variable.business_variable_id%type        :=   29711846;
+gbv_installment_issue_date    constant business_variable.business_variable_id%type        :=   29712246;
+gbv_installment_actual_date   constant business_variable.business_variable_id%type        :=   30745146;
+gbv_installment_actual_end    constant business_variable.business_variable_id%type        :=   31689246;
+gbv_installment_number        constant business_variable.business_variable_id%type        :=   29718346;
+gbv_installment_type          constant business_variable.business_variable_id%type        :=   31686846;
+gbv_PrevInstallment           constant business_variable.business_variable_id%type        :=   31683446;
+gbv_NextInstallment           constant business_variable.business_variable_id%type        :=   31683346;
+gbv_installment_invoiced_tf   constant business_variable.business_variable_id%type        :=   31212946; -- OSPRODUCT-17785
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PaymentSchedule
+gbv_ScheduledRefInstallment   constant business_variable.business_variable_id%type        :=   29705446;
+gbv_ScheduledElementRefAsset  constant business_variable.business_variable_id%type        :=   29717346;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- SchedulePaymentElement
+gbv_ScheduledPayment_num      constant business_variable.business_variable_id%type        :=   29107006;
+gbv_installment_fee           constant business_variable.business_variable_id%type        :=   29107206;
+gbv_element_name              constant business_variable.business_variable_id%type        :=   29712346;
+gbv_create_debit_flag         constant business_variable.business_variable_id%type        :=   29712446;
+gbv_debit_category            constant business_variable.business_variable_id%type        :=   29712546;
+gbv_debit_sub_category        constant business_variable.business_variable_id%type        :=   29712646;
+gbv_create_credit_flag        constant business_variable.business_variable_id%type        :=   29712746;
+gbv_credit_category           constant business_variable.business_variable_id%type        :=   29712846;
+gbv_credit_sub_category       constant business_variable.business_variable_id%type        :=   29712946;
+gbv_element_amount            constant business_variable.business_variable_id%type        :=   29713846;
+gbv_billing_element_id        constant business_variable.business_variable_id%type        :=   30790846;
+gbv_ScheduleElementFitem_id   constant business_variable.business_variable_id%type        :=   30792846;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PaymentPlan
+gbv_PaymentPlanChildPayment   constant business_variable.business_variable_id%type        :=   29105606;
+gbv_PaymentPlanCurrentStub    constant business_variable.business_variable_id%type        :=   31689146;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--PaymentPlanScheduledPayment
+gbv_PaymentParentPaymentPlan  constant business_variable.business_variable_id%type        :=   29105506;
+gbv_billing_issue_date        constant business_variable.business_variable_id%type        :=   29105806;
+gbv_billing_due_date          constant business_variable.business_variable_id%type        :=   29105906;
+gbv_actual_due_date           constant business_variable.business_variable_id%type        :=   30745246;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gbv_agent_due_date            constant business_variable.business_variable_id%type        :=   29712046;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+gbv_ScheduledPaymentType      constant business_variable.business_variable_id%type        :=   31202846;
+gbv_actual_end_date           constant business_variable.business_variable_id%type        :=   31206846;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--Action task close
+gaction_fitem_task_close      constant action.action_id%type                              :=   941946;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Policy
+gbv_Policy_RefProdAgency      constant business_variable.business_variable_id%type        :=   26590907;
+gbv_Policy_Payment_Amount     constant business_variable.business_variable_id%type        :=   212037;
+gbv_Policy_AppliedCashFromAcc constant business_variable.business_variable_id%type        :=   29753646;
+gbv_Policy_RefChosenPlan      constant business_variable.business_variable_id%type        :=   212021;
+gbv_Policy_RecentFIChange     constant business_variable.business_variable_id%type        :=   31841946;
+gbv_Policy_BillingMethod      constant business_variable.business_variable_id%type        :=   27372305;
+gbv_Policy_BillTo             constant business_variable.business_variable_id%type        :=   29608209;
+gbv_Policy_Child_PolicyAll    constant business_variable.business_variable_id%type        :=   32685546;
+gbv_responsible_billingacct_id constant business_variable.business_variable_id%type        :=   33887946;
+gbv_Policy_Billing_Mismatch_tf constant business_variable.business_variable_id%type        :=   34120246;
+gbv_PolicyBalance             constant business_variable.business_variable_id%type        :=   32092840;
+gbv_Policy_RwPredecessor       constant business_variable.business_variable_id%type       :=   32752248; -- UTPRODUCT2-58
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTransaction
+gbv_PolicyTrx_RefPolicyTerm   constant business_variable.business_variable_id%type        :=   29728801;
+gbv_PolicyTrx_RefActionPolTrx constant business_variable.business_variable_id%type        :=   29944346;
+gbv_PolicyTrx_RefCoverages    constant business_variable.business_variable_id%type        :=   212318;
+gbv_PT_OldProducerCommAmt     constant business_variable.business_variable_id%type        :=   30743246;  -- Old Producer Commission adjusted amount
+gbv_PT_NewProducerCommAmt     constant business_variable.business_variable_id%type        :=   30743346;  -- New Producer Commission amount
+gbv_PolicyTrx_RefBelongsTo    constant business_variable.business_variable_id%type        :=   29728801;
+gbv_PolicyTrx_RollbackTrx     constant business_variable.business_variable_id%type        :=   33478148; -- LXPRODUCT-449
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- PolicyTerm
+gbv_PolicyTerm_LastReversalDt constant business_variable.business_variable_id%type        :=   32689346;
+gbv_PolicyTerm_RwPredecessor constant business_variable.business_variable_id%type         :=   31531746; -- UTPRODUCT2-58
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Partner
+gbv_RefSuspenseAccountPartner constant business_variable.business_variable_id%type        :=   32722146;  -- Reference from Carrier to its Suspense Account child partner
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--GenericBillingAssetItem
+gbv_GBAssetItem_Category constant business_variable.business_variable_id%type        :=   32725646;
+gbv_GBAssetItem_SubCategory constant business_variable.business_variable_id%type        :=   32725746;
+
+--PolicyAll
+gbv_AllAssetsCreated constant business_variable.business_variable_id%type        :=   33881946;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Session
+gbv_SessionRefPolicy          constant business_variable.business_variable_id%type        :=   29650546;
+gbv_UserSessionRefConnectedTo constant business_variable.business_variable_id%type        :=   210090;
+gbv_ExchangeRefSponsorPartner constant business_variable.business_variable_id%type        :=   21814301;
+gbv_UserSessionRefSessionUser constant business_variable.business_variable_id%type        :=   210086;
+gbv_UserSessionRefNewObject   constant business_variable.business_variable_id%type        :=   210395;
+-- UTPRODUCT-4270
+gbv_UserSessionMiniWf         constant business_variable.business_variable_id%type        :=   33045248;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- DragonUser
+gbv_DragonUserDragonActorType constant business_variable.business_variable_id%type        :=   21689501;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- GenericObject
+gbv_GenericObjRefPrimarycsr constant business_variable.business_variable_id%type          :=   31867546;
+gbv_GenericObjSourceOrigin  constant business_variable.business_variable_id%type          :=   27926602;
+gbv_GenericObjRefCreator    constant business_variable.business_variable_id%type          :=   210150;
+
+
+--     OSBILLING-7838--
+---PolicyPAM
+gbv_PolicyPAM_discount          constant business_variable.business_variable_id%type          :=   31991946;
+
+-- Product Id--
+gProduct_thinPolicy                  constant pd_product.pd_product_id%type := 86546;
+-- End of OSBILLING-7838--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-13849
+gLateNotice                   constant db_fitem_type.db_fitem_type_id%type                :=   5146;
+gLateNotice2                  constant db_fitem_type.db_fitem_type_id%type                :=   8646;
+gNOIC                         constant db_fitem_type.db_fitem_type_id%type                :=   4212;
+gFirstReminder                constant db_fitem_type.db_fitem_type_id%type                :=   6631;
+gSecondReminder               constant db_fitem_type.db_fitem_type_id%type                :=   6731;
+gPolicyTrxObjectStateId       constant db_fitem_type.db_fitem_type_id%type                :=   106;
+
+gFItem_Debit                  constant db_fitem_type.db_fitem_type_id%type                :=   146;
+gFItem_Credit                 constant db_fitem_type.db_fitem_type_id%type                :=   246;
+
+gFIChange_Create              constant lookup_list_value.lookup_enum%type                 :=   101;
+gFIChange_Change              constant lookup_list_value.lookup_enum%type                 :=   201;
+gFIChange_FYI                 constant lookup_list_value.lookup_enum%type                 :=   401;
+gFIChange_Yes                 constant lookup_list_value.lookup_enum%type                 :=   1;
+--2016-01-06 osbilling-178
+gFIChange_No                  constant lookup_list_value.lookup_enum%type                 :=   2;
+
+gBillingAcStatus_Active       constant lookup_list_value.lookup_enum%type                 :=   37246;
+gBillingAcType_Customer       constant lookup_list_value.lookup_enum%type                 :=   201;
+gBillingAcType_Partner        constant lookup_list_value.lookup_enum%type                 :=   101;
+
+gBillingMethod_Direct         constant lookup_list_value.lookup_enum%type                 :=   1;
+gBillingMethod_Agency         constant lookup_list_value.lookup_enum%type                 :=   2;
+
+gBatchEntryMethod_System      constant lookup_list_value.lookup_enum%type                 :=   401;
+gFITrxStatus_InProcess        constant lookup_list_value.lookup_enum%type                 :=   38146;
+gBatchStatus_Processed        constant lookup_list_value.lookup_enum%type                 :=   39846;
+gBatchStatus_Created              constant object_state.object_state_id%type                  :=   23;
+gBatchStatus_RequestAP        constant lookup_list_value.lookup_enum%type                 :=   52046;
+
+gFITrxType_Dr_Generate        constant lookup_list_value.lookup_enum%type                 :=   601;
+gFITrxType_Cr_Generate        constant lookup_list_value.lookup_enum%type                 :=   602;
+gFITrxType_Cash_Post          constant lookup_list_value.lookup_enum%type                 :=   603;
+gFITrxType_Cash_Apply         constant lookup_list_value.lookup_enum%type                 :=   101;
+
+gFITrxStatus_Processed        constant lookup_list_value.lookup_enum%type                 :=   37646;
+
+gFItem_Category_Cash          constant lookup_list_value.lookup_enum%type                 :=   646;
+gFItem_Category_Premium       constant lookup_list_value.lookup_enum%type                 :=   246;
+gFItem_Cat_Commission         constant lookup_list_value.lookup_enum%type                 :=   946;
+gFItem_SubCat_Commision       constant lookup_list_value.lookup_enum%type                 :=   3846;
+gFItem_SubCat_Comm_Clawback   constant lookup_list_value.lookup_enum%type                 :=   68646;
+gFItem_Cat_ConvAdj            constant lookup_list_value.lookup_enum%type                 :=   6546;
+gFItem_SubCat_ConvAdj         constant lookup_list_value.lookup_enum%type                 :=   68746;
+gFItem_Cat_ExtCredit          constant lookup_list_value.lookup_enum%type                 :=   5346;
+gFItem_Cat_Discount           constant lookup_list_value.lookup_enum%type                 :=   6646;    -- OSBILLING-6501
+gFitem_SubCat_Discount        constant lookup_list_value.lookup_enum%type                 :=   55248;    --OSBILLING-7127-- OSBILLING-6890
+gFItem_SubCat_Premium         constant lookup_list_value.lookup_enum%type                 :=   46746;	-- OSPRODUCT-13313
+gFItem_Cat_DeferPremCmsn      constant lookup_list_value.lookup_enum%type                 :=   5746;	-- OSPRODUCT-13313
+gFItem_SubCat_CmsnPayable     constant lookup_list_value.lookup_enum%type                 :=   3546;	-- OSPRODUCT-13313
+
+--OSPRODUCT-2708 start
+gFitem_SubCat_MVRProcessFee   constant lookup_list_value.lookup_enum%type                 :=   53046;
+gFitem_SubCat_LateFee         constant lookup_list_value.lookup_enum%type                 :=   47746;
+--OSPRODUCT-2708 end
+
+gFItemCatSet_CashApply        constant lookup_list_value.lookup_enum%type                 :=   446;
+gBatch_AutoCreditApply        constant lookup_list_value.lookup_enum%type                 :=   3401;
+gFItemBillStatus_Active       constant lookup_list_value.lookup_enum%type                 :=   38246;
+
+gFItemProcStatus_Created      constant lookup_list_value.lookup_enum%type                 :=   39246;
+gFItemProcStatus_Processed    constant lookup_list_value.lookup_enum%type                 :=   39346;
+gFItemProcStatus_RequestAP    constant lookup_list_value.lookup_enum%type                 :=   51946;
+
+gCashApplyMethod_ProRata      constant lookup_list_value.lookup_enum%type                 :=   146;
+gCashApplyMethod_Seq          constant lookup_list_value.lookup_enum%type                 :=   246;
+
+gBatchType_ScheduledEFT       constant lookup_list_value.lookup_enum%type                    :=   6001;
+gBatchType_ScheduledCC        constant lookup_list_value.lookup_enum%type                    :=   6002;
+
+gCoverage_FinalCommission     constant pc_coverage.pc_coverage_id%type                    :=   365946;
+
+gRule_Installment             constant rule.rule_id%type                                  :=   8782746;
+
+gInstallmentType_Installment  constant lookup_list_value.lookup_enum%type                 :=   1;
+gInstallmentType_Stub         constant lookup_list_value.lookup_enum%type                 :=   2;
+
+gFItem_Unearned               constant lookup_list_value.lookup_enum%type                 :=   2;
+-- OSBILLING-5653/MUSTDEV-4807 - Arun - Added Earned
+gFItem_Earned                 constant lookup_list_value.lookup_enum%type                 :=   1;
+
+gDefaultBATransactionSetID     constant     number(12) := 0;
+
+gPoltrxSetId                   constant    db_billing_trx_set.db_billing_trx_set_id%type := 2646 ;
+-- UTPRODUCT2-61
+g_PdTrxSet_Acc_Stmt_Run_Date   constant     pd_transaction_set.pd_transaction_set_id%type := 55148;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Transaction Types
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gBillTrxType_NewBusiness         constant db_transaction_set_type.db_trxset_enum%type := 9;
+gBillTrxType_Endorsement         constant db_transaction_set_type.db_trxset_enum%type := 4;
+gBillTrxType_CancelInsured       constant db_transaction_set_type.db_trxset_enum%type := 1;
+gBillTrxType_CancelNonPay        constant db_transaction_set_type.db_trxset_enum%type := 2;
+gBillTrxType_Reinstatement       constant db_transaction_set_type.db_trxset_enum%type := 3;
+gBillTrxType_Renewal             constant db_transaction_set_type.db_trxset_enum%type := 8;
+gBillTrxType_Rewrite             constant db_transaction_set_type.db_trxset_enum%type := 3604;
+gBillTrxType_Audit               constant db_transaction_set_type.db_trxset_enum%type := 11;
+gBillTrxType_ChngWithDrawalDte   constant db_transaction_set_type.db_trxset_enum%type := 6040;
+gBillTrxType_NBRewrite            constant db_transaction_set_type.db_trxset_enum%type := 5099;
+gBillTrxType_RollBack                 constant db_transaction_set_type.db_trxset_enum%type := 3902;
+gBillTrxType_RescPendingCancel   constant db_transaction_set_type.db_trxset_enum%type := 5046;
+gTrxSubType_DefEndorsement         constant lookup_list_value.lookup_enum%type := 4; --OSPROCUT-1968
+gTrxSubType_cmsnAdjust           constant pd_transaction_sub_type.pd_transaction_sub_type_id%type := 23;  -- UTPRODUCT-910
+
+-- Arun OSBILLING-5632 -  Start
+gBillTrxType_ProfileUsageUpd     constant db_transaction_set_type.db_trxset_enum%type := 7004;
+gPolTrxType_ProfileUpdReminder   constant pd_transaction_type.pd_transaction_type_id%type := 8746;
+-- Arun OSBILLING-5632 -  End
+
+gBillTrxType_Invoice               constant db_transaction_set_type.db_trxset_enum%type := 1801;
+
+OutComeTransactionIncomplete    constant outcome.outcome_id%type                      :=   58340;
+gObjType_PolicySTAT                constant object_type.object_type_id%type               :=   2297706; --OSBILLING-7448
+gbvStat_CoverageId                    constant business_variable.business_variable_id%type   :=   29172002;--OSBILLING-7448
+gbvNetChangeAmount                 constant business_variable.business_variable_id%type   :=   29376614;--OSBILLING-7448
+--UTPRODUCT2-1 start 
+gbv_PTP_InvoicePref                constant  business_variable.business_variable_id%type := 33570248;
+gbv_PTPPayer_InvoicePref           constant  business_variable.business_variable_id%type := 33570148;
+gbv_PTerm_InvoicePref              constant  business_variable.business_variable_id%type := 33552148;
+gbv_PT_Rewrite_New_Policy          constant  business_variable.business_variable_id%type := 29320014;
+--UTPRODUCT2-1 end 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Type Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+type v_object_list                 is table of object.object_id%type       index by varchar2(50);
+gnull_object_list                  v_object_list;
+type t_fitem_list             is table of number(20)             index by varchar2(20);
+type t_due_date_list          is table of date                   index by varchar2(5);
+type t_billing_account_list   is table of number(20)             index by varchar2(100);
+
+-- OSPRODUCT-6968
+type t_obj_column_value_tab   is table of varchar2(500) index by varchar2(500);
+gnull_obj_column_val_tab      t_obj_column_value_tab;
+
+type t_fitem_cache            is table of dragon_fitem%rowtype index by varchar2(100);
+g_fitem_cache                 t_fitem_cache;
+
+type     db_recon_type_cache               is table of db_reconciliation%rowtype     index by     pls_integer;
+g_db_reconciliation_cache          db_recon_type_cache;
+
+type     db_recon_item_cache               is table of db_recon_item%rowtype     index by     pls_integer;
+g_db_recon_item_cache               db_recon_item_cache;
+
+g_Property_invoke_gl               pd_property_type.pd_property_type_id%type := 17848; -- OSPRODUCT-7572
+gbv_GenObjProducingAgency          constant  business_variable.business_variable_id%type := 26590907;--OSPRODUCT-17377
+gbv_GenObjProducer                 constant  business_variable.business_variable_id%type := 26590707;--OSPRODUCT-17377
+gPolicyTrx_SubType                 constant number                                        := 26542407;--OSPRODUCT-17377
+gPolicyTrx_EndorsTypeID            constant number                                        := 4;--OSPRODUCT-17377
+gPolicyTrx_CPPSubTypeID            constant number                                        := 5;--OSPRODUCT-17377
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Cursors ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Function and Procedure Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fichange_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_parent_fitransaction_id         in             object.object_id%type,
+     in_fichange_action                 in             lookup_list_value.lookup_enum%type,
+     in_fichange_action_delta           in             number,
+     in_fichange_ref_fitem              in             object.object_id%type,              -- The FItem that caused the FIChange to be created
+     out_fichange_id                    out            object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_fichange_sum_include            in             lookup_list_value.lookup_enum%type default null,
+     in_fichange_process_date           in             object_bv_value.business_variable_value%type default null,
+     in_fichange_ref_pol                in             object.object_id%type default null,
+     in_fichange_ref_pol_trx            in             object.object_id%type default null,
+     in_fichange_belongs_to             in             object.object_id%type default null,
+     in_fichange_object_state           in             object_bv_value.business_variable_value%type default null,
+     in_bv_table                        in             pkg_os_object_io.t_bv_table default pkg_os_object_io.gnull_bv_table,
+     in_refresh_datamart                in             char default 'T',
+     in_billing_account_id              in             object.object_id%type default null,
+     in_fitem_lock_tf                   in             char default 'T',-- UTPRODUCT-3679
+     in_enable_perf_mode_tf             in             char default 'F',
+     in_associated_fitx_values          in             dragon_fichange%rowtype default null, -- OSPRODUCT-7816
+     in_associated_pt_value             in             dragon_fichange%rowtype default null  -- OSPRODUCT-7816
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fitransaction_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_fitrx_parent_fitrxset_id        in             object.object_id%type,
+     out_fitransaction_id               out            object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_fitrx_type                      in             object_bv_value.business_variable_value%type default null,
+     in_fitrx_ref_billing_account       in             object.object_id%type default null,
+     in_fitrx_ref_associatedpolicy      in             object.object_id%type default null,
+     in_fitrx_ref_associatedpoltrx      in             object.object_id%type default null,
+     in_fitrx_ref_actionpolicy          in             object.object_id%type default null,
+     in_fitrx_ref_actionpoltrx          in             object.object_id%type default null,
+     in_fitrx_ref_associatedfitem       in             object.object_id%type default null,
+     in_fitrx_effective_date            in             object_bv_value.business_variable_value%type default null,
+     in_fitrx_gl_date                   in             object_bv_value.business_variable_value%type default null,
+     in_fitrx_process_date              in             object_bv_value.business_variable_value%type default null,
+     in_fitrx_posted_date               in             object_bv_value.business_variable_value%type default null,
+     in_fitrx_remaining_amount          in             number default null,
+     in_fitrx_amount                    in             number default null,
+     in_fitrx_object_state              in             object_bv_value.business_variable_value%type default null,
+in_fitrx_ref_associatedrollup      in             object_bv_value.business_variable_value%type default null,
+     in_bv_table                        in             pkg_os_object_io.t_bv_table default pkg_os_object_io.gnull_bv_table
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_GbAssetItem_Create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in                object.object_id%type,
+     in_ultimate_template_id             IN                object.object_id%type DEFAULT NULL
+    );
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fitem_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_parent_object_id                 in                object.object_id%type,
+     in_fitem_debit_credit               in               lookup_list_value.lookup_enum%type,
+     in_fitem_category                    in               lookup_list_value.lookup_enum%type,
+     out_fitem_id                       out            object.object_id%type,
+     in_current_date_time               in             date default null,
+     in_fitem_subcategory                 in               lookup_list_value.lookup_enum%type default null,
+     in_fitem_effective_date              in               object_bv_value.business_variable_value%type default null,
+     in_fitem_billing_status              in               lookup_list_value.lookup_enum%type default null,
+     in_fitem_processing_status           in               lookup_list_value.lookup_enum%type default null,
+     in_fitem_bill_status_date           in               object_bv_value.business_variable_value%type default null,
+     in_fitem_Earningstatus              in               lookup_list_value.lookup_enum%type default null,
+     in_fitem_earned_amount              in               number default null ,
+     in_fitem_unearned_amount               in               number default null,
+     in_fitem_paid_amount                in               object_bv_value.business_variable_value%type default null,
+     in_FItemRefInstallment               in               object.object_id%type default null,
+     in_FItemRefPolicy                    in               object.object_id%type default null,
+     in_FItemRefPolicyTxn               in               object.object_id%type default null,
+     in_FitemRefPolicyTerm              in               object.object_id%type default null,
+     in_FItemRefCustomer                    in               object.object_id%type default null,
+     in_FItemRefEntityBelongsTo          in               object.object_id%type default null,
+     in_FItemRefAssWithFItrx            in               object.object_id%type default null,
+     in_FItemRefAssetpkg_db_object          in               object.object_id%type default null,
+     in_Fitem_LateFeeDueDate               in               object_bv_value.business_variable_value%type default null,
+     in_Fitem_billing_elt_md_id          in               db_billing_element.db_billing_element_id%type default null,
+     in_bv_table                        in             pkg_os_object_io.t_bv_table default pkg_os_object_io.gnull_bv_table,
+     in_ultimate_template_id            in        object.object_id%type default null,-- Kiran OSPRODUCT-32906. Comma Added.
+     --Kiran start OSPRODUCT-32906
+     in_Fitem_element_business_relation in    object_bv_value.business_variable_value%type default null
+     --Kiran end OSPRODUCT-32906 
+
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fitem_create
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_parent_object_id                in           object.object_id%type,
+     out_fitem_id                       out       object.object_id%type,
+     out_offset_FItem_id                    out           object.object_id%type,
+     in_current_date_time               in        date default null,
+     in_fitem_debit_credit               in          lookup_list_value.lookup_enum%type,
+     in_fitem_category                    in          lookup_list_value.lookup_enum%type,
+     in_fitem_subcategory                 in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_effective_date              in          object_bv_value.business_variable_value%type default null,
+     in_fitem_billing_status              in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_processing_status           in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_bill_status_date           in          object_bv_value.business_variable_value%type default null,
+     in_fitem_Earningstatus              in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_earned_amount              in          number default null ,
+     in_fitem_unearned_amount               in          number default null,
+     in_fitem_paid_amount                in          object_bv_value.business_variable_value%type default null,
+     in_FItemRefInstallment               in          object.object_id%type default null,
+     in_FItemRefPolicy                    in          object.object_id%type default null,
+     in_FItemRefPolicyTxn               in          object.object_id%type default null,
+     in_FitemRefPolicyTerm              in        object.object_id%type default null,
+     in_FItemRefCustomer                    in          object.object_id%type default null,
+     in_FItemRefEntityBelongsTo          in          object.object_id%type default null,
+     in_FItemRefAssWithFItrx               in          object.object_id%type default null,
+     in_FItemRefAssetpkg_db_object          in          object.object_id%type default null,
+     in_FitemRefActionPolicyTxn         in        object.object_id%type default null,
+     in_Fitem_LateFeeDueDate               in          object_bv_value.business_variable_value%type default null,
+     in_Fitem_billing_elt_md_id          in          db_billing_element.db_billing_element_id%type default null,
+     in_bv_table                           in        pkg_os_object_io.t_bv_table default pkg_os_object_io.gnull_bv_table,
+     in_FitemRefCashAssoWithID           in        object.object_id%type default null ,
+     in_ultimate_template_id            in        object.object_id%type default null,-- Kiran OSPRODUCT-32906. Comma Added.
+     --Kiran start OSPRODUCT-32906
+     in_Fitem_element_business_relation in    object_bv_value.business_variable_value%type default null
+     --Kiran end OSPRODUCT-32906 
+
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_process_action_mini
+(
+     in_session_id                    in               object.object_id%type,
+     in_transaction_id                in               object.object_id%type,
+     in_action_id                     in               object.object_id%type,
+     in_action_object_id              in               object.object_id%type,
+     io_object_cache                  in out nocopy    pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id             in out           outcome.outcome_id%type,
+     out_action_id                    out              object.object_id%type,
+     out_action_object_id             out              object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_process_action_mini
+(
+     in_session_id                    in                   object.object_id%type,
+     in_transaction_id                in                   object.object_id%type,
+     in_action_id                     in                   object.object_id%type,
+     in_action_object_id              in                   object.object_id%type,
+     io_object_cache                  in out nocopy        pkg_os_object_cache.t_object_cache,
+     io_message_list                  in out nocopy        pkg_os_message.t_message_list,
+     io_action_outcome_id             in out nocopy        outcome.outcome_id%type,
+     in_context_action_id             in                   object.object_id%type, /*OSPRODUCT-3536*/
+     in_context_object_id             in                   object.object_id%type, /*OSPRODUCT-3536*/
+     out_action_id                    out                  object.object_id%type,
+     out_action_object_id             out                  object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_update_billingaccount_dm
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_list            in             t_billing_account_list
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure  sp_set_policy_primary_csr
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_id                       in             action.action_id%type,
+     in_action_object_id                in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_billing_fichange_delta_sum
+(
+     in_session_id                    in          object.object_id%type,
+     in_transaction_id               in          object.object_id%type,
+     in_billinacounttrxset_id          in          object.object_id%type,
+     in_use_datamart_tf               in          char          default 'T'
+)
+return object_bv_value.business_variable_value%type;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billing_acct_trx_process
+(
+     in_session_id              in          object.object_id%type,
+     in_transaction_id          in          object.object_id%type,
+     in_fitrxset_id             in          object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_object_cache            in out nocopy     pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id       in out      outcome.outcome_id%type,
+     in_current_date_time       in          date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fitransaction_process
+(
+     in_session_id                    in          object.object_id%type,
+     in_transaction_id               in          object.object_id%type,
+     in_billing_trx_set_id          in          object.object_id%type,
+     in_fitransaction_id               in          object.object_id%type,
+     io_action_outcome_id          in out      outcome.outcome_id%type,
+     in_current_date_time          in          date default null,
+     in_update_counts_tf               in          char default 'T'
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_evaluate_rule_set
+(
+    in_session_id        in   object.object_id%type,
+    in_transaction_id    in   object.object_id%type,
+    in_object_type_id    in   object.object_id%type,
+    in_object_id         in   object.object_id%type,
+    in_rule_set_id       in   rule_set.rule_set_id%type
+)
+return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_list_selected_objects_get
+(
+    in_session_id             in             object.object_id%type,
+    in_transaction_id         in             object.object_id%type,
+    in_list_object_id         in             object.object_id%type,
+    in_object_cache               in out nocopy     pkg_os_object_cache.t_object_cache,
+    io_object_list             in out nocopy     pkg_os_object.t_object_list
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure  sp_create_billing_accounts
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_clear_fitem_cache
+(
+     in_fitem_id        in   object.object_id%type     default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_fitem_row
+(
+     in_session_id               in     object.object_id%type,
+     in_transaction_id          in   object.object_id%type,
+     in_fitem_id                  in   object.object_id%type
+)
+return dragon_fitem%rowtype;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function     fn_db_reconciliation_row
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_reconciliation_id          in          db_reconciliation.db_reconciliation_id%type
+)
+return  db_reconciliation%rowtype;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function     fn_db_recon_item_row
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_recon_item_id               in          db_recon_item.db_recon_item_id%type
+)
+return  db_recon_item%rowtype;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_batrxset_type_in_set
+(
+     in_batrx_type_id              in        db_transaction_set_type.db_trxset_type_id%type,
+     in_batrx_type_set_id          in        db_billing_trx_set.db_billing_trx_set_id%type
+
+)
+return char ;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_async_ba_datamart_update
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_billingacounttrxset_create
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_billing_account_id      in              object.object_id%type,
+     in_transaction_type_id   in             db_transaction_set_type.db_trxset_type_id%type,
+     in_entry_type_id         in             object.object_id%type,
+     out_batrxset_id          out            object.object_id%type,
+     in_current_date          in             date default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_billingacounttrxset_process
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_billingacounttrxset_id          in             object.object_id%type,
+     in_transasction_type_id  in             db_transaction_set_type.db_trxset_enum%type,
+     in_current_date          in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_billing_trx_post_processing
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type,
+     in_ba_trx_set_id                   in             object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_action_outcome_id               in out         outcome.outcome_id%type,
+     in_current_date_time               in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-1344
+procedure sp_ba_object_bv_set
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_object_id                  in   object.object_id%type,
+     in_bv_id                      in   business_variable.business_variable_id%type,
+     in_bv_value                   in   object_bv_value.business_variable_value%type,
+     in_insert                     in   boolean default false,
+     in_set_encrypted_value        in   boolean default false
+);
+--OSPRODUCT-1344
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-1344
+procedure sp_ba_object_bv_set
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_object_id                  in   object.object_id%type,
+     in_bv_table                   in   pkg_os_object_io.t_bv_table,
+     in_insert                     in     boolean default false,
+     in_set_encrypted_value        in     boolean default false
+);
+--OSPRODUCT-1344
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-1786
+procedure sp_ba_additional_attribute_set
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_object_id                  in   object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_billing_account_no
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_billing_account_id         in   object.object_id%type default null  --OSPRODUCT-17458
+)
+return varchar2;
+--OSPRODUCT-1786
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-2926
+procedure sp_billing_doc_processing
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ba_trx_set_id                   in             object.object_id%type,    
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+--UTPRODUCT-2926
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-3610
+procedure sp_create_relatedPolicyEntity
+(
+     in_session_id               in             object.object_id%type,
+     in_transaction_id           in             object.object_id%type,
+     in_object_id                in             object.object_id%type,
+     in_object_type              in             object.object_id%type default null
+);
+procedure sp_create_entityList
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_bats_id               in             object.object_id%type,
+     in_ptp_id                in             object.object_id%type,
+     io_entity_list           in out         pkg_os_object.t_object_list
+);
+
+--OSPRODUCT-9914
+procedure sp_autonomous_workflow
+(
+     in_session_id               in             object.object_id%type,
+     in_transaction_id           in             object.object_id%type,
+     in_action_id                in             object.object_id%type,
+     in_action_object_id         in             object.object_id%type,
+     in_outcome_id               in             object.object_id%type
+);
+--OSPRODUCT-9914
+
+procedure sp_db_set_object_lock
+(
+     in_session_id                 in                object.object_id%type,
+     in_transaction_id             in                object.object_id%type,
+     in_object_id                  in                object.object_id%type,
+     out_lock_status               in out            char
+);
+procedure sp_db_clear_object_lock
+(
+     in_session_id                 in                object.object_id%type,
+     in_transaction_id             in                object.object_id%type,
+     in_object_id                  in                object.object_id%type
+);
+
+--OSPRODUCT-11365
+procedure sp_sync_fininst_acc_to_partner
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+);
+
+--OSPRODUCT-11765
+procedure sp_update_next_invoice_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     in_policy_term_id             in             object.object_id%type,
+     in_bats_id                    in             object.object_id%type--OSPRODUCT-14316
+);
+
+-- OSPRODUCT-8769
+procedure sp_ba_lastupdatedate_dm_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type
+);
+
+procedure sp_fitem_lastupdatedate_dm_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type
+);
+
+procedure sp_fic_lastupdatedate_dm_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type
+);
+
+procedure sp_bats_lastupdatedate_dm_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type
+);
+
+procedure sp_fitrx_lastupdatedate_dm_upd
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type
+);
+-- end OSPRODUCT-8769
+-- OSPRODUCT-12390
+function fn_default_currency_get(
+	in_session_id				in	object.object_id%type,
+	in_transaction_id			in	object.object_id%type
+)
+return currency.currency_id%type;
+-- UTPRODUCT-4841
+procedure sp_intalment_invocie_flag_set
+(
+     in_session_id               object.object_id%type,
+     in_transaction_id           object.object_id%type,
+     in_billing_account_id       object.object_id%type,
+     in_billingaccounttrxset_id  object.object_id%type,
+     in_current_date          in             date default null
+);
+-- UTPRODUCT-4841
+
+-----------------------------------------------------------------------------------
+--OSPRODUCT-13275 start
+function fn_subj_basis_image_get
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     in_transaction_class_id       in             number,
+     in_effective_date             in             varchar2,
+     out_transaction_id            out            object.object_id%type,
+     in_after_tf                   in             char,
+     in_exclude_transaction_id     in             object.object_id%type
+)
+return char;
+
+--------------------------------------------------------------------------------------
+procedure sp_fitem_create_offset
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_parent_object_id                in        object.object_id%type default null,
+     in_fitem_id                        in        object.object_id%type,
+     out_offset_FItem_id                out       object.object_id%type,
+     in_fitem_debit_credit               in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_category                    in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_subcategory                 in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_effective_date              in          object_bv_value.business_variable_value%type default null,
+     in_fitem_billing_status              in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_processing_status           in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_bill_status_date           in          object_bv_value.business_variable_value%type default null,
+     in_fitem_Earningstatus              in          lookup_list_value.lookup_enum%type default null,
+     in_fitem_earned_amount              in          number default null ,
+     in_fitem_unearned_amount               in          number default null,
+     in_fitem_paid_amount                in          object_bv_value.business_variable_value%type default null,
+     in_FItemRefInstallment               in          object.object_id%type default null,
+     in_FItemRefPolicy                    in          object.object_id%type default null,
+     in_FItemRefPolicyTxn               in          object.object_id%type default null,
+     in_FitemRefPolicyTerm              in        object.object_id%type default null,
+     in_FItemRefCustomer                    in          object.object_id%type default null,
+     in_FItemRefAssWithFItrx               in          object.object_id%type default null,
+     in_FItemRefAssetpkg_db_object          in          object.object_id%type default null,
+     in_FitemRefActionPolicyTxn         in        object.object_id%type default null,
+     in_Fitem_LateFeeDueDate               in          object_bv_value.business_variable_value%type default null,
+     in_Fitem_billing_elt_md_id          in          db_billing_element.db_billing_element_id%type default null,
+     in_ultimate_template_id            in        object.object_id%type default null
+);
+--OSPRODUCT-17377
+procedure sp_roll_back
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_to_be_rb_trx_id                 in             object.object_id%type,
+     in_basis_ptp_id                    in             object.object_id%type,
+     in_basis_payment_plan_id           in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+procedure sp_roll_back_post_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_to_be_rb_trx_id                 in             object.object_id%type,
+     in_rb_transaction_id               in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+procedure sp_roll_forward
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_rb_ptp_id                       in             object.object_id%type,
+     in_rf_ptp_id                       in             object.object_id%type,
+     in_rf_trx_id                       in             object.object_id%type,
+     in_trx_type_id                     in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+--OSPRODUCT-17377
+
+procedure sp_load_gtt_trx_hist
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billingaccount_id               in             object.object_id%type
+);
+
+procedure sp_load_gtt_rel_trx_hist
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billingaccount_id               in             object.object_id%type
+);
+-------------------------------------------------------------------------------------
+-- OSPRODUCT-19433
+procedure sp_ba_object_bv_path_set
+(
+     in_session_id            in      object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_object_id         in    object.object_id%type,
+     in_bv_path               in     varchar2,
+     in_bv_path_value   in   varchar2
+);
+-- OSPRODUCT-19433
+-------------------------------------------------------------------------------------
+-- OSPRODUCT-19433
+procedure sp_ba_object_bv_path_set
+(
+     in_session_id            in         object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_object_id         in      object.object_id%type,
+     io_bv_path_value_list in out nocopy  pkg_os_object_io.t_bv_path_table
+);
+-- OSPRODUCT-19433
+-------------------------------------------------------------------------------------
+
+procedure sp_set_invoice_preference
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type,
+     in_policy_term_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_policy_transaction_type         in             number,
+     in_ptp_payer_list                   in             pkg_os_object.t_object_list
+);
+-----------------------------------------------------------------------
+--OSPRODUCT-32378
+function fn_get_obj_node_label
+(
+     in_session_id       in   object.object_id%type,
+     in_program_id       in   object.object_id%type
+)
+return varchar2;
+
+end PKG_DB_OBJECT;
+/

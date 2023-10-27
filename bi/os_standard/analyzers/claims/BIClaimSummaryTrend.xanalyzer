@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2022-12-21T12:31:32.650+05:30" update="2023-05-04T17:06:46.207+05:30">
+        <path name="BIClaimSummaryTrend" folder="/home/OneShieldBI/analyzers/claims/BIClaimSummaryTrend.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="CLAIM_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Incurred_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Recovery_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[Reserve_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]"/>
+            <measure formula="[Measures].[Actual_Paid_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]"/>
+            <measure formula="[Measures].[Closed_Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="RSUM" sortOrderEnum="NONE" id="[MEASURE:6]" gembarId="measures" gembarOrdinal="1">
+                <displayLabels>
+                    <displayLabel locale="" label="Closed Claim Count" labelPlural=""/>
+                </displayLabels>
+                <summaryFacet summaryAcrossEnum="ROWS" useNonVisualTotals="false"/>
+                <numberFormat formatCategory="General Number" formatScale="0" formatShortcut="NONE" currencySymbol="$">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+            <measure formula="[Measures].[Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="RSUM" sortOrderEnum="NONE" id="[MEASURE:8]" gembarId="measures" gembarOrdinal="0">
+                <displayLabels>
+                    <displayLabel locale="" label="Total Claim Count" labelPlural=""/>
+                </displayLabels>
+                <summaryFacet summaryAcrossEnum="ROWS" useNonVisualTotals="false"/>
+                <numberFormat formatCategory="General Number" formatScale="0" formatShortcut="NONE" currencySymbol="$">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Claim Creation Date].[Creation Week]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Line" legendPosition="RIGHT" showLegend="false" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" multiChartRangeScope="GLOBAL" emptyCellMode="GAP" sizeByNegativesMode="NEG_LOWEST" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Cause of Loss].[Peril Type]</drillColumn>
+            <drillColumn>[Cause of Loss].[Cause Of Loss]</drillColumn>
+            <drillColumn>[Claim Close Date].[Claim Close Year]</drillColumn>
+            <drillColumn>[Claim Close Date].[Claim Close Quarter]</drillColumn>
+            <drillColumn>[Claim Close Date].[Claim Close Month]</drillColumn>
+            <drillColumn>[Claim Close Date].[Claim Close Week]</drillColumn>
+            <drillColumn>[Claim Close Date].[Claim Close Day]</drillColumn>
+            <drillColumn>[Claim Close Date].[Date]</drillColumn>
+            <drillColumn>[Claim_Jurisdiction].[State]</drillColumn>
+            <drillColumn>[Claim Number].[Claim Number]</drillColumn>
+            <drillColumn>[Claim Status].[Claim Status]</drillColumn>
+            <drillColumn>[Claim Status Reason].[Claim Status Reason]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Claim Submission Year]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Claim Submission Quarter]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Claim Submission Month]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Claim Submission Week]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Claim Submission Day]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Date]</drillColumn>
+            <drillColumn>[Customer].[Customer Type]</drillColumn>
+            <drillColumn>[Customer].[Customer Name]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Year]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Quarter]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Month]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Week]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Day]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Date]</drillColumn>
+            <drillColumn>[Incident Date].[Incident Year]</drillColumn>
+            <drillColumn>[Incident Date].[Incident Quarter]</drillColumn>
+            <drillColumn>[Incident Date].[Incident Month]</drillColumn>
+            <drillColumn>[Incident Date].[Incident Week]</drillColumn>
+            <drillColumn>[Incident Date].[Incident Day]</drillColumn>
+            <drillColumn>[Incident Date].[Date]</drillColumn>
+            <drillColumn>[Incident Number].[Incident Number]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Incident Reported Year]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Incident Reported Quarter]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Incident Reported Month]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Incident Reported Week]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Incident Reported Day]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Date]</drillColumn>
+            <drillColumn>[Last Updated Date].[Last Updated Date]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Measures].[Actual_Paid_Amount]</drillColumn>
+            <drillColumn>[Measures].[Litigation_Incurred_Amount]</drillColumn>
+            <drillColumn>[Measures].[Reserve_Amount]</drillColumn>
+            <drillColumn>[Measures].[Total_Claim_Creation_Time]</drillColumn>
+            <drillColumn>[Measures].[Total_Completion_Time]</drillColumn>
+            <drillColumn>[Measures].[Total_Incident_Completion_Time]</drillColumn>
+            <drillColumn>[Measures].[Incurred_Amount]</drillColumn>
+            <drillColumn>[Measures].[Recovery_Amount]</drillColumn>
+            <drillColumn>[Measures].[Reserve_Historical_Amount]</drillColumn>
+            <drillColumn>[Agency].[Agency]</drillColumn>
+            <drillColumn>[Policy].[Policy Status]</drillColumn>
+            <drillColumn>[Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Primary Risk Address].[Country]</drillColumn>
+            <drillColumn>[Primary Risk Address].[Jurisdiction]</drillColumn>
+            <drillColumn>[Primary Risk Address].[City]</drillColumn>
+            <drillColumn>[Primary Risk Address].[ZipCode]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="80"/>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"top","trendType":"none","lineWidth":1}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

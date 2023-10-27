@@ -1,0 +1,430 @@
+create or replace PACKAGE BODY PKG_PC_INTEGRATION
+-------------
+-- $Workfile:   PKG_PC_INTEGRATION.sql  $
+-- $Revision: 60188 $
+--   $Author: ssaraf@OSHQ.ONESHIELD.COM $
+--     $Date: 2022-07-06 21:17:18 +0530 (Mon, 06 Jul 2020) $
+-------------
+
+AS
+
+pkg_name  constant  system_log.program_name%type  :=   'PKG_PC_INTEGRATION.';
+
+-----------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-4729 start
+procedure sp_create_integ_object
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_action_id             in        action.action_id%type,
+     in_action_object_id      in        object.object_id%type,
+     io_action_outcome_id     in out    outcome.outcome_id%type
+)
+is
+     v_procedure_name    constant system_log.program_name%type := pkg_name ||'sp_create_integ_object';
+     v_session_control            pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+
+     v_customer_id                 object.object_id%type;
+     v_policy_id                   object.object_id%type;
+     v_isr_object_id               object.object_id%type;
+     v_common_req_id               object.object_id%type;
+     v_operation_label             object_bv_value.business_variable_value%type;
+     v_service_name                object_bv_value.business_variable_value%type;
+     v_input_object                object.object_id%type;
+     v_isr_parent_object           object.object_id%type;
+     v_object_state                constant number := 75;
+     v_ultimate_customer_id        object.object_id%type;
+
+     cursor c_get_integration_def (in_operation_label varchar2)
+     is
+
+          select    ss.service_name,
+                    --pkg_os_bv.fn_bv_path_bv_get(idef.root_object_path) as root_object_path,  --kirtan commented
+                    --pkg_os_bv.fn_bv_path_bv_get(idef.isr_path) as isr_path,
+                    idef.root_object_path as root_object_path,
+                    idef.isr_path as isr_path,
+                    idef.object_type,idef.qualification_rule,idef.region,idef.sub_method
+          from      sl_service_op_definition sod, sl_operation od, sl_service ss  ,integration_definition idef
+          where     od.operation_id = sod.operation_id
+          and       idef.operation_definition = sod.service_op_definition_id
+          and       ss.service_id = od.service_id
+          and       idef.operation_name = in_operation_label
+          and       idef.active ='T'
+          and       rownum =1;
+begin
+
+
+     v_operation_label   :=   PKG_OS_OBJECT_IO.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id, '210356.33983846' );
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '......Input object id :'|| in_action_object_id ||
+               ' v_operation_label:->'     || v_operation_label
+          );
+     end if;
+     v_ultimate_customer_id   :=   pkg_os_object_search.fn_object_get_parent_of_type
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        in_action_object_id,
+                                        pkg_os_constant.gObjType_Customer
+                                   );
+     --- Run the cursor for input object
+     -- get the Object ID using ISR_PATH
+     for r_get_integration_def in c_get_integration_def(v_operation_label)
+     loop
+          --v_input_object := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_action_object_id,r_get_integration_def.root_object_path);  -- Kirtan commented
+          --v_isr_parent_object := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_action_object_id,r_get_integration_def.Isr_Path);
+          v_input_object := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id,r_get_integration_def.root_object_path);
+          v_isr_parent_object := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id,r_get_integration_def.Isr_Path);
+          
+          if pkg_os_object.fn_object_type_get(in_session_id,in_transaction_id,in_action_object_id) = 2365946 and v_operation_label = 'getTransactionDetail'  --doubledip
+          then
+               v_input_object      := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id,'32828640.211343');
+               v_isr_parent_object := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id,'32828640.211343');
+                              
+          end if;
+          
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '......v_input_object :' || v_input_object ||
+                    'v_isr_parent_object ' || v_isr_parent_object ||
+                    ' path ' || r_get_integration_def.Isr_Path ||
+                    ' r_get_integration_def.root_object_path' || r_get_integration_def.root_object_path --||
+                    --'r_get_integration_def id ' || r_get_integration_def.INTEGRATION_DEFINITION_ID
+               );
+          end if;
+          pkg_os_object.sp_object_create
+          (
+               in_session_id, -- session id
+               in_transaction_id,
+               gobj_Type_IntegrationReq,
+               v_isr_Parent_object, -- parent object id
+               v_isr_object_id
+          );
+          pkg_os_object.sp_object_create
+          (
+               in_session_id, -- session id
+               in_transaction_id,
+               gobj_Type_CommonServReq,
+               v_isr_object_id, -- parent object id
+               v_common_req_id
+          );
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_isr_object_id,
+               gbv_IntegReq_refReqObj,
+               v_common_req_id
+          );
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_isr_object_id,
+               gbv_IntegReq_respParObj,
+               v_common_req_id
+          );
+          /*pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_Client,
+               'AIC'--'OSPRODUCT' -- testing it will be driven by MD
+          );*/
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_srvcType,
+               r_get_integration_def.service_name -- testing it will be driven by MD
+          );
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_Mode,
+               r_get_integration_def.region -- testing it will be driven by MD
+          );
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_Oprlabel,
+               v_operation_label-- testing it will be driven by MD
+          );
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_Region,
+               r_get_integration_def.region -- testing it will be driven by MD
+          );
+          /*pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_PayVend,
+               'GlobalPayment' -- testing it will be driven from input object
+          );*/
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_belongsTo,
+               in_action_object_id -- testing it will be driven by MD
+          );
+          pkg_os_logging.sp_log
+         (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              '......Input object Id :'||   in_action_object_id ||
+              ' ISR Object ::'         ||   v_common_req_id     
+         );
+          /*pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_commonRequest_belongsTo,
+               pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_action_object_id, 34275748 )
+          );*/--KP testing
+          
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_input_object,
+               gbv_genObject_CurrentISR,
+               v_isr_object_id -- testing it will be driven by MD
+          );
+          
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_isr_object_id,
+               gbv_IntegrationSrv_OprLab,
+               v_operation_label-- service label
+          );
+          pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_common_req_id,
+                    gbv_PaymentMode,
+                    1
+               );
+          pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_common_req_id,
+                    33986148,
+                    1
+               );
+          pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_common_req_id,
+                    gbv_ApplicationName,
+                    'Web'
+               );
+
+          if v_operation_label in ('getFabricProfileURL')  
+          then
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    gbv_CTF_orderID,
+                    v_common_req_id
+               );
+          end if;
+          
+          if v_operation_label in ('getFabricPaymentPageURL', 'chargePaymentProfile')  
+          then
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,--pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_action_object_id,32828640),
+                    gbv_CTF_orderID,
+                    v_common_req_id
+               );
+          end if;
+          
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_common_req_id,
+               gbv_CustomerID,
+               v_ultimate_customer_id
+          );
+
+     end loop;
+
+     if v_session_control.gLogging_Full
+     then
+     pkg_os_logging.sp_log
+     (
+          in_session_id,
+          in_transaction_id,
+          v_procedure_name,
+          '......Input object Id :'||   in_action_object_id ||
+          ' ISR Object ::'         ||   v_isr_object_id     ||
+          ' Common Request ::'     ||   v_common_req_id     ||
+          ' v_isr_Parent_object:: '||   v_isr_Parent_object ||
+          ' v_input_object::'      ||   v_input_object ||
+          'Input object type Id ' || pkg_os_object.fn_object_type_get(in_session_id,in_transaction_id,in_action_object_id)
+     );
+     end if;
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+     exception
+     when others
+     then
+          pkg_os_logging.sp_log_error
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '.... Error for input object id .....'||in_action_object_id ||
+               ' sql message ' || sqlerrm ||
+               ' Error trace:' || dbms_utility.format_error_backtrace
+          ) ;
+end sp_create_integ_object;
+--OSPRODUCT-4729 End
+-----------------------------------------------------------------------------------------------------------------------------------
+procedure sp_read_deep_link
+(
+     in_session_id        in object.object_id%type,
+     in_transaction_id    in object.object_id%type,
+     in_action_object_id  in object.object_id%type,
+     io_action_outcome_id in out outcome.outcome_id%type
+)
+is
+     v_procedure_name constant     system_log.program_name%type := pkg_name || 'sp_read_deep_link';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+
+     v_customer_id                 object.object_id%type;
+     v_webExtenralReq              object.object_id%type;
+     v_webExtenralparam            object.object_id%type;
+     v_IntholderObjectID           object.object_id%type;
+     v_customer_id                 Object_Bv_Value.Business_Variable_Value%type;
+     v_callBackURL                 object_Bv_Value.Business_Variable_Value%type;
+     v_callBackAction              object_Bv_Value.Business_Variable_Value%type;
+     v_child_list                  pkg_os_object.t_object_list;
+     v_child_index                 number := null;
+     v_paramName                   Object_Bv_Value.Business_Variable_Value%type;
+     v_paramValue                  Object_Bv_Value.Business_Variable_Value%type;
+
+begin
+
+
+     v_webExtenralReq := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_session_id,gbv_ref_currWebRequest);
+     pkg_os_object.sp_object_create
+     (
+          in_session_id,
+          in_transaction_id,
+          gobj_Type_IntPlaceHolder,
+          v_webExtenralReq,
+          v_IntholderObjectID
+     );
+     pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_ref_IntPlaceBelongsTo,in_session_id);
+
+     v_child_list.delete;
+     pkg_os_object_search.sp_object_children_of_type_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_webExtenralReq,
+          gobj_Type_ExtWebReqParam, --
+          v_child_list
+     );
+     v_child_index := v_child_list.first;
+
+     if v_session_control.gLogging_Full
+     then
+     pkg_os_logging.sp_log
+     (
+          in_session_id,
+          in_transaction_id,
+          v_procedure_name,
+          '......Input object Id :' ||   in_action_object_id ||
+          ':: v_webExtenralReq::' ||v_webExtenralReq ||
+          'ParamCount:'||v_child_list.count ||
+          'Place Holder Object '||v_IntholderObjectID
+     );
+     end if;
+
+     while v_child_index is not null
+     loop
+
+          v_webExtenralparam  := v_child_list(v_child_index);
+          v_paramName    := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,v_webExtenralparam,gbv_paramName);
+          v_paramValue   := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,v_webExtenralparam,gbv_paramValue);
+
+          if upper(v_paramName) = 'CUSTOMERID'
+          then
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_IntCustomerID,v_paramValue);
+          end if;
+          if upper(v_paramName) = 'CALLBACK'
+          then
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_IntCallBackURL,v_paramValue);
+          end if;
+          if upper(v_paramName) = 'ACTION'
+          then
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_IntCallBackAction,v_paramValue);
+          end if;
+          if upper(v_paramName) = 'CLIENT'
+          then
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_IntClientName,v_paramValue);
+          end if;
+          if upper(v_paramName) = 'ORDERID'
+          then
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_IntholderObjectID,gbv_IntOrderID,v_paramValue);
+          end if;
+          v_child_index := v_child_list.next(v_child_index);
+     end loop;
+     io_action_outcome_id := pkg_os_constant.goutcome_ok;
+
+     exception
+     when others
+     then
+          pkg_os_logging.sp_log_error
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '.... Error for input object id .....'||in_action_object_id ||
+               ' sql message ' || sqlerrm ||
+               ' Error trace:' || dbms_utility.format_error_backtrace
+          ) ;
+     raise;
+end;
+
+END PKG_PC_INTEGRATION;
+/

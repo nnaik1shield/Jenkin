@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2018-03-30T11:27:56.639+05:30" update="2018-03-30T12:16:03.025+05:30">
+        <path name="IncidentDetails" folder="/home/Oneshield/Cubes/IncidentDetails.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield Claims Cubes" cube="INCIDENT_CUBE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyCells="false" emptyCellDisplay="-" showDrillLinks="false" version="9" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Incident_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[IncidentLoss_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[Avg_Losses_per_Incident]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Time (Creation Date)].[Creation Year]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Time (Creation Date)].[Creation Month]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Incident Address].[Jurisdiction]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Incident].[Incident Type]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Claimant].[Claimant Name]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Incident].[Incident Type]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL" parameterName="{Incident Type}">
+                        <member formula="[Incident].[Alcohol &amp; Drugs related Liability]" caption="Alcohol &amp; Drugs related Liability" pos="0"/>
+                        <member formula="[Incident].[Animal bite liability Other than Dog]" caption="Animal bite liability Other than Dog" pos="0"/>
+                        <member formula="[Incident].[Assault liability]" caption="Assault liability" pos="0"/>
+                        <member formula="[Incident].[Collapse]" caption="Collapse" pos="0"/>
+                        <member formula="[Incident].[Dog bite liability]" caption="Dog bite liability" pos="0"/>
+                        <member formula="[Incident].[Equipment Breakdown]" caption="Equipment Breakdown" pos="0"/>
+                        <member formula="[Incident].[Explosion]" caption="Explosion" pos="0"/>
+                        <member formula="[Incident].[Fire]" caption="Fire" pos="0"/>
+                        <member formula="[Incident].[Flood]" caption="Flood" pos="0"/>
+                        <member formula="[Incident].[Freezing]" caption="Freezing" pos="0"/>
+                        <member formula="[Incident].[Hurricane ]" caption="Hurricane " pos="0"/>
+                        <member formula="[Incident].[N/A]" caption="N/A" pos="0"/>
+                        <member formula="[Incident].[Water]" caption="Water" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="CUSTOM" customChartType="ccc_bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="true" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="80,80,92,206,210"/>
+        <columnDataFieldWidths actualWidths="120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

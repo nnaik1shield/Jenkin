@@ -1,0 +1,803 @@
+create or replace package pkg_db_auto_funds_transfer
+-------------
+-- $Workfile:   PKG_DB_AUTO_FUNDS_TRANSFER.PSK  $
+-- $Revision: 45661 $
+--   $Author: kdubin@OSHQ.ONESHIELD.COM $
+--     $Date: 2016-12-08 13:47:33 +0200 (??, 08 ??? 2016) $
+
+-------------
+as
+
+gFITrxType_CCExpiry                     constant  lookup_list_value.lookup_enum%type           := 8001;
+gbv_CashXferProfile_ass_policy          constant  business_variable.business_variable_id%type  := 4160346;
+gbv_FITrxPaymentPrfl                    constant  business_variable.business_variable_id%type  := 30016446;
+gbv_cc_expiry_notice_sent               constant  business_variable.business_variable_id%type  := 32901364;
+gbv_CC_Expiry_Notice                    constant  lookup_list_value.lookup_enum%type           := 8001;
+gbv_CTF_CC_Exp_Month                    constant business_variable.business_variable_id%type   := 30011246;
+gbv_CTF_CC_Exp_Year                     constant business_variable.business_variable_id%type   := 30011146;
+gbv_FITrx_Exp_Month                     constant business_variable.business_variable_id%type   := 32123940;
+gbv_FITrx_Exp_Year                      constant business_variable.business_variable_id%type   := 32124040;
+gbv_BATrx_RefAsscProfile                constant business_variable.business_variable_id%type   := 32828640;
+gbv_Pay_CCExpNoticeSent                 constant business_variable.business_variable_id%type   := 32901664;
+gbv_Disb_CCExpNoticeSent                constant business_variable.business_variable_id%type   := 32901564;
+gbv_curr_tx_effective_date              constant business_variable.business_variable_id%type   := 32122040;
+gbv_FITrx_CashAppplyLevel               constant business_variable.business_variable_id%type   := 32438231;
+gbv_FITrx_CashSubCategEnum              constant business_variable.business_variable_id%type   := 32011446;
+gOutcome_Wait                           constant  number(12) := 60864;
+gOutcome_AmountMismatch                 constant  number(12) := 54464;
+gOutcome_InvalidTransaction             constant  number(12) := 54364;
+
+gObjType_TermScheduledPayment      constant  object_type.object_type_id%type := 2365446;
+gObjType_BillingTrxSet             constant  object_type.object_type_id%type := 2365946;
+gObjType_FITransaction             constant  object_type.object_type_id%type := 2365046;
+gObjType_IntegrationDailyTrx       constant  object_type.object_type_id%type := 3368546;
+gObjType_PaymentPrflUsage          constant  object_type.object_type_id%type := 2384546;
+gObjType_DisbPrflUsage             constant  object_type.object_type_id%type := 2384646;
+v_FundsImportObject                constant  object_type.object_type_id%type := 3180719;
+gObjType_Auto_Transfer_Try         constant  object_type.object_type_id%type := 3194146;
+gbv_Try_sys_gen_ref_number        constant business_variable.business_variable_id%type   :=   36218448;
+
+gbv_BillingAccPaymentProfile       constant  business_variable.business_variable_id%type := 30744446;
+gbv_BillingAccDisburseProfile      constant  business_variable.business_variable_id%type := 31705546;
+gbv_ObjectUsageRefLogsUsed         constant  business_variable.business_variable_id%type := 30000546;
+gbv_DisProfUsageRefProfile         constant  business_variable.business_variable_id%type := 30013446;
+gbv_PolicyTrxCashXferProfile       constant  business_variable.business_variable_id%type := 30746246;
+gbv_PolicyRolledDate               constant  business_variable.business_variable_id%type  := 31532046;
+gbv_PolicyTotalWriteOffAmount      constant  business_variable.business_variable_id%type  := 34066246; -- DDWIDEV-654
+
+
+
+gbv_CurrentTermFromRolledDate      constant  business_variable.business_variable_id%type := 31844846;
+gbv_MasterPolicySourceQuoteTrx     constant  business_variable.business_variable_id%type := 29606209;
+gbv_TermSchPayment_BillingDue      constant  business_variable.business_variable_id%type := 29711846;
+gbv_TermSchPayment_Balance         constant  business_variable.business_variable_id%type := 32080746;
+gbv_TermSchPayment_InvoicedTF      constant  business_variable.business_variable_id%type := 31212946;
+gbv_TermSchPayment_WithBTS         constant  business_variable.business_variable_id%type := 32179046;
+gbv_TermSchPayment_RetryDate       constant  business_variable.business_variable_id%type := 34074546;
+
+
+gbv_BTS_Type                       constant  business_variable.business_variable_id%type  := 29707346;
+gbv_BTS_External_Batch_ID          constant  business_variable.business_variable_id%type  := 29707446;
+gbv_BTS_Entry_Method               constant  business_variable.business_variable_id%type  := 29707546;
+gbv_FITrxSetEnteredby              constant  business_variable.business_variable_id%type  := 32264940;
+gbv_BTS_Date_Posted                constant  business_variable.business_variable_id%type  := 29707646;
+gbv_BTS_Date_Processed             constant  business_variable.business_variable_id%type  := 29707246;
+gbv_BTS_Total_Amount               constant  business_variable.business_variable_id%type  := 29707746;
+gbv_BTS_Total_NumItems             constant  business_variable.business_variable_id%type  := 29707846;
+gbv_BTS_Associated_Policy          constant  business_variable.business_variable_id%type  := 32180046;
+gbv_BTS_Payment_Mode               constant  business_variable.business_variable_id%type  := 29720646;
+gbv_BTS_DisbursementProfile        constant  business_variable.business_variable_id%type  := 31711146;
+gbv_BTS_CurrentTransaction         constant  business_variable.business_variable_id%type  := 29743646;
+gbv_try_AssFITransaction           constant  business_variable.business_variable_id%type  := 32857540;
+gbv_BTS_RevReasonCode              constant  business_variable.business_variable_id%type  := 32235640;
+gbv_BTS_auto_cash_apply            constant  business_variable.business_variable_id%type  := 29748846;
+gbv_BTS_CCWithdrawal_AuthCode      constant  business_variable.business_variable_id%type  := 32873040;
+gbv_BTS_CCWithdrawal_ApprDate      constant  business_variable.business_variable_id%type  := 32873140;
+gbv_BATS_CurrentAutoTransfTry      constant  business_variable.business_variable_id%type  := 34058746;
+gbv_BTS_WithdrawalDate             constant  business_variable.business_variable_id%type  := 32857040;
+gbv_BTS_RefCreatedFiTrxSet         constant  business_variable.business_variable_id%type  := 31756446;
+gbv_BTS_OverrideAmount             constant  business_variable.business_variable_id%type  := 34072546;
+gbv_BTS_ReverseReasonCode          constant  business_variable.business_variable_id%type  := 32586746;
+gbv_BTS_WithdrwalRetryDate          constant  business_variable.business_variable_id%type  :=34073446;
+gbv_BTS_CheckNumber                constant  business_variable.business_variable_id%type  := 32379946;
+gbv_BTS_CheckRefDetails            constant  business_variable.business_variable_id%type  := 32380046;
+
+
+gbv_TermSchPymtInstl_WithDate      constant  business_variable.business_variable_id%type := 32178946;
+gbv_TermSchPymtInstl_retrycnt    constant  business_variable.business_variable_id%type := 34249746;
+gbv_PolicyTerm_PrefPaymentProf     constant  business_variable.business_variable_id%type := 32251146;
+gbv_PolicyTermSuspensionStatus     constant  business_variable.business_variable_id%type := 32251346;
+gbv_Policy_DishhonorIndicator      constant  business_variable.business_variable_id%type := 32093040;
+gbv_PolicyTerm_BillingStatus       constant  business_variable.business_variable_id%type := 29706146;
+
+gbv_AutoTransfTry_RespnseCode      constant  business_variable.business_variable_id%type  :=  32022419;
+gbv_AutoTransfTry_RespnseMsg       constant  business_variable.business_variable_id%type  :=  32018019;
+
+gbv_PaymentProfile_ProfileUsed     constant  business_variable.business_variable_id%type := 30013046;
+gbv_SchPymtInst_LastSchWithd       constant  business_variable.business_variable_id%type := 32873240;
+gbv_SchPymtInst_CurrSchWithd       constant  business_variable.business_variable_id%type := 32880440;
+
+gbv_cashTrfProf_PymtMode           constant  business_variable.business_variable_id%type  := 30010546;
+gbv_cashTrfProf_ProfStopDate       constant  business_variable.business_variable_id%type  := 32375446;
+gbv_CashTransferProf_CCMonth       constant  business_variable.business_variable_id%type := 30011246;
+gbv_CashTransferProf_CCYear        constant  business_variable.business_variable_id%type := 30011146;
+gbv_cashTrfProf_CCTokenNumber      constant  business_variable.business_variable_id%type := 32834040;
+gbv_cashTrfProf_EFTAccountNo       constant  business_variable.business_variable_id%type := 32846640;
+gbv_cashTrfProf_EFTBankID          constant  business_variable.business_variable_id%type := 32088040;
+gbv_cashTrfProf_EFTTransitNo       constant  business_variable.business_variable_id%type := 32088140;
+gbv_cashTrfProf_EFTBankCountry     constant  business_variable.business_variable_id%type := 32377346;
+gbv_cashTrfProf_EFTAccNumber       constant  business_variable.business_variable_id%type := 30011946;
+gbv_cashTrfProf_EFTRoutingNo       constant  business_variable.business_variable_id%type := 30011346;
+gbv_GL_START_DATE                  constant  business_variable.business_variable_id%type := 32856148;
+
+
+
+
+
+gOutcome_Email                     constant  number(12) := 37446;
+gOutcome_ServiceDown               constant  number(12) := 32062;
+gOutcome_Declined                  constant  number(12) := 57640;
+gOutcome_PaymentProfExp            constant  number(12) := 72546;
+gOutcome_AutoTryNotFound           constant  number(12) := 72846;
+gOutcome_BlankAutoTryNotFound      constant  number(12) := 52432;
+gOutcome_TryAlreadyReversed        constant  number(12) := 72946;
+
+gOutcome_PolicyTransformError                      constant  number(12) := 51760;
+gOutcome_FinancialInstitutionNotConfigured          constant  number (12) := 62348; --UTPRODUCT-3325
+
+gTry_TrxType_Refund                constant  number(12) := 2;
+gTry_TrxType_Withdrwal             constant  number(12) := 1;
+
+gBankCountryUS                     constant  number(12) := 1;
+
+gbv_FITransactionType             constant business_variable.business_variable_id%type   :=   29708346;
+gbv_FITransaction_EffDate         constant business_variable.business_variable_id%type   :=   29709246;
+gbv_FITransaction_GLDate          constant business_variable.business_variable_id%type   :=   29755046;
+gbv_FITrxRefActionPolicy          constant business_variable.business_variable_id%type   :=   29974046;
+gbv_FITrxRefAssocPolicy           constant business_variable.business_variable_id%type   :=   29721146;
+gbv_FITrx_AssocPolicyTerm         constant business_variable.business_variable_id%type   :=   32080546;
+gbv_FITrx_PaymentType             constant business_variable.business_variable_id%type   :=   30744646;
+gbv_FITrx_AccountType             constant business_variable.business_variable_id%type   :=   32029346;
+gbv_FITrx_AccountNumber           constant business_variable.business_variable_id%type   :=   32029446;
+gbv_FITrx_RoutingNumber           constant business_variable.business_variable_id%type   :=   32029146;
+gbv_FITrx_BankName                constant business_variable.business_variable_id%type   :=   32029246;
+gbv_FITrx_AssociatedAccount       constant business_variable.business_variable_id%type   :=   29745946;
+gbv_FITrx_Amount                  constant business_variable.business_variable_id%type   :=   29708946;
+gbv_FITrx_RefCurrentTry           constant business_variable.business_variable_id%type   :=   32886840;
+
+gbv_Try_ConfirmationDate          constant business_variable.business_variable_id%type   :=   32022319;
+gbv_Try_ConfResponseCode          constant business_variable.business_variable_id%type   :=   32022419;
+gbv_Try_ConfResponseMsg           constant business_variable.business_variable_id%type   :=   32018019;
+
+gbv_Try_ReconStatus               constant business_variable.business_variable_id%type   :=   32019019;
+gbv_Try_TransactionDate           constant business_variable.business_variable_id%type   :=   32022019;
+gbv_Try_ReconClearDate            constant business_variable.business_variable_id%type   :=   32018919;
+gbv_Try_ChequeEFTNumber           constant business_variable.business_variable_id%type   :=   32233746;
+gbv_Try_Description               constant business_variable.business_variable_id%type   :=   32018219;
+gbv_Try_Reason_code               constant business_variable.business_variable_id%type   :=   32441446;
+gbv_Try_ReconciledAmount          constant business_variable.business_variable_id%type   :=   32018319;
+gbv_Try_RefCTProfileUsed          constant business_variable.business_variable_id%type   :=   32179746;
+gbv_Try_NachaString               constant business_variable.business_variable_id%type   :=   34062446;
+
+gbv_Batx_CheckStatus               constant business_variable.business_variable_id%type   :=   32617646; --UTPRODUCT-853
+gBATrxSet_CheckStatus_Clear        constant  lookup_list_value.lookup_enum%type           :=   2;        --UTPRODUCT-853
+
+gBTSType_Sched_Direct_Debit        constant  lookup_list_value.lookup_enum%type           := 6001;
+gBTSType_Scheduled_CC_DC           constant  lookup_list_value.lookup_enum%type           := 6002;
+gBTSType_Disbursement              constant  lookup_list_value.lookup_enum%type           := 2301;
+gBTSType_Disbursement_rollback     constant  lookup_list_value.lookup_enum%type           := 2801;
+gBTSType_EFTPaymentBatch           constant  lookup_list_value.lookup_enum%type           := 301;
+gBTSType_CHQPaymentBatch           constant  lookup_list_value.lookup_enum%type           := 101;
+gBTSType_DISCHQPaymentBatch        constant  lookup_list_value.lookup_enum%type           := 6003;
+gBTSType_SinglePayment             constant  lookup_list_value.lookup_enum%type           := 601;
+
+gBTSEntry_Scheduled_Process        constant  lookup_list_value.lookup_enum%type           := 201;
+gBTSEntry_Import                    constant  lookup_list_value.lookup_enum%type           := 301;
+
+gBTSPayMode_EFTDirectDebit         constant  lookup_list_value.lookup_enum%type           := 5;
+gBTSPaymentMode_CreditCard         constant  lookup_list_value.lookup_enum%type           := 4;
+gBTSPaymentMode_EFTOnline          constant  lookup_list_value.lookup_enum%type           := 10;
+gBTSPaymentMode_CHQ                constant  lookup_list_value.lookup_enum%type           := 2;
+
+gFITrxType_CashPost                constant  lookup_list_value.lookup_enum%type           := 603;
+gFITrxPayType_EFTDirectDebit       constant  lookup_list_value.lookup_enum%type           := 301;
+gFITrxPayType_EFT                  constant  lookup_list_value.lookup_enum%type           := 53346;
+gFITrxPaymentType_CC               constant  lookup_list_value.lookup_enum%type           := 201;
+gFITrxPaymentType_CreditCard       constant  lookup_list_value.lookup_enum%type           := 51940;  
+gFITrx_CashSubCat_CreditCard       constant  lookup_list_value.lookup_enum%type           := 53246;  -- UTPRODUCT-5016
+gFITrxStatus_Identified            constant  lookup_list_value.lookup_enum%type           := 40246;
+gFITrxStatus_UnIdentified          constant  lookup_list_value.lookup_enum%type           := 40346;
+
+gPolicyPaymentMode_CC              constant  lookup_list_value.lookup_enum%type           := 2;
+gPolicyPaymentMode_EFT             constant  lookup_list_value.lookup_enum%type           := 3;
+gPolicyPaymentMode_Check           constant  lookup_list_value.lookup_enum%type           := 1;
+
+gState_BTS_InProcess               constant  object_state.object_state_id%type := 39946;
+gState_BTS_Processed               constant  object_state.object_state_id%type := 39846;
+gState_BTS_Requested               constant  object_state.object_state_id%type := 53346;
+gState_BTS_Validated               constant  object_state.object_state_id%type := 54146;
+gState_BTS_Failed                  constant  object_state.object_state_id%type := 53446;
+gState_Pending                     constant  object_state.object_state_id%type := 64352;
+gState_Exported                    constant  object_state.object_state_id%type := 64452;
+gState_Dishonored                  constant  object_state.object_state_id%type := 70546;
+gState_Pending_text                constant  varchar2(20)                      := 'PENDING';
+gState_Exported_text               constant  varchar2(20)                      := 'EXPORTED';
+
+gState_Try_Requested               constant  object_state.object_state_id%type := 56046;
+gState_Try_Dispatched              constant  object_state.object_state_id%type := 53546;
+gState_Try_Validated               constant  object_state.object_state_id%type := 53646;
+gState_Try_Invalidated             constant  object_state.object_state_id%type := 53746;
+gState_Try_Successful              constant  object_state.object_state_id%type := 53846;
+gState_Try_Failed                  constant  object_state.object_state_id%type := 53946;
+gState_Try_Rejected                constant  object_state.object_state_id%type := 53540;
+gState_Try_Resolved                constant  object_state.object_state_id%type := 52940;
+gState_PolicyTermBASusp            constant  object_state.object_state_id%type := 54446;
+gState_PolicyCancelled             constant  object_state.object_state_id%type := 73;
+gState_BatsRolledback              constant  object_state.object_state_id%type := 51219; --70646
+gState_BatsDisbFailed              constant  object_state.object_state_id%type := 70646;
+gState_FiTrxProcessed              constant  object_state.object_state_id%type := 37646;
+gState_FiTrxDuplicate              constant  object_state.object_state_id%type := 37046;
+
+
+gbv_Policy_No                      constant business_variable.business_variable_id%type   := 231;
+gbv_FITrx_OriginalBatch            constant business_variable.business_variable_id%type   := 31756346;
+
+gbv_ba_acc_type                    constant business_variable.business_variable_id%type  := 29711346;
+gbv_acct_type_broker               constant business_variable.business_variable_id%type  := 101;
+gbv_try_trx_type                   constant business_variable.business_variable_id%type :=32180146;
+gbv_assc_fitem                     constant business_variable.business_variable_id%type :=31689946;
+gOutcome_TrxFeedValidtn_OK         constant  outcome.outcome_id%type := 51960;
+gOutcome_TrxFeedValidtn_Failed     constant  outcome.outcome_id%type := 52060;
+gOutcome_NoMatch                   constant  outcome.outcome_id%type := 34246;
+gOutcome_NoRecordFound             constant  outcome.outcome_id%type := 52619;
+
+gOutcome_CashPostAndApply           constant  outcome.outcome_id%type := 51732;
+gOutcome_SkipCashPostAndApply       constant  outcome.outcome_id%type := 51832;
+gOutcome_NachaCreationFailure       constant  outcome.outcome_id%type := 51932;
+-- Arun OSPRODUCT-532 - Start
+gOutcome_FileStringCreateFail  constant  outcome.outcome_id%type := 53048;
+-- Arun OSPRODUCT-532 - End
+
+gOutcome_InvalidResponseCode       constant outcome.outcome_id%type :=55448; --OSPRODUCT-1558
+
+--UTPRODUCT-981 start
+gOutcome_LockboxDuplicateRec   constant outcome.outcome_id%type := 54848;
+gbv_ServiceOperationLabel      constant business_variable.business_variable_id%type := 33983846;
+gOutcome_LockboxDataMismatch   constant outcome.outcome_id%type := 55548;
+--UTPRODUCT-981 end
+
+gExternalTable_import_account      constant number := 215660;
+gExternalTable_import_policy       constant number := 215760;
+gExternalTable_import_premium      constant number := 215860;
+gExternalTable_db_funds_rcpt       constant number := 244146;
+gBillingMethodDirect               constant number := 1;
+
+-- PD Property
+gPd_Property_WebService_TF         pd_property_type.pd_property_type_id%type := 19046;
+gPd_Property_FileService_TF        pd_property_type.pd_property_type_id%type := 15948;
+gPd_Property_ConsolidateTry_TF     pd_property_type.pd_property_type_id%type := 19346;
+gPd_Prop_SchFundOptimisticTF       pd_property_type.pd_property_type_id%type := 13240;
+gPDProp_incl_writeoff_amt          pd_property_type.pd_property_type_id%type := 19746;  --DDWIDEV-654
+gPDProp_CashPostOnAccount_TF       pd_property_type.pd_property_type_id%type := 20746;  --DDWIDEV-1062
+gPDProp_IncludePastDuesWith_TF     pd_property_type.pd_property_type_id%type := 13848;  --DDWIDEV-1062
+gPDProp_OptimisticFlag             pd_property_type.pd_property_type_id%type := 13240;  --UTPRODUCT-853
+gPDProp_oneormultipleBATS          pd_property_type.pd_property_type_id%type := 18048;  --OSPRODUCT-8537
+
+
+gTask_SchFundTransfer              task_type.task_type_id%type := 15740;
+gTask_CreditCardExpired            task_type.task_type_id%type := 17540;
+gExc_TrxFeed_BatchFilesetIsBad     exception;
+
+gTrxApproveCode                   constant number := 101;
+gTrxApproveCodeWithMismatch       constant number := 103;
+gTrxUnAuthorisedRequest           constant number := 401;
+
+gTrxRefundTestCode                constant number := 108;
+gTrxRefundApproveCode             constant number := 106;
+gTrxApproveTestCode               constant number := 104;
+
+gPolicyTermStateCancelled         constant number := 45046;  --OSPRODUCT-862
+
+--UTPRODUCT-2888
+gUsePayProviderIntegration        constant number := 32855748;
+gIntegrationType                  constant number := 32907248;
+gbv_NewExistingCC                 constant number := 32638846;
+gbv_NewExistingEFT                constant number := 32640646;
+gIntegrationType_Javascript       constant number := 1;
+gCTF_NewExisting_New              constant number := 2;
+function fn_get_sched_withdrawal_date
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_current_date                    in             date,
+     in_policy_pay_mode_id              in             number
+)
+return date;
+
+procedure sp_policy_auto_withdrawal
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_current_date                    in             date,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_advance_days                    in             number default 0
+);
+
+
+procedure sp_auto_transfer_try_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     in_current_date                    in             date,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_manual_try_id                   in             object.object_id%type default null
+);
+
+procedure sp_auto_withdraw_try_update
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     in_try_status_id                   in             number,
+     in_try_status_reason_desc          in             varchar2,
+     in_processed_date                  in             date
+);
+
+procedure sp_auto_withdraw_try_test
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     in_current_date                    in             date,
+     io_outcome_id                      in out         outcome.outcome_id%type
+);
+
+procedure sp_auto_funds_receipt
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     in_current_date                    in             date,
+     io_outcome_id                      in out         outcome.outcome_id%type
+);
+
+procedure sp_auto_disburse_try_test
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     in_current_date                    in             date,
+     io_outcome_id                      in out          outcome.outcome_id%type
+);
+
+procedure sp_auto_disburse_try_update
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     in_try_recon_status                in             number,
+     in_transaction_date                in             date,
+     in_recon_clear_date                in             date,
+     in_cheque_eft_number               in             number,
+     in_description                     in             varchar2,
+     in_try_reason_code                 in             varchar2   default null
+);
+
+procedure sp_import_funds_receipt
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_object_cache               in out    pkg_os_object_cache.t_object_cache,
+     io_message_list               in out    pkg_os_message.t_message_list,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+
+procedure sp_funds_receipt_process
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_object_cache               in out    pkg_os_object_cache.t_object_cache,
+     io_message_list               in out    pkg_os_message.t_message_list,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+
+procedure sp_fb_batch_control_update
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_user_session_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_try_type_id                     in             lookup_list_value.lookup_enum%type default null,
+     in_pay_mode_id                     in             lookup_list_value.lookup_enum%type default null
+
+);
+
+procedure sp_auto_withdraw_failure
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     in_current_date                    in             date,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_billacc_auto_withdrawal
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billacc_id                      in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_auto_disbreqtry_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_auto_disb_resp
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_disb_bts_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+procedure sp_receipt_request_try_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_receipt_try_response
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     v_batch_id                         in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_withd_rev_req_try_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_chequedisbreqtry_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_cheque_disb_try_response
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     v_batch_id                         in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_cheque_disb_try_failure
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_disb_bts_id                in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_disb_rev_req_try_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+function fn_get_batch_error_message
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_batch_id                        in             object.object_id%type
+)
+return varchar2;
+
+function fn_get_original_try
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type
+)
+return number;
+
+function fn_async_batch_exists
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_async_batch_type_id             in             number
+)
+return varchar2;
+
+procedure sp_cc_expiry_notice_create
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_current_date                    in             date,
+     in_bats_id                                in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_get_associated_policy
+(
+    in_session_id                 in             object.object_id%type,
+    in_transaction_id             in             object.object_id%type,
+    in_billing_account_trx_set_id     in             object.object_id%type
+
+);
+
+procedure sp_funds_receipt_create_batch
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_payment_type               in            object_bv_value.business_variable_value%type,
+     in_job_id                                    in        object.object_id%type,
+     io_billtrxset_id              in out    object.object_id%type,
+     io_bill_acc_id                in out    object.object_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+
+procedure sp_file_semantic_validation
+(
+     in_session_id                 in               object.object_id%type,
+     in_transaction_id             in               object.object_id%type,
+     in_action_id                  in               object.object_id%type,
+     io_action_outcome_id          in out nocopy    outcome.outcome_id%type
+);
+
+procedure sp_post_file_import
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_action_id                  in        action.action_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+
+/*
+procedure sp_fb_batch_update_disc
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_batch_id                        in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);*/
+procedure sp_fb_batch_update_disc
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_pay_mode_id                     in             number,
+     in_trx_type_id                     in             number,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+function fn_staging_batch_exists
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             number
+)
+return varchar2;
+--GCNA-2604
+procedure sp_async_batch_count
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_user_session_id                          in             number,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_trx_type_id                     in             number
+
+);
+
+Procedure sp_batch_in_sleep(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_duration                        in             number,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_pre_GLFeed_export
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type
+);
+procedure sp_post_GLFeed_export
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type
+);
+function fn_get_external_table_id
+(
+     in_external_table_name        in        varchar2
+)
+return number DETERMINISTIC;
+
+procedure sp_auto_withdraw_resp_tab
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     in_current_date                    in             date,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_auto_withdraw_resp_web
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     in_current_date                    in             date,
+     in_response_code                   in             object_bv_value.business_variable_value%type,
+     in_response_msg                    in             object_bv_value.business_variable_value%type,
+     in_current_try_id                       in        object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+procedure sp_auto_disb_resp_tab
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_disb_bts_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+procedure sp_auto_disb_resp_web
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_disb_bts_id                 in             object.object_id%type,
+     in_response_code                   in             object_bv_value.business_variable_value%type,
+     in_response_msg                    in             object_bv_value.business_variable_value%type,
+     in_current_try_id                  in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--OSPRODUCT-953
+procedure sp_auto_disb_resp_file
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_disb_bts_id                 in             object.object_id%type,
+     in_response_code                   in             object_bv_value.business_variable_value%type,
+     in_response_msg                    in             object_bv_value.business_variable_value%type,
+     in_current_try_id                  in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--OSPRODUCT-953
+procedure sp_eft_dish_validate
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+procedure sp_eft_dish_install_reset
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--OSPRODUCT-953
+procedure sp_update_fund_receipt_res
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--OSPRODUCT-953
+--------------------------------------------------------------------------------------
+function fn_check_cash_profile
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_cash_xfer_prof_id               in             object.object_id%type,
+     in_req_cash_xfer_prof_id           in             object.object_id%type,
+     in_payment_mode_id                 in             number
+)
+return varchar2;
+
+--------------------------------------------------------------------------------------------------
+-- Arun OSPRODUCT-532 - Start
+/*
+procedure sp_create_tpr_nacha_string
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in               object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+*/
+procedure sp_create_try_file_string
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in               object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+-- Arun OSPRODUCT-532 - End
+--------------------------------------------------------------------------------------------------
+procedure sp_validate_billingaccounttrx(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                       in             object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+--------------------------------------------------------------------------------------------------
+-- Arun
+procedure sp_auto_try_update_status
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_try_id                          in             object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+--UTPRODUCT-1267 start
+function fn_get_next_gl_from_date
+(
+         in_session_id        in        object.object_id%type,
+         in_file_number       in        number
+)
+return date;
+--------------------------------------------------------------------------------------
+function fn_get_next_gl_to_date
+(
+         in_session_id        in        object.object_id%type,
+         in_file_number       in        number
+)
+return date;
+--UTPRODUCT-1267 end
+function fn_incomplete_integration_CTF
+(
+         in_session_id        in        object.object_id%type,
+         in_transaction_id    in        object.object_id%type,
+         in_input_profile_id  in        object.object_id%type,
+         in_cc_profile_id     in        object.object_id%type,
+         in_eft_profile_id    in        object.object_id%type
+     
+)
+return number;		
+-----------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-10252
+function fn_validate_withdrwreq_tf  
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_BATS_id	                        in             object.object_id%type 
+)
+return char;
+--------------------------------------------------------------------------------------------------------------------------
+procedure sp_discard_withdrwreqtry
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_auto_transfer_bts_id            in             object.object_id%type,
+     in_current_date                    in             date,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+--OSPRODUCT-10252 end
+--------------------------------------------------------------------------------------------------------------------------
+function fn_get_retry_withdrawal_date  --OSPRODUCT-12663
+(
+     in_session_id                      in      object.object_id%type,
+     in_transaction_id                  in      object.object_id%type,
+     in_object_id                       in      object.object_id%type,
+     in_auto_transfer_bts_id            in      object.object_id%type,
+     -- MUSTDEV-18081 - Arun - Start
+     --in_resp_code                       in      number default null
+     in_resp_code                       in      object_bv_value.business_variable_value%type default null
+     -- MUSTDEV-18081 - Arun - End
+
+) 
+return date;
+procedure sp_wrapper_cc_expiry_notice
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_CTF_id                in             object.object_id%type,
+     io_action_outcome_id     in out nocopy  outcome.outcome_id%type,
+     in_object_cache          in out         pkg_os_object_cache.t_object_cache
+);
+end pkg_db_auto_funds_transfer;
+/

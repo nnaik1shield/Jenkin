@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action-sequence> 
+  <title>Overdue Tasks for User</title>
+  <version>1</version>
+  <logging-level>debug</logging-level>
+  <documentation> 
+    <author>OneShield</author>  
+    <description>Overdue Tasks for User</description>  
+    <help/>  
+    <result-type/>  
+    <icon/> 
+  </documentation>
+
+  <inputs>
+    <userObjectId type="long">
+      <sources>
+        <request>userObjectId</request>
+        <session>SESSION_USER_OBJECT_ID</session>
+      </sources>
+      <default-value><![CDATA[112929625556]]></default-value>
+    </userObjectId>
+  </inputs>
+
+  <outputs> 
+    <image-tag type="content"> 
+      <destinations> 
+        <response>content</response> 
+      </destinations> 
+    </image-tag> 
+  </outputs>
+
+  <resources> 
+    <pie_chart_attributes> 
+      <solution-file> 
+        <location>pie_chart_definition.xml</location>  
+        <mime-type>text/xml</mime-type> 
+      </solution-file> 
+    </pie_chart_attributes> 
+  </resources>
+  
+  <actions> 
+    <action-definition> 
+      <component-name>SQLLookupRule</component-name>
+      <action-type>Relational</action-type>
+      <action-inputs>
+        <userObjectId type="string"/>
+      </action-inputs>
+      <action-outputs> 
+        <query-result type="result-set" mapping="OVERDUE_TASKS_FOR_USER"/>  
+        <TASK_TITLE type="string"/>  
+        <TASK_COUNT type="long"/> 
+      </action-outputs>
+      <component-definition> 
+        <jndi><![CDATA[OneshieldData]]></jndi>  
+        <query><![CDATA[select ft.TD_TASK_TITLE as task_title, count(*) as task_count
+from BI_FACT_TASK_DETAIL ft
+where ft.TD_STATUS_IND = 2
+  and ft.td_due_dt < trunc(SYSDATE)
+  and ft.UD_ASSIGNED_USER_ID = {PREPARE:userObjectId}
+group by ft.TD_TASK_TITLE]]></query>  
+        <live><![CDATA[true]]></live> 
+      </component-definition> 
+    </action-definition>
+  
+    <action-definition> 
+      <component-name>OpenFlashChartComponent</component-name>
+      <action-type>Generate Chart</action-type>
+      <action-inputs> 
+        <chart-data type="result-set" mapping="OVERDUE_TASKS_FOR_USER"/> 
+      </action-inputs>
+      <action-resources> 
+        <chart-attributes type="resource" mapping="pie_chart_attributes"/> 
+      </action-resources>
+      <action-outputs> 
+        <image-tag type="content"/> 
+      </action-outputs>
+      <component-definition>
+        <title>Overdue Tasks for User</title>
+      </component-definition> 
+    </action-definition>
+ 
+  </actions> 
+</action-sequence>

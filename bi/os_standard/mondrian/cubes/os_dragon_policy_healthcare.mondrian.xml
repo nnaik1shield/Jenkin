@@ -1,0 +1,162 @@
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 July 2020  $
+-->
+<Schema name="Dragon Policy Healthcare Cubes">
+  <Dimension highCardinality="false" name="Customer">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE" nameColumn="CD_INSURED_TYPE" ordinalColumn="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Address">
+    <Hierarchy hasAll="true" allMemberName="All Countries" primaryKey="AD_ADDRESS_ID">
+      <Table name="BI_DIM_ADDRESS_DETAIL">
+      </Table>
+      <Level name="Country" column="AD_COUNTRY_NAME" nameColumn="AD_COUNTRY_NAME" ordinalColumn="AD_COUNTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Country" description="Name of the Country">
+	  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">country</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="Jurisdiction" column="AD_JURISDICTION_NAME" nameColumn="AD_JURISDICTION_NAME" ordinalColumn="AD_JURISDICTION_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Jurisdiction" description="Name of the Country">
+	  	  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="City" column="AD_ADDRESS_CITY" nameColumn="AD_ADDRESS_CITY" ordinalColumn="AD_ADDRESS_CITY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="City" description="Name of the City">
+	  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">city</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="ZipCode" column="AD_ADDRESS_ZIP_CODE" ordinalColumn="AD_ADDRESS_ZIP_CODE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Zip Code" description="Zip Code">
+	  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">zip</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Policy Eff Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EFF_TIME">
+      </Table>
+      <Level name="Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Effective Day" visible="true" column="TD_DAY"  type="Date" uniqueMembers="Numeric" levelType="TimeDays" hideMemberIf="Never" description="Effective Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Policy Exp Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EXP_TIME">
+      </Table>
+      <Level name="Expiration Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Expiration Year">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Expiration Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+	  <Annotations>
+ 	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+	  </Annotations>
+      </Level>
+      <Level name="Expiration Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+ 	  </Annotations>
+      </Level>
+      <Level name="Expiration Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Expiration Day">
+	  <Annotations>
+	  <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+	  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Healthcare Activity Type">
+    <Hierarchy hasAll="true" allMemberName="Healthcare Activity Type" primaryKey="HCE_ID">
+      <Table name="BI_DIM_HCPL_CUST_EXPOSURE">
+      </Table>
+      <Level name="Healthcare Activity" column="HCE_TYPE" nameColumn="HCE_TYPE" ordinalColumn="HCE_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Healthcare Activity Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Healthcare Exposure Type">
+    <Hierarchy hasAll="true" allMemberName="Healthcare Exposure Type" primaryKey="HCE_ID">
+      <Table name="BI_DIM_HCPL_CUST_EXPOSURE">
+      </Table>
+      <Level name="Healthcare  Exposure" column="HCE_EXP_TYPE" nameColumn="HCE_EXP_TYPE" ordinalColumn="HCE_EXP_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Healthcare  Exposure Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension highCardinality="false" name="Exposure Type Desc">
+    <Hierarchy hasAll="true" allMemberName="Exposure Type Desc" primaryKey="HCEC_ID">
+      <Table name="BI_FACT_HCPL_CUST_EXP_CLASS">
+      </Table>
+      <Level name="Exposure Description" column="HCEC_EXP_TYPE_DESC" nameColumn="HCEC_EXP_TYPE_DESC" ordinalColumn="HCEC_EXP_TYPE_DESC" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Exposure Type Desc">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Cube name="HCPL_EXPOSURE_CUBE" caption="Healthcare Activity Exposure Cube" cache="true" enabled="true">
+    <Table name="BI_FACT_HCPL_CUST_EXP_CLASS">
+    </Table>
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Address" name="Address" foreignKey="AD_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Healthcare Activity Type" name="Healthcare Activity Type" foreignKey="HCE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Healthcare Exposure Type" name="Healthcare Exposure Type" foreignKey="HCE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy Eff Date" name="Policy Eff Date" caption="Policy Eff Date" visible="true" foreignKey="EFFECTIVE_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy Exp Date" name="Policy Exp Date" caption="Policy Exp Date" visible="true" foreignKey="EXPIRATION_DATE" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Exposure Type Desc" caption="Exposure Type Desc">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Exposure Type Desc" visible="true" column="HCEC_EXP_TYPE_DESC" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Exposure Type Description">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Total Inpatient Class" column="HCEC_INPATIENT_CLASS_DESC" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Inpatient Class" description="Number of Inpatient Bed">
+    </Measure>
+    <Measure name="Total Outpatient Class" column="HCEC_OUTPATIENT_CLASS_DESC" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Outpatient Class" description="Number of Outpatient">
+    </Measure>
+    <Measure name="Total Freestanding Class" column="HCEC_FREESTANDING_CLASS_DESC" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Freestanding Class" description="Number of Freestanding Outpatient">
+    </Measure>
+    <Measure name="No. of Inpatient In Service" column="HCEC_INPATIENT_IN_SERVICE" datatype="Numeric" formatString="#,###" aggregator="sum" caption="No. of Inpatient In Service" description="Number of Inpatient In Service">
+    </Measure>
+    <Measure name="No. of Outpatient" column="HCEC_OUTPATIENT_NO_OF" datatype="Numeric" formatString="#,###" aggregator="sum" caption="No. of Outpatient" description="Number of Outpatient">
+    </Measure>
+    <Measure name="No. of Freestanding" column="HCEC_FREESTANDING_NO_OF" datatype="Numeric" formatString="#,###" aggregator="sum" caption="No of Freestanding" description="Number of Freestanding Outpatient">
+    </Measure>
+    <Measure name="Premium" column="EXPOSURE_CLASS_PREMIUM" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Premium" description="Premium of the Exposure Class">
+    </Measure>
+  </Cube>
+</Schema>

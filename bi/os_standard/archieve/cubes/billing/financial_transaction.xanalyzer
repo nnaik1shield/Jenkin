@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2013-07-13T13:27:15" created="2013-07-13T13:27:15" updatedBy="joe" createdBy="joe">
+        <path name="Financial Transaction Cube"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="7" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="BILLING_FITRANSACTION_CUBE" catalog="Dragon Billing Cubes">
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Batch Total Items]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[FT_AMOUNT]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="true" formula="[Billing_Account_Dim].[Account Type]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[FINANCIAL_TRANSACTION].[FT_TRANSACTION_TYPE]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions legendFontFamily="Default" labelFontFamily="Default" legendStyle="PLAIN" legendColor="#000000" legendSize="12" legendBackgroundColor="#ffffff" labelStyle="PLAIN" backgroundColorEnd="#ffffff" maxChartsPerRow="3" backgroundFill="NONE" labelSize="12" labelColor="#000000" backgroundColor="#ffffff" maxValues="100" lineShape="CIRCLE" lineWidth="2" displayUnitsSecondary="UNITS_0" autoRangeSecondary="true" displayUnits="UNITS_0" autoRange="true" showLegend="true" legendPosition="RIGHT" customChartType="ccc_bar" chartType="CUSTOM"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelScalingPageTall="1" excelScalingPageWide="1" excelScalingPercent="100" excelScalingType="PERCENT" pdfOrientation="LANDSCAPE" excelOrientation="LANDSCAPE" pdfPageSize="LETTER" excelPageSize="LETTER"/>
+    </report>
+    <uiAttributes showFilterPanel="false" showFieldLayout="false" showFieldList="true">
+        <rowFieldWidths actualWidths="160,127"/>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

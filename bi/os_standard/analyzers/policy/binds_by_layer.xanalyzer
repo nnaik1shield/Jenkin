@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-04-27T09:57:27" created="2011-02-18T10:30:16" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Submission/Binds by Layer.xanalyzer" name="Binds by Layer"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="QUOTE" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Bind_Count]"/>
+            <measure id="[MEASURE:3]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Bound_Premium]"/>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Hit_Ratio]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Premium Band].[Premium Band]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Status].[Status]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Closed" formula="[Status].[Closed]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+            <filter viewFilterEnum="MULTIPLE" formula="[Premium Band].[Premium Band]">
+                <predicates>
+                    <predicate operatorEnum="NOT_EQUAL" ordinal="1">
+                        <member pos="0" caption="Not Available" formula="[Premium Band].[#null]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

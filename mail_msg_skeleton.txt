@@ -1,0 +1,17 @@
+Client = ${region.client}
+Region = ${region.name}
+Build  = ${release.PVCSLabel}
+
+Date of Build        = ${release.time}
+
+${DB_target} start time = ${db.update.start.time}
+${DB_target} end   time = ${db.update.end.time}
+
+Database=${db.instance.name}
+	md_schema =${db.instance.md_schema}
+	st_schema =${db.instance.st_schema}
+	api_schema =${db.instance.api_schema}
+	mapi_schema =${db.instance.mapi_schema}
+
+
+Below is an error summary from the log file.

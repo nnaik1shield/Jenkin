@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-07-29T17:18:34" created="2011-05-20T12:13:26" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Submission/Marketing Dashboard Quotes by LOB Pie.xanalyzer" name="Marketing Dashboard Quotes by LOB"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="CHART" cube="QUOTE" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Line of Business].[Line of Business]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Line of Business].[Line of Business]">
+                <conditions>
+                    <condition op1="6.0" operator="GREATER_THAN" formula="[Measures].[Quote_Count]"/>
+                </conditions>
+            </filter>
+            <filter viewFilterEnum="MULTIPLE" formula="[Producer].[Agency]">
+                <predicates>
+                    <predicate parameterName="Agency" operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Agent Mark" formula="[Producer].[None].[None].[Agent  Mark]"/>
+                        <member pos="0" caption="Aviva Canada" formula="[Producer].[None].[None].[Aviva  Canada]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="MULTIPLE_PIE"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

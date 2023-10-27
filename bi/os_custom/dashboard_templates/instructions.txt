@@ -1,0 +1,17 @@
+1. Copy the content of businessintelligence\os_custom\dashboard_templates folder.
+
+2. Stop the BI server.
+
+3. Take the backup of /opt/pentaho_<servername>/server/pentaho-server/pentaho-solutions folder.
+
+4. Copy all the files of pentaho-server\pentaho-solutions\system\dashboards\templates\xul\ folder to /opt/pentaho_<servername>/server/pentaho-server/pentaho-solutions/system/dashboards/templates/xul
+
+5. Copy pentaho-server\pentaho-solutions\system\dashboards\themes\0-Sapphire\dashboards\0-Sapphire\0-Sapphire.css to /opt/pentaho_<servername>/server/pentaho-server/pentaho-solutions/system/dashboards/themes/0-Sapphire/dashboards/0-Sapphire
+
+6. Copy pentaho-server\pentaho-solutions\system\analyzer\styles\themes\ruby\anaRuby.css to /opt/pentaho_<servername>/server/pentaho-server/pentaho-solutions/system/analyzer/styles/themes/ruby folder.
+
+7. Copy pentaho-server\pentaho-solutions\system\analyzer\styles\report.css to /opt/pentaho_<servername>/server/pentaho-server/pentaho-solutions/system/analyzer/styles folder
+
+8. Copy pentaho-server\pentaho-solutions\system\common-ui\resources\themes\ruby\globalRuby.css to /opt/pentaho_basedev3/server/pentaho-server/pentaho-solutions/system/common-ui/resources/themes/ruby folder.
+
+9. Start the BI server.

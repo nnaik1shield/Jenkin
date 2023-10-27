@@ -1,0 +1,70 @@
+create or replace package PKG_DB_BUSINESS_RELATIONSHIP is
+
+  -- Author  : KIRANCHAND
+  -- Created : 04-09-2023 15:50:40
+  -- Purpose : Managing the Business relationships for Billing
+  
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package - Constants
+-----------------------------------------------------------------------------------------------------------------------------------------------------  
+gBusRel_CarrAndProducingAgencyRecv      constant object_type.object_type_id%type := 	12048;
+gBusRel_PayerAndCarrier                 constant object_type.object_type_id%type := 	10748;
+gBusRel_CarrAndProducingAgencyPay       constant object_type.object_type_id%type := 	10848;
+gBusRel_CarrAndTaxAuthority             constant object_type.object_type_id%type := 	10948;
+gBusRel_CarrAndSurcharge                constant object_type.object_type_id%type := 	11048;
+gBusRel_PayerAndInhouseAgency           constant object_type.object_type_id%type := 	11148;
+gBusRel_CarrAndInhouseAgency            constant object_type.object_type_id%type := 	11248;
+gBusRel_InhouseAgencyAndBroker          constant object_type.object_type_id%type := 	11348;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package - Cursors
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Exceptions
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Public variable declarations
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Public function and procedure declarations
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--Kiran OSPRODUCT-34429 start
+function fn_get_business_relationship_list
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_transaction_set_type       in  number
+)
+return pkg_os_object.t_object_list;
+--Kiran OSPRODUCT-34429 end
+
+--Kiran OSPRODUCT-35200 start
+function fn_billplan_relationship_tf
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_product_id                 in  pd_product.pd_product_id%type,
+     in_ptp_id                     in  object.object_id%type
+)
+return char;
+--Kiran OSPRODUCT-35200 end
+
+----------------------------------------------------------------------------------------------
+  
+end PKG_DB_BUSINESS_RELATIONSHIP;
+/

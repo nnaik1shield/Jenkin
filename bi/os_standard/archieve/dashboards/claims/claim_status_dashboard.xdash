@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dashboard>
+<title>ClaimStatusDashboard</title>
+<heading>Claims Dashboard</heading>
+<enableWidgetPrinting>false</enableWidgetPrinting>
+<documentation>
+<author>admin</author>
+<description/>
+<icon/>
+</documentation>
+<template-ref>xul/01-2-by-2.xul</template-ref>
+<theme-ref>0-Ruby</theme-ref>
+<layout>
+<overlay xmlns:pho="http://www.pentaho.com" pho:fixie="withme">
+<box id="Panel_1" pho:title="Claims Incurred by Product" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_2" pho:title="Claims Incurred by Agency" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_3" pho:title="Claims Incurred by Year" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_4" pho:title="Claims Incurred by Location" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_5" pho:title="Untitled 5"/>
+<box id="Panel_6" pho:title="Untitled 6"/>
+<box id="Panel_7" pho:title="Untitled 7"/>
+<box id="Panel_8" pho:title="Untitled 8"/>
+<box id="Panel_9" pho:title="Untitled 9"/>
+<box id="Panel_10" pho:title="Untitled 10"/>
+<box id="Label_1" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_2" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_3" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_4" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_5" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_6" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_7" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_8" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_9" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_10" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="titlebar" hidden="false" collapsed="false" width="0" type="pagetitle" title="" height="23"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="FilterPanel" hidden="true" collapsed="false" width="0" type="povpanel" title="" height="100"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/></overlay>
+</layout>
+<parameters>
+<parameter>
+  <name>25597$25597$[Primary Risk Address].[City]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>89399$89399$[Claim Creation Date].[Creation Year]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>89399$89399$[Claim Creation Date].[Creation Quarter]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>89399$89399$[Claim Creation Date].[Creation Month]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>89399$89399$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>98108$98108$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>61715$61715$[Agency].[Agency]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>61715$61715$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>37932$37932$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>71444$71444$[Agency].[Agency]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>71444$71444$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>17050$17050$[Claim Creation Date].[Creation Year]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>17050$17050$[Claim Creation Date].[Creation Quarter]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>17050$17050$[Claim Creation Date].[Creation Month]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>17050$17050$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>39065$39065$[Primary Risk Address].[City]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>94614$94614$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>954$954$[Agency].[Agency]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>954$954$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>57147$57147$[Claim Creation Date].[Creation Year]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>57147$57147$[Claim Creation Date].[Creation Quarter]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>57147$57147$[Claim Creation Date].[Creation Month]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>57147$57147$[Line of Business].[Line of Business]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>7479$7479$[Primary Risk Address].[City]</name>
+  <defaultValue/>
+</parameter>
+</parameters>
+
+
+
+
+<widgetJavascript><![CDATA[%5B%7B%22xactionPath%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimIncurredByProduct.xanalyzer%22%2C%22localizedName%22%3A%22ClaimIncurredByProduct%22%2C%22timerStart%22%3A%222020-10-05T15%3A13%3A47.688Z%22%2C%22logColor%22%3A%22rgb(85%2C184%2C83)%22%2C%22refreshPeriod%22%3A0%2C%22GUID%22%3A%2294614%22%2C%22cl%22%3A%22%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%2C%22timerSplit%22%3A%222020-10-05T15%3A13%3A47.717Z%22%2C%22elapsedSinceStart%22%3A29%2C%22staticParameters%22%3Atrue%2C%22type%22%3A%22AnalyzerComponent%22%2C%22elapsedSinceSplit%22%3A2%2C%22path%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimIncurredByProduct.xanalyzer%22%2C%22initInstance%22%3A%220%22%2C%22isDirty%22%3Afalse%2C%22htmlObject%22%3A%22content-area-Panel_1%22%2C%22solution%22%3A%22%22%2C%22name%22%3A%22widget1%22%2C%22action%22%3A%22ClaimIncurredByProduct.xanalyzer%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5D%2C%22outputParameters%22%3A%5B%5B%22Line%20of%20Business%22%2Ctrue%2C%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%5D%2C%22listeners%22%3A%5B%5D%7D%2C%7B%22xactionPath%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimsIncurredByAgency.xanalyzer%22%2C%22localizedName%22%3A%22ClaimsIncurredByAgency%22%2C%22timerStart%22%3A%222020-10-05T15%3A13%3A47.692Z%22%2C%22logColor%22%3A%22rgb(84%2C184%2C82)%22%2C%22refreshPeriod%22%3A0%2C%22GUID%22%3A%22954%22%2C%22cl%22%3A%22%22%2C%22timerSplit%22%3A%222020-10-05T15%3A13%3A47.732Z%22%2C%22elapsedSinceStart%22%3A40%2C%22staticParameters%22%3Atrue%2C%22type%22%3A%22AnalyzerComponent%22%2C%22elapsedSinceSplit%22%3A0%2C%22path%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimsIncurredByAgency.xanalyzer%22%2C%22initInstance%22%3A%220%22%2C%22isDirty%22%3Afalse%2C%22htmlObject%22%3A%22content-area-Panel_2%22%2C%22solution%22%3A%22%22%2C%22name%22%3A%22widget2%22%2C%22action%22%3A%22ClaimsIncurredByAgency.xanalyzer%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5B%22PRODUCT%22%2C%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%2C%22Business%20Owners%20Package%22%5D%5D%2C%22outputParameters%22%3A%5B%5B%22Agency%22%2Cfalse%2C%22954%24%5BAgency%5D.%5BAgency%5D%22%5D%2C%5B%22Line%20of%20Business%22%2Cfalse%2C%22954%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%5D%2C%22listeners%22%3A%5B%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%7D%2C%7B%22xactionPath%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimsIncurredByYear.xanalyzer%22%2C%22localizedName%22%3A%22ClaimsIncurredByYear%22%2C%22timerStart%22%3A%222020-10-05T15%3A13%3A47.694Z%22%2C%22logColor%22%3A%22rgb(83%2C184%2C81)%22%2C%22refreshPeriod%22%3A0%2C%22GUID%22%3A%2257147%22%2C%22cl%22%3A%22%22%2C%22timerSplit%22%3A%222020-10-05T15%3A13%3A47.733Z%22%2C%22elapsedSinceStart%22%3A39%2C%22staticParameters%22%3Atrue%2C%22type%22%3A%22AnalyzerComponent%22%2C%22elapsedSinceSplit%22%3A1%2C%22path%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimsIncurredByYear.xanalyzer%22%2C%22initInstance%22%3A%220%22%2C%22isDirty%22%3Afalse%2C%22htmlObject%22%3A%22content-area-Panel_3%22%2C%22solution%22%3A%22%22%2C%22name%22%3A%22widget3%22%2C%22action%22%3A%22ClaimsIncurredByYear.xanalyzer%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5B%22PRODUCT%22%2C%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%2C%22Business%20Owners%20Package%22%5D%5D%2C%22outputParameters%22%3A%5B%5B%22Creation%20Year%22%2Cfalse%2C%2257147%24%5BClaim%20Creation%20Date%5D.%5BCreation%20Year%5D%22%5D%2C%5B%22Creation%20Month%22%2Cfalse%2C%2257147%24%5BClaim%20Creation%20Date%5D.%5BCreation%20Month%5D%22%5D%2C%5B%22Line%20of%20Business%22%2Cfalse%2C%2257147%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%5D%2C%22listeners%22%3A%5B%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%7D%2C%7B%22xactionPath%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimByGeography.xanalyzer%22%2C%22localizedName%22%3A%22ClaimByGeography%22%2C%22timerStart%22%3A%222020-10-05T15%3A13%3A47.695Z%22%2C%22logColor%22%3A%22rgb(81%2C184%2C79)%22%2C%22refreshPeriod%22%3A0%2C%22GUID%22%3A%227479%22%2C%22cl%22%3A%22%22%2C%22timerSplit%22%3A%222020-10-05T15%3A13%3A47.733Z%22%2C%22elapsedSinceStart%22%3A38%2C%22staticParameters%22%3Atrue%2C%22type%22%3A%22AnalyzerComponent%22%2C%22elapsedSinceSplit%22%3A0%2C%22path%22%3A%22%2Fhome%2FOneShield%2FDashboards%2FClaims%2FClaimByGeography.xanalyzer%22%2C%22initInstance%22%3A%220%22%2C%22isDirty%22%3Afalse%2C%22htmlObject%22%3A%22content-area-Panel_4%22%2C%22solution%22%3A%22%22%2C%22name%22%3A%22widget4%22%2C%22action%22%3A%22ClaimByGeography.xanalyzer%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5B%22PRODUCT%22%2C%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%2C%22Business%20Owners%20Package%22%5D%5D%2C%22outputParameters%22%3A%5B%5B%22City%22%2Cfalse%2C%227479%24%5BPrimary%20Risk%20Address%5D.%5BCity%5D%22%5D%5D%2C%22listeners%22%3A%5B%2294614%24%5BLine%20of%20Business%5D.%5BLine%20of%20Business%5D%22%5D%7D%5D]]></widgetJavascript>
+<widgets><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Claims/ClaimIncurredByProduct.xanalyzer</xactionPath><localizedName jsonType="string">ClaimIncurredByProduct</localizedName><timerStart jsonType="string">2020-10-05T15:13:47.688Z</timerStart><logColor jsonType="string">rgb(85,184,83)</logColor><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">94614</GUID><cl jsonType="string">[Line of Business].[Line of Business]</cl><timerSplit jsonType="string">2020-10-05T15:13:47.717Z</timerSplit><elapsedSinceStart jsonType="string">29</elapsedSinceStart><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><elapsedSinceSplit jsonType="string">2</elapsedSinceSplit><path jsonType="string">/home/OneShield/Dashboards/Claims/ClaimIncurredByProduct.xanalyzer</path><initInstance jsonType="string">0</initInstance><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_1</htmlObject><solution jsonType="string"/><name jsonType="string">widget1</name><action jsonType="string">ClaimIncurredByProduct.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"/><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Line of Business</name><id jsonType="string">94614__dollar_[Line of Business].[Line of Business]</id><enabled jsonType="string">true</enabled></parameter0></outputParameters></widget><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Claims/ClaimsIncurredByAgency.xanalyzer</xactionPath><localizedName jsonType="string">ClaimsIncurredByAgency</localizedName><timerStart jsonType="string">2020-10-05T15:13:47.692Z</timerStart><listeners jsonType="string" jsonIsArray="true">94614__dollar_[Line of Business].[Line of Business]</listeners><logColor jsonType="string">rgb(84,184,82)</logColor><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">954</GUID><cl jsonType="string"/><timerSplit jsonType="string">2020-10-05T15:13:47.732Z</timerSplit><elapsedSinceStart jsonType="string">40</elapsedSinceStart><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><elapsedSinceSplit jsonType="string">0</elapsedSinceSplit><path jsonType="string">/home/OneShield/Dashboards/Claims/ClaimsIncurredByAgency.xanalyzer</path><initInstance jsonType="string">0</initInstance><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_2</htmlObject><solution jsonType="string"/><name jsonType="string">widget2</name><action jsonType="string">ClaimsIncurredByAgency.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"><parameter0 jsonType="object"><const jsonType="string">NIL</const><var jsonType="string">94614__dollar_[Line of Business].[Line of Business]</var><name jsonType="string">PRODUCT</name></parameter0></parameters><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Agency</name><id jsonType="string">954__dollar_[Agency].[Agency]</id><enabled jsonType="string">false</enabled></parameter0><parameter1 jsonType="object"><name jsonType="string">Line of Business</name><id jsonType="string">954__dollar_[Line of Business].[Line of Business]</id><enabled jsonType="string">false</enabled></parameter1></outputParameters></widget><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Claims/ClaimsIncurredByYear.xanalyzer</xactionPath><localizedName jsonType="string">ClaimsIncurredByYear</localizedName><timerStart jsonType="string">2020-10-05T15:13:47.694Z</timerStart><listeners jsonType="string" jsonIsArray="true">94614__dollar_[Line of Business].[Line of Business]</listeners><logColor jsonType="string">rgb(83,184,81)</logColor><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">57147</GUID><cl jsonType="string"/><timerSplit jsonType="string">2020-10-05T15:13:47.733Z</timerSplit><elapsedSinceStart jsonType="string">39</elapsedSinceStart><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><elapsedSinceSplit jsonType="string">1</elapsedSinceSplit><path jsonType="string">/home/OneShield/Dashboards/Claims/ClaimsIncurredByYear.xanalyzer</path><initInstance jsonType="string">0</initInstance><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_3</htmlObject><solution jsonType="string"/><name jsonType="string">widget3</name><action jsonType="string">ClaimsIncurredByYear.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"><parameter0 jsonType="object"><const jsonType="string">NIL</const><var jsonType="string">94614__dollar_[Line of Business].[Line of Business]</var><name jsonType="string">PRODUCT</name></parameter0></parameters><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Creation Year</name><id jsonType="string">57147__dollar_[Claim Creation Date].[Creation Year]</id><enabled jsonType="string">false</enabled></parameter0><parameter2 jsonType="object"><name jsonType="string">Line of Business</name><id jsonType="string">57147__dollar_[Line of Business].[Line of Business]</id><enabled jsonType="string">false</enabled></parameter2><parameter1 jsonType="object"><name jsonType="string">Creation Month</name><id jsonType="string">57147__dollar_[Claim Creation Date].[Creation Month]</id><enabled jsonType="string">false</enabled></parameter1></outputParameters></widget><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Claims/ClaimByGeography.xanalyzer</xactionPath><localizedName jsonType="string">ClaimByGeography</localizedName><timerStart jsonType="string">2020-10-05T15:13:47.695Z</timerStart><listeners jsonType="string" jsonIsArray="true">94614__dollar_[Line of Business].[Line of Business]</listeners><logColor jsonType="string">rgb(81,184,79)</logColor><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">7479</GUID><cl jsonType="string"/><timerSplit jsonType="string">2020-10-05T15:13:47.733Z</timerSplit><elapsedSinceStart jsonType="string">38</elapsedSinceStart><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><elapsedSinceSplit jsonType="string">0</elapsedSinceSplit><path jsonType="string">/home/OneShield/Dashboards/Claims/ClaimByGeography.xanalyzer</path><initInstance jsonType="string">0</initInstance><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_4</htmlObject><solution jsonType="string"/><name jsonType="string">widget4</name><action jsonType="string">ClaimByGeography.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"><parameter0 jsonType="object"><const jsonType="string">NIL</const><var jsonType="string">94614__dollar_[Line of Business].[Line of Business]</var><name jsonType="string">PRODUCT</name></parameter0></parameters><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">City</name><id jsonType="string">7479__dollar_[Primary Risk Address].[City]</id><enabled jsonType="string">false</enabled></parameter0></outputParameters></widget></widgets></dashboard>

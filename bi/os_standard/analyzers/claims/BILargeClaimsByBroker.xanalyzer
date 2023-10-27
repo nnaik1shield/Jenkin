@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-02-16T15:04:42.913+05:30" update="2023-05-01T21:39:33.744+05:30">
+        <path name="BILargeClaimsByBroker" folder="/home/OneShieldBI/analyzers/claims/BILargeClaimsByBroker.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="CLAIM_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="DESC" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Incurred_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Agency].[Agency]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Agency].[Agency]" viewFilterEnum="MULTIPLE">
+                <conditions>
+                    <condition formula="[Measures].[Incurred_Amount]" operator="GREATER_THAN_EQUAL" op1="25000.0"/>
+                </conditions>
+            </filter>
+        </filters>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/BarHorizontal" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Claim Close Date].[Date]</drillColumn>
+            <drillColumn>[Claim_Jurisdiction].[State]</drillColumn>
+            <drillColumn>[Claim Number].[Claim Number]</drillColumn>
+            <drillColumn>[Claim Status].[Claim Status]</drillColumn>
+            <drillColumn>[Claim Status Reason].[Claim Status Reason]</drillColumn>
+            <drillColumn>[Claim Submission Date].[Date]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Date]</drillColumn>
+            <drillColumn>[Incident Date].[Date]</drillColumn>
+            <drillColumn>[Incident Number].[Incident Number]</drillColumn>
+            <drillColumn>[Incident Reported Date].[Date]</drillColumn>
+            <drillColumn>[Last Updated Date].[Last Updated Date]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Measures].[Incurred_Amount]</drillColumn>
+            <drillColumn>[Agency].[Agency]</drillColumn>
+            <drillColumn>[Policy].[Policy Status]</drillColumn>
+            <drillColumn>[Policy].[Policy Number]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="210"/>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

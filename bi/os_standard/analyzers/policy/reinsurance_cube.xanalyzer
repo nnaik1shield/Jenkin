@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2022-02-14T14:57:40.029+05:30" update="2022-03-02T16:59:41.359+05:30">
+        <path name="reinsurance_cube" folder="/home/OneShieldBI/analyzers/policy/reinsurance_cube.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Dragon Policy Admin Cubes" cube="REINSURANCE_CUBE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Reinsurance_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:8]"/>
+            <measure formula="[Measures].[POLICY_GROSS_PREMIUM_AMT]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[POLICY_GROSS_LIMIT_AMT]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[EL_CEDED_PREM_AMT]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[QS_CEDED_PREM_AMT]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Reinsurer].[Reinsurer]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Reinsurance Attributes].[Reinsurance Type]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Reinsurance Attributes].[Cess Type]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="false" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="163,118,107">
+            <labelWidth index="1">
+                <width>-38</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>-20</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>-19</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

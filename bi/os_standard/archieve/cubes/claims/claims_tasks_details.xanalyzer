@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2018-03-30T11:43:51.801+05:30" update="2018-03-30T12:10:44.792+05:30">
+        <path name="ClaimTasksDetails" folder="/home/Oneshield/Cubes/ClaimTasksDetails.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Dragon Cubes" cube="TASK_CUBE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyCells="false" emptyCellDisplay="-" showDrillLinks="false" version="9" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Task_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Assigned User].[Assigned Role]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Assigned User].[Assigned User]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Time (Creation Date)].[Creation Year]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Time (Creation Date)].[Creation Month]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Task Type].[Task Title]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Task Status].[Task Status]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Assigned User].[Assigned Role]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL">
+                        <member formula="[Assigned User].[Adjuster]" caption="Adjuster" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager]" caption="Claim CSR Manager" pos="0"/>
+                        <member formula="[Assigned User].[Claims CSR]" caption="Claims CSR" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+            <filter formula="[Assigned User].[Assigned User]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL" parameterName="{Assigned User}">
+                        <member formula="[Assigned User].[Adjuster].[Adjuster User]" caption="Adjuster User" pos="0"/>
+                        <member formula="[Assigned User].[Claims CSR].[Claims CSR]" caption="Claims CSR" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager].[ClaimsCSR Manager]" caption="ClaimsCSR Manager" pos="0"/>
+                        <member formula="[Assigned User].[Adjuster].[Mamta Adjuster]" caption="Mamta Adjuster" pos="0"/>
+                        <member formula="[Assigned User].[Claims CSR].[Narayan Rai]" caption="Narayan Rai" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager].[Rajesh Balaji Claim CSR]" caption="Rajesh Balaji Claim CSR" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager].[Rams N]" caption="Rams N" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager].[Savdhaan India]" caption="Savdhaan India" pos="0"/>
+                        <member formula="[Assigned User].[Claims CSR].[Shashank Jain]" caption="Shashank Jain" pos="0"/>
+                        <member formula="[Assigned User].[Adjuster].[Shashank Jain]" caption="Shashank Jain" pos="0"/>
+                        <member formula="[Assigned User].[Claim CSR Manager].[Test user]" caption="Test user" pos="0"/>
+                        <member formula="[Assigned User].[Adjuster].[rams rao]" caption="rams rao" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="CUSTOM" customChartType="ccc_bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="true" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="107,112,104,115,393,80">
+            <labelWidth index="0">
+                <width>12</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>26</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>-24</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>-35</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>-183</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

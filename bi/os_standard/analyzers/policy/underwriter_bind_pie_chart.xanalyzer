@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2010-12-07T16:09:10" created="2010-12-07T13:55:58" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Submission/Underwriter Pie Chart.xanalyzer" name="Underwriter Bind Pie Chart"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="CHART" cube="QUOTE" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="DESC" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Underwriter].[Underwriter]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Underwriter].[Underwriter]">
+                <conditions>
+                    <condition op1="100.0" operator="GREATER_THAN" formula="[Measures].[Quote_Count]"/>
+                </conditions>
+            </filter>
+            <filter viewFilterEnum="MULTIPLE" formula="[Time (Creation Date)].[Creation Year]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="MULTIPLE_PIE"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

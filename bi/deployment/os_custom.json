@@ -1,0 +1,10 @@
+{
+    "base_server_path":"/home/OneShieldCustomReports/",
+    "canned_reports":{
+        "base_path":"reports",
+        "reports":[]
+    },
+    "cubes":{
+        "mondrian":[]
+	}
+}

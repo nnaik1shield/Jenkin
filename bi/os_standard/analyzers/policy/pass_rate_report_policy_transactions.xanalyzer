@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-04-27T10:22:34" created="2011-04-27T10:22:34" description="" updatedBy="joe" createdBy="joe">
+        <path folder="" name="Pass Rate Report - Policy Transactions"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="POLICYTRANSACTION" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Transaction Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[UW_NO_Rule_Count]"/>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[UW_Referred_Count]"/>
+            <measure calculateSubtotalsUsingFormula="true" id="[MEASURE:3]" sortOrderEnum="NONE" measureTypeEnum="EXPRESSION" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Pass Rate" locale=""/>
+                </displayLabels>
+                <expression>[Measures].[UW_NO_Rule_Count]/[Measures].[Transaction Count]</expression>
+                <numberFormat formatShortcut="NONE" formatScale="1" formatCategory="Expression">
+                    <formatExpression>Case
+When [Measures].CurrentMember &gt; .40 Then '|##.#%|style=green'
+When [Measures].CurrentMember &lt;  .20 Then '|##.#%|style = red'
+Else '|##.#%|style =yellow'
+End</formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Line of Business].[Line of Business]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

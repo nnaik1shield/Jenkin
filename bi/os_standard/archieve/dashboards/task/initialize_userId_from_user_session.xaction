@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action-sequence> 
+  <title>Overdue Tasks for User</title>
+  <version>1</version>
+  <logging-level>debug</logging-level>
+  <documentation> 
+    <author>OneShield</author>  
+    <description>Overdue Tasks for User</description>  
+    <help/>  
+    <result-type/>  
+    <icon/> 
+  </documentation>
+
+  <inputs> 
+    <userObjectId type="long"> 
+      <sources> 
+        <session>SESSION_USER_OBJECT_ID</session> 
+      </sources>  
+      <default-value><![CDATA[112929625556]]></default-value> 
+    </userObjectId>  
+    <userActorTypeId type="long"> 
+      <sources> 
+        <session>SESSION_USER_ACTOR_ROLE_ID</session> 
+      </sources> 
+    </userActorTypeId> 
+  </inputs>
+
+  <outputs> 
+    <sessionUserActorTypeId type="long"> 
+      <destinations> 
+        <session>sessionUserActorTypeId</session> 
+      </destinations> 
+    </sessionUserActorTypeId>  
+    <sessionUserObjectId type="string"> 
+      <destinations> 
+        <session>sessionUserObjectId</session>  
+        <response>sessionUserObjectId</response>
+      </destinations> 
+    </sessionUserObjectId> 
+  </outputs>
+
+  <resources/>
+  
+  <actions> 
+    <action-definition> 
+      <component-name>JavascriptRule</component-name>
+      <action-type>JavaScript</action-type>
+      <action-inputs> 
+        <userObjectId type="long"/>  
+        <userActorTypeId type="long"/> 
+      </action-inputs>
+      <action-outputs> 
+        <sessionUserObjectId type="string"/>  
+        <sessionUserActorTypeId type="long"/> 
+      </action-outputs>
+      <component-definition> 
+        <script><![CDATA[sessionUserObjectId = userObjectId;
+sessionUserActorTypeId = userActorTypeId;]]></script> 
+      </component-definition> 
+    </action-definition>
+ 
+  </actions> 
+</action-sequence>

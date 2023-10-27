@@ -1,0 +1,2231 @@
+create or replace package body PKG_PC_SUSPENSION
+
+-------------
+-- $Workfile:   PKG_PC_SUSPENSION.PBK  $
+-- $Revision:   1.00  $
+--   $Author:   varya  $
+--     $Date:   12 06 2020 14:46:50  $
+-------------
+
+is-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+pkg_name               constant system_log.program_name%type                  := 'PKG_PC_SUSPENSION.';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        show_version
+--
+-- %USAGE
+--        Display the version, revision, author, and date of this package body
+--
+-- %ALGORITHM
+--        Not specified
+--
+-- %PARAMS
+--        Not specified
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version
+is
+begin
+     dbms_output.put_line('$Workfile:   PKG_PC_SYSTEM_IDENTIFIER.PBK  $');
+     dbms_output.put_line('$Revision:   1.00  $');
+     dbms_output.put_line('$Author:     varya  $');
+     dbms_output.put_line('$Date:        12 06 2020 14:46:50   $');
+
+exception
+     when others then
+                 dbms_output.put_line(sqlerrm(sqlcode));
+
+end show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      FN_GET_EVENT_LIST 
+--
+--  %USAGE
+--     Function to return the list of active events available in system
+--
+--
+--  %ALGORITHM
+--       
+--       Retrieve the active events for object state as 75 from dragon_event 
+--
+--  %PARAM    in_session_id                  Session Id
+--  %PARAM    in_transaction_id              Transaction Id
+--  %PARAM    in_object_id                   Object  Id
+--  %PARAM    in_business_variable_id        Business Variable ID
+--  %PARAM    in_business_variable_path      Business Variable Path
+--  %PARAM    io_enum_list
+--  %PARAM    in_current_value
+----------------------------------------------------------------------------------
+function fn_get_event_list
+(
+     in_session_id               in         object.object_id%type,
+     in_transaction_id           in         object.object_id%type,
+     in_object_id                in         object.object_id%type,
+     in_business_variable_id     in         business_variable.business_variable_id%type,
+     in_business_variable_path   in         varchar2,
+     io_enum_list                in out nocopy pkg_os_lookup.t_enum_list,
+     in_current_value            in         varchar2
+
+)   return char
+is
+      v_list_index               number;
+      v_procedure_name           system_log.program_name%type            := pkg_name||'fn_get_event_list';
+      v_session_control          pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     cursor c_events
+     is
+     select
+          event_id,
+          event_name
+     from
+          dragon_event
+     where
+         event_status_id = pkg_os_constant.gObjState_Alive
+         and
+         event_name is not null
+     order by
+          event_name;
+
+
+begin
+     v_list_index := io_enum_list.count;
+     v_list_index := v_list_index + 1;
+     io_enum_list( v_list_index ).object_id := in_object_id;
+
+     if in_business_variable_path is null then
+
+         io_enum_list( v_list_index ).business_variable_path := in_business_variable_id;
+
+     else
+
+         io_enum_list( v_list_index ).business_variable_path := in_business_variable_path;
+
+     end if;
+
+    io_enum_list( v_list_index ).lookup_enum        := 0;
+    io_enum_list( v_list_index ).lookup_text        := '- Select -';
+
+     for r_events in c_events loop
+
+          v_list_index := v_list_index + 1;
+          io_enum_list( v_list_index ).object_id          := in_object_id;
+
+          if in_business_variable_path is null then
+
+              io_enum_list( v_list_index ).business_variable_path := in_business_variable_id;
+
+          else
+
+               io_enum_list( v_list_index ).business_variable_path := in_business_variable_path;
+
+          end if;
+
+         io_enum_list( v_list_index ).lookup_enum     := r_events.event_id;
+         io_enum_list( v_list_index ).lookup_text     := r_events.event_name;
+
+     end loop;
+
+    return 'T';
+
+end fn_get_event_list;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      fn_county_suspended_tf
+--
+--  %USAGE
+--
+--     Function to validate suspension county  with county of primary  address of policy
+--     This will check if the county of the primary address match with the county of the passed suspension jurisdiction object .
+--
+--
+--  %ALGORITHM
+--      - Get the county from the primary address
+--      - Get all the child of EventJurisdcition of Type of EventCounty
+--      - Loop
+--      -- Check the county of EventCounty match with the county of the primary address
+--      -- If matched then return 'T' else 'F'
+
+--  %PARAM    in_session_id                  Session Id
+--  %PARAM    in_transaction_id              Transaction Id
+--  %PARAM    in_eventJurisdiction_id        EventJurisdiction Object ID
+--  %PARAM    in_address_id           Primary Address ID
+
+
+
+function fn_county_suspended_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_EventJurisdiction_id       in        object.object_id%type,
+     in_address_id          in        object.object_id%type
+)
+return char is
+     v_procedure_name                        system_log.program_name%type            := pkg_name||'fn_county_suspended_tf';
+     v_session_control                       pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_event_county_id                       business_variable.business_variable_id%type;
+     v_eventcounty_list                      pkg_os_object.t_object_list;
+     v_eventcounty_index                     number;
+     v_PrimaryAddress_CountyName             object_bv_value.business_variable_value%type;
+     v_event_county_name                     object_bv_value.business_variable_value%type;
+     v_in_EventJurisdiction_id               number;
+     v_PrimaryAddress_county_code             object_bv_value.business_variable_value%type;
+     v_event_county_fips                      object_bv_value.business_variable_value%type;
+     v_PrimaryAddress_Jurisdiction            object_bv_value.business_variable_value%type;
+   
+begin
+
+-- Get county from Primary Address
+     if v_session_control.gLogging_Full
+     then
+     pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Validating if County is applicable for this policy suspension.'
+           );
+     end if;
+
+   v_PrimaryAddress_county_code :=  to_number(pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_address_id,gbv_addressCounty_code))  ;
+   v_PrimaryAddress_Jurisdiction := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_address_id,gbv_address_Jurisdiction  );   
+   v_in_EventJurisdiction_id   := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_EventJurisdiction_id,32811348  ); 
+   
+   pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'Details Manjri1 ' ||'v_PrimaryAddress_county_code :'||v_PrimaryAddress_county_code||'in_address_id :'||in_address_id
+                          );
+                  
+   --Get all the Event County under EventJurisdiction
+
+      v_eventcounty_list.delete;
+       pkg_os_object_search.sp_object_children_of_type_get
+          (
+               in_session_id,
+               in_transaction_id,
+               in_EventJurisdiction_id,
+               gObjType_EventCounty,
+               v_eventcounty_list
+          );
+
+    if v_eventcounty_list.count > 0
+     then
+
+          v_eventcounty_index := v_eventcounty_list.first;
+
+          while v_eventcounty_index is not null
+          loop
+               --Get County value
+              v_event_county_id := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_eventcounty_list(v_eventcounty_index), gbv_eventcounty );
+              v_event_county_fips := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_eventcounty_list(v_eventcounty_index), 32942148 );
+              
+               pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'Details Manjri ' ||'v_PrimaryAddress_county_code :'||v_PrimaryAddress_county_code||' v_event_county_fips :'||v_event_county_fips||' v_PrimaryAddress_Jurisdiction :' ||v_PrimaryAddress_Jurisdiction||' v_in_EventJurisdiction_id :'||v_in_EventJurisdiction_id
+                          );
+
+
+           if   v_PrimaryAddress_county_code= v_event_county_fips
+                and 
+                v_PrimaryAddress_Jurisdiction =v_in_EventJurisdiction_id
+            then
+                 if v_session_control.gLogging_Full
+                 then
+                       pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'Policy is suspended due to County ' ||v_event_county_name
+                          );
+                  end if;
+
+              return 'T';
+           end if ;
+            v_eventcounty_index := v_eventcounty_list.next( v_eventcounty_index );
+          end loop;
+      return   'F';
+     else
+      return   'F' ;
+     end if;
+
+exception
+       when no_data_found
+          then             
+              
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+           return 'F';
+       when others
+          then
+              
+               pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+
+               return 'F';
+
+end fn_county_suspended_tf;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      fn_jurisd_suspended_tf
+--
+--  %USAGE
+--
+--     Function to validate suspension Jurisdiction with Jurisdiction  of primary  address of a policy
+--     This will check if the Jurisdiction of the primary address match with the Jurisdiction of the passed suspension jurisdiction object .
+--
+--
+--  %ALGORITHM
+--      -- Get the Jurisdiction from the primary address
+--      -- Check the Jurisdiction of EventJurisdcition match with the Jurisdiction of the primary address
+--      -- If matched then return 'T' else 'F'
+
+--  %PARAM    in_session_id                  Session Id
+--  %PARAM    in_transaction_id              Transaction Id
+--  %PARAM    in_eventJurisdiction_id        EventJurisdiction Object ID
+--  %PARAM    in_address_id           Primary Address ID
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_jurisd_suspended_tf
+(
+     in_session_id                           in        object.object_id%type,
+     in_transaction_id                       in        object.object_id%type,
+     in_eventJurisdiction_id                 in        object.object_id%type,
+     in_address_id                    in        object.object_id%type,
+     in_effective_date                       in        date
+)
+return char is
+     v_procedure_name                        system_log.program_name%type            := pkg_name||'fn_jurisd_suspended_tf';
+     v_session_control                       pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_address_jurisdiction                  object_bv_value.business_variable_value%type;
+     v_EventJurisdiction                     object_bv_value.business_variable_value%type;
+     v_eventjurisdiction_start_date          date;
+     v_EventJurisdiction_end_Date            date;
+     v_current_date                          date := pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,in_eventJurisdiction_id);
+begin
+
+  if v_session_control.gLogging_Full
+  then
+        pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Checking Jurisdictions for policy suspension.'||in_eventJurisdiction_id
+           );
+    end if;
+
+          --Get Jurisdiction of Primary Address
+          v_address_jurisdiction := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_address_id, gbv_addressJurisdiction );
+          
+        if v_session_control.gLogging_Full
+        then
+                 pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Address jurisdiction is :'||v_address_jurisdiction
+           );
+         end if;
+          
+          
+          --Get Jurisdcition of EventJurisdiction
+          v_EventJurisdiction := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,in_eventJurisdiction_id,gbv_EventJurisdiction );
+          v_eventjurisdiction_start_date := to_Date(pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,in_eventJurisdiction_id,gbv_JurisdictionEventStartDate ), pkg_os_constant.DragonDateFormatDefault);
+          v_EventJurisdiction_end_Date := to_Date(pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,in_eventJurisdiction_id,gbv_JurisdictionEventEndDate ), pkg_os_constant.DragonDateFormatDefault);
+
+            if v_session_control.gLogging_Full
+                    then
+                        pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'Passed jurisdiction details  ' || v_EventJurisdiction || ' suspension.'||v_address_jurisdiction 
+                            ||'v_eventjurisdiction_start_date'||trunc(v_eventjurisdiction_start_date) ||'v_EventJurisdiction_end_Date'||trunc(v_EventJurisdiction_end_Date)
+                            ||'in_effective_date'||in_effective_date
+                           
+                          );
+                    end if;
+            if v_address_jurisdiction = v_EventJurisdiction 
+               and 
+              
+            ( trunc(in_effective_date )>= trunc(v_eventjurisdiction_start_date)
+                and
+               trunc(in_effective_date) <= trunc(v_EventJurisdiction_end_Date) 
+            )
+              
+            then
+                    if v_session_control.gLogging_Full
+                    then
+                        pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'policy is suspended due to this  jurisdiction ' || v_EventJurisdiction 
+                          );
+                    end if;
+
+                    return 'T';
+            end if;
+
+      return   'F';
+     
+   
+
+exception
+       when no_data_found
+       then   
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+          return 'F';
+       when others
+       then
+              
+             
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+               return 'F';
+
+end fn_jurisd_suspended_tf;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      fn_zip_postalcode_suspended_tf
+--
+--  %USAGE
+--
+--     Function to validate suspension ZIP/Postal Code  with ZIP/Postal Code  of primary  address of a policy
+--     This will check if the ZIP/Postal Code of the primary address match with the ZIP/Postal Code of the passed suspension jurisdiction object .
+--
+--
+--  %ALGORITHM
+--      -- Get the ZIP/Postal Code from the primary address
+--      -- Get the EventZipPostal Code object under EventJurisdiction
+--      -- Check if the ZIP/Postal Code  of EventJurisdcition match with the ZIP/Postal Code  of the primary address
+--      -- If matched then return 'T' else 'F'
+
+--  %PARAM    in_session_id                  Session Id
+--  %PARAM    in_transaction_id              Transaction Id
+--  %PARAM    in_eventJurisdiction_id        EventJurisdiction Object ID
+--  %PARAM    in_address_id           Primary Address ID
+
+function fn_zip_postalcode_suspended_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_eventJurisdiction_id       in        object.object_id%type,
+     in_address_id          in        object.object_id%type
+)
+return char is
+     v_procedure_name              system_log.program_name%type            := pkg_name||'fn_zip_postalcode_suspended_tf';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_Address_zip_postal_Code     object_bv_value.business_variable_value%type;
+     v_EventZipPostal_list         pkg_os_object.t_object_list;
+     v_EventZipostal_Index         number;
+     v_event_zip_code              object_bv_value.business_variable_value%type;
+     v_event_zip_code_id           object_bv_value.business_variable_value%type;
+     
+
+begin
+   --Get Zip Postal Code from Primary Address
+     v_Address_zip_postal_Code:= pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_address_id, gbv_Address_ZIP_PostalCode );
+   --Get all the EventZipPostalCode under EventJurisdiction
+     v_EventZipPostal_list.delete;
+     pkg_os_object_search.sp_object_children_of_type_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_eventJurisdiction_id,
+          gObjType_EventZIP_PostalCode, --ExchangeSuspensionZipCode
+          v_EventZipPostal_list
+     );
+
+     if v_session_control.gLogging_Full
+     then
+       pkg_os_logging.sp_log
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  'Checking ZIP Codes for policy suspension.'
+                );
+       end if;
+       
+    if v_EventZipPostal_list.count > 0
+     then
+
+          v_EventZipostal_Index := v_EventZipPostal_list.first;
+
+          while v_EventZipostal_Index is not null
+          loop
+            v_event_zip_code_id := pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, v_EventZipPostal_list(v_EventZipostal_Index), gbv_Event_ZipPostalCode );
+            v_event_ZIP_CODE:= pkg_os_reference_lookup.fn_get_lookup_text(in_session_id, in_transaction_id, v_EventZipPostal_list(v_EventZipostal_Index),gbv_Event_ZipPostalCode,v_event_zip_code_id);--get zip name
+
+             if v_Address_zip_postal_Code = v_event_zip_code then
+                  if  v_session_control.gLogging_Full
+                  then
+                        pkg_os_logging.sp_log
+                          (
+                            in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'Policy is suspended due to ZIP Code ' || v_event_zip_code || ' suspension.'
+                          );
+                  end if ;
+              return 'T';
+              end if;
+            v_EventZipostal_Index := v_EventZipPostal_list.next( v_EventZipostal_Index );
+         end loop;
+         end if; 
+         
+         
+               RETURN   'F';
+    
+
+    exception
+       when no_data_found
+       then
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+              );
+               return 'F';
+               
+       when others
+        then
+              
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+          return 'F';
+
+end fn_zip_postalcode_suspended_tf;
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      sp_policy_suspension_check
+--
+--  %USAGE
+--     Procedure to check the applicable suspension on the Policy/Quote .
+--     This will verify whether a Policy Suspension is in effect for the current transaction, and if so, returns the Suspension outcome.
+--
+--
+--  %ALGORITHM
+       -- Get primary address, program line and current transaction
+--      - Check the in action is  valid and the current transaction is valid transaction using cursor 
+--      - Check the available suspension for current date 
+--      -	For each Suspension Object
+--        -- Check the valid condition if the suspension is available  for program line and current transaction
+--           --IF Condition satisifed then Set V_condition_Satisfied is T;
+--           --Get the Reference Associated event from Suspension 
+--           --Get all the child event Jurisdiction under the associated Event for the current suspension using 
+--                 --Loop  for EventJurisdiction
+--                          --check whether this policy / quote is suspended by executing the following  functions:
+--                          o	Get the value of EntireJurisdictionOrSpecificCounty/Zip BV  
+--                            --If    EntireJurisdictionOrSpecificCounty /Zip BV BV value = EntireJurisdiction 
+--                                      then 
+--                                      check   fn_jurisdiction_suspended_tf(v_object_list(v_object_index), v_primary_address_id) is T   
+--                                                set io_action_outcome_id to PolicySuspended 
+--                                                set Suspension  object id to PT-Reference-Causing-Suspension  if  applicable and exit the procedure
+--                                                Else 
+--                                                If      EntireJurisdictionOrSpecificCounty /Zip BV BV value EntireCounty  
+--                                                 then 
+--                                                 check fn_county_suspended_tf(v_jurisdiction_object(v_jurisdiction_index) ,v_primary_address_id) is T   
+--                                                 set io_action_outcome_id to PolicySuspended 
+--                                                 set Suspension  object id to PT-Reference-Causing-Suspension  if  applicable and exit the procedure
+
+--                                                 Else 
+--                                                 If     EntireJurisdictionOrSpecificCounty /Zip BV BV value Entire Zip/Poctal code   
+--                                                 then 
+--                                                 Check fn_zip_postal_code_suspended_tf(v_jurisdiction_index), v_primary_address_id) is T   
+--                                                 set io_action_outcome_id to PolicySuspended 
+--                                                 set Suspension  object id to PT-Reference-Causing-Suspension  if  applicable and exit the procedure
+ 	
+--                                    End if 
+--                                    End loop- Event Jurisdiction
+
+
+--
+--  %PARAM    in_session_id                  Session Id
+--  %PARAM    in_transaction_id              Transaction Id
+--  %PARAM    in_action_id                   Object  Id
+--  %PARAM    in_action_object_id            Acion Object ID
+--  %PARAM    in_transaction_type_id         Transaction Type ID
+--  %PARAM    in_applicable_domain           Applicable To (Policy/Billing )
+--  %PARAM    io_suspension_object_id        Suspension Object ID
+--  %PARAM    io_action_outcome_id           Action Outcome ID
+
+----------------------------------------------------------------------------------
+
+
+
+procedure sp_object_suspension_check
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     in_transaction_type_id        in        pd_transaction_type.pd_transaction_type_id%type,
+     in_applicable_domain          in        object.object_id%type,
+     in_effective_date             in        date default null,
+     io_suspension_object_id       in out    object.object_id%type,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+
+) as
+
+     v_procedure_name                        system_log.program_name%type            := pkg_name||'sp_object_suspension_check';
+     v_current_date                          date                                      := pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,in_action_object_id);
+     v_session_control                       pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_primary_address_id                    object.object_id%type;
+     v_valid_cond_satisfied                  Char(1):='F';
+     --code is just checking for primary address ONLY and NOT all covered jurisdictions --OSPRODUCT-4240
+     v_ref_primary_address_path              varchar2(50):= '27360105.29253414.29254014';
+     v_Reference_LastTrxProcessed            varchar2(50):='27919402.29614301';
+     --code is just checking for primary program ONLY and package policy is NOT in-scope for now OSPRODUCT-4241
+     v_policy_program_line                   object_bv_value.business_variable_value%type;
+     v_eventJurisdiction_list                pkg_os_object.t_object_list        := pkg_os_object.gnull_object_list;
+     v_eventJurisdiction_index               number                             := null;
+     v_selected_geographical_area            object_bv_value.business_variable_value%type;
+     v_pt_object_id                          object.object_id%type;
+     v_associated_Event                      object.object_id%type;
+     v_action_object_type_id                 object.object_id%type;
+     v_policy_image_id                       object.object_id%type;
+     v_last_processed_trx_id                 object.object_id%type;
+     v_transaction_effective_date            date;
+     v_policy_effective_Date                 date;
+     v_effective_date                        date;
+     v_suspension_name                       object_bv_value.business_variable_value%type;
+     v_moratorium_consdr_criteria            pd_property.pd_property_value%type := 'T';
+
+	 --LXPRODUCT-177
+	 v_address_list                           pkg_os_object.t_object_list        := pkg_os_object.gnull_object_list;
+     v_address_index                          number                             := null;
+
+    --LXPRODUCT-324
+      v_source                              object_bv_value.business_variable_value%type;
+      v_new_action_object_id                object.object_id%type;
+      v_Source_UploadQuote                  number                             := 4;
+	  v_Source_Comprater                    number                             := 33;
+     cursor c_suspensions
+     is
+          select
+               action_pol_suspend_func_id ,POL_FUNC_SUSPENDED_ENUM
+          from
+               action_pol_suspend_func apsf
+         where
+               apsf.action_id = in_action_id
+               and
+
+               (
+                 in_transaction_type_id is null
+                 or
+                 pkg_os_policy_transaction_type.fn_transaction_type_in_set(in_transaction_type_id, apsf.pd_transaction_set_id ) = 'T'
+               )
+
+               and
+               ( apsf.suspension_rule_id is null or ( pkg_os_exp.fn_evaluate_expression(in_session_id, in_transaction_id, in_action_object_id, apsf.suspension_rule_id ) = 'T' ))
+               and
+                 active_tf ='T'
+                order by sequence;
+
+       cursor c_current_date_suspension
+       is
+       Select
+              suspension_id, suspended_lob_Set, suspended_transaction_Set, associated_event_id,impacted_Area_Set ,suspension_effective_Date,suspension_expiration_date
+       from
+              Dragon_Suspension DS
+       where
+              ds.associated_event_id is not null
+       and
+              ds.object_state = 75
+       and
+             trunc(v_effective_date) >= trunc(ds.suspension_effective_Date)
+       and
+             trunc(v_effective_date)<=trunc(ds.suspension_expiration_date);
+
+     begin
+
+      -- Get the type of in action object id
+          v_action_object_type_id:= pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_action_object_id, gbv_GenericObject_type );
+
+
+     --- Get Policy ID, PTP ID and PolicyTransaction ID from the in_action_object_id to get further details on program line, transaction type and primary address
+          if v_action_object_type_id= gObjType_Policy
+          then
+
+             -- get most recent transaction from policy
+             v_pt_object_id := null;
+             v_policy_image_id:= pkg_os_object_io.fn_object_bv_get
+                                      (
+                                          in_session_id,
+                                          in_transaction_id,
+                                          pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_action_object_id, gbv_reference_most_recent_trx ),
+                                          gbv_Reference_Coverages
+                                      );
+            -- Set the dates to sysdate as to check to check if there is any applicable supension on current date on the policy
+              v_effective_Date:= sysdate;
+              v_transaction_effective_date:=sysdate; ---OSPRODUCT-6943
+
+          elsif  v_action_object_type_id= gObjType_Submission
+          then
+				 v_pt_object_id := null;
+
+                 v_policy_image_id:=null;
+
+                 v_effective_Date:= sysdate;
+
+                 v_transaction_effective_date:=to_date( pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_action_object_id, 4095 ),pkg_os_constant.DragonDateFormatDefault);
+
+          elsif  v_action_object_type_id= gObjType_PolicyTransaction
+          then
+              v_pt_object_id := in_action_object_id;
+
+              v_policy_image_id :=  pkg_os_object_io.fn_object_bv_get
+                                      (
+                                          in_session_id,
+                                          in_transaction_id,
+                                          in_action_object_id,
+                                          gbv_Reference_Coverages
+                                      );
+          -- Get the policy Image ID from _Reference_Last Transaction Processed in case when the Policy image is not created for current transactionn
+
+              if v_policy_image_id is null
+              then
+
+                   v_last_processed_trx_id:= pkg_os_object_io.fn_object_bv_path_get
+                                                (
+                                                    in_session_id,
+                                                    in_transaction_id,
+                                                    in_action_object_id,
+                                                    v_Reference_LastTrxProcessed
+                                                );
+                   v_policy_image_id:=  pkg_os_object_io.fn_object_bv_path_get
+                                                (
+                                                    in_session_id,
+                                                    in_transaction_id,
+                                                    v_last_processed_trx_id,
+                                                    gbv_Reference_Coverages
+                                                );
+
+              end if;
+              v_transaction_effective_date :=   to_date( pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_pt_object_id, gbv_transaction_effective_date ),pkg_os_constant.DragonDateFormatDefault);
+
+          elsif v_action_object_type_id = gObjType_PolicyTransactionPolicy
+          then
+
+                v_policy_image_id := in_action_object_id;
+                v_pt_object_id := pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id, v_policy_image_id );
+                v_transaction_effective_date :=   to_date( pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_pt_object_id, gbv_transaction_effective_date ),pkg_os_constant.DragonDateFormatDefault);
+          end if;
+
+          --Get the consideration criteria of suspension from PD_Property . IF 'T' then coonsider Sysdate and if 'F' then consider Transaction Effective Date
+           v_moratorium_consdr_criteria := pkg_os_product.fn_product_property_get
+                                          	(
+                                                 in_session_id => in_session_id,
+                                                 in_transaction_id => in_transaction_id,
+                                                 in_object_id        => null,
+                                                 in_property_type_id => v_pd_prop_mort_cnsdr_date
+                                             );
+
+         --Check the in_effetive date first and then check the property criteria
+          if in_effective_date is not null
+          then
+             v_effective_date := in_effective_date;
+          elsif nvl(v_moratorium_consdr_criteria,'T') = 'T'
+          then
+             v_effective_date := sysdate;
+          elsif nvl(v_moratorium_consdr_criteria,'T') = 'F'
+          then
+             v_effective_date := nvl(v_transaction_effective_date,sysdate);
+          end if;
+
+
+         /*  --Get Primary Address
+          v_primary_address_id := pkg_os_object_io.fn_object_bv_path_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_policy_image_id,
+                                        v_ref_primary_address_path
+                                   );
+
+			*/
+			 --LXPRODUCT-177
+			-- Get all the CustomerAddress
+
+            if v_action_object_type_id = gObjType_Submission
+                        then
+                                 v_address_list.Delete;
+
+								--LXPRODUCT-324
+								-- This is to make comparater and upload quote of Lio service to work
+								-- In case of comprater and upload quote , submissionAddress is not formed so we need to go to CustomerAddress
+
+								v_source      := pkg_os_object_io.fn_object_bv_get
+                                                                    (
+                                                                         in_session_id,
+                                                                         in_transaction_id,
+                                                                         in_action_object_id,
+                                                                         gbv_Origin --Object Source/Origin Type
+                                                                    );
+								if (v_source is not null and v_source in (v_Source_UploadQuote,v_Source_Comprater) )then
+
+                        	--Get the mater customer object for this Submission
+								  v_new_action_object_id := pkg_os_object.fn_object_parent_get     ( in_session_id, in_transaction_id, in_action_object_id );
+
+                                    pkg_os_object_search.sp_object_children_of_type_get
+									(
+                                         in_session_id                 =>  in_session_id,
+                                         in_transaction_id             =>  in_transaction_id,
+                                         in_object_id                  =>  v_new_action_object_id,
+                                         In_Child_Object_Type_Id       =>  gObjType_customerAddress, --CustomerAddress
+                                         io_object_list                =>  v_address_list,
+                                         In_Sort_Bv_Id                 =>  null,
+                                         in_recurse_flag               =>  true,
+                                         in_qualification_rule_id      =>  null,
+                                         in_exclude_deleted_objects_tf =>  true
+                                    );
+									v_address_index := v_address_list.first;
+
+
+                                else
+									pkg_os_object_search.sp_object_children_of_type_get
+									(
+                                         in_session_id                 =>  in_session_id,
+                                         in_transaction_id             =>  in_transaction_id,
+                                         in_object_id                  =>  in_action_object_id,
+                                         In_Child_Object_Type_Id       =>  gObjType_submissionAddress,--SubmissionAddress
+                                         io_object_list                =>  v_address_list,
+                                         In_Sort_Bv_Id                 =>  null,
+                                         in_recurse_flag               =>  true,
+                                         in_qualification_rule_id      =>  null,
+                                         in_exclude_deleted_objects_tf =>  true
+                                    );
+									v_address_index := v_address_list.first;
+
+
+
+								end if;
+								 v_policy_program_line        := nvl(pkg_os_object_io.fn_object_bv_get
+                                                                    (
+                                                                         in_session_id,
+                                                                         in_transaction_id,
+                                                                         in_action_object_id,
+                                                                         gbv_submission_program
+                                                                    ),848);
+
+              end if;
+
+        if v_action_object_type_id <> pkg_os_constant.gobjType_Submission
+               then
+
+			 v_address_list.Delete;
+                pkg_os_object_search.sp_object_children_of_type_get
+                    (
+                         in_session_id                 =>  in_session_id,
+                         in_transaction_id             =>  in_transaction_id,
+                         in_object_id                  =>  v_policy_image_id,
+                         In_Child_Object_Type_Id       =>  2304114,--CustomerAddress
+                         io_object_list                =>  v_address_list,
+                         In_Sort_Bv_Id                 =>  null,
+                         in_recurse_flag               =>  true,
+                         in_qualification_rule_id      =>  gbv_CustomerAddress_Qrule,
+                         in_exclude_deleted_objects_tf =>  true
+                    );
+                v_address_index := v_address_list.first;
+
+          --Get Policy Pregram Line
+
+          v_policy_program_line :=  pkg_os_object_io.fn_object_bv_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_policy_image_id,
+                                        gbv_program
+                                   );
+
+                  if v_session_control.gLogging_Full
+                    then
+                         pkg_os_logging.sp_log
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              '... Attempting to get inside available active  suspensions :'
+                              ||' Action ID :'||in_action_id
+                              ||', Transaction Type :'||in_transaction_type_id
+                              ||', Policy Image Object ID :  '|| v_policy_image_id
+                              ||', IN Action Object ID : '||in_action_object_id
+                              ||',  Address: '||v_address_list.first
+                              ||', Program Line :'||v_policy_program_line
+                              ||', PT Object : '|| v_pt_object_id
+                              ||',Trx Effective date: '||v_transaction_effective_date
+                              ||'Moratorium Consideration Date criteria :'||v_moratorium_consdr_criteria
+                              ||'Suspension Consideration Date :'||v_effective_date
+                         );
+                  end if ;
+            end if;
+
+      for r_suspensions in c_suspensions
+          loop
+
+                      --loop through all the current date suspensions
+
+                  for r_current_date_suspension in c_current_date_suspension
+                  loop
+                       v_suspension_name:= pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,r_current_date_suspension.suspension_id , gbv_suspension_name );
+
+                              if v_session_control.gLogging_Full
+                              then
+                                   pkg_os_logging.sp_log
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_procedure_name,
+                                             'inside cursor  r_current_date_suspension :'
+                                            ||r_current_date_suspension.suspension_id
+                                            || 'Suspension Name: '||v_suspension_name
+                                            ||'Suspension Effective Date : '|| r_current_date_suspension.suspension_effective_Date
+                                            ||'suspension Expiration Date :'||r_current_date_suspension.suspension_expiration_date
+
+                                        );
+                              end if;
+
+                              v_valid_cond_satisfied:='F';
+
+                              pkg_os_logging.sp_log
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_procedure_name,
+                                             'Testing M Before If condition :'
+                                            ||'v_pt_object_id :'||v_pt_object_id
+                                            || 'r_suspensions.pol_func_suspended_enum : '||r_suspensions.pol_func_suspended_enum
+                                            ||'r_current_date_suspension.suspended_transaction_Set : '|| r_current_date_suspension.suspended_transaction_Set
+                                            ||'v_action_object_type_id :'||v_action_object_type_id
+
+                                        );
+                               -- LXPRODUCT-251
+                             /*  if (r_suspensions.pol_func_suspended_enum is null)
+                               then
+                                     r_suspensions.pol_func_suspended_enum :=in_transaction_type_id;
+                               end if; */
+
+                               -- Check the valid condition fort the suspension is available  for program line and current transaction
+                              if ( pkg_os_token.fn_find_in_set(v_policy_program_line ,r_current_date_suspension.suspended_lob_Set) = 'T'
+                                   or
+                                   r_current_date_suspension.suspended_lob_Set ='0'
+                                  )-- check for all
+                              and
+
+                                  (
+                                      (   v_pt_object_id is not null
+                                          and
+                                          (pkg_os_token.fn_find_in_set(nvl(r_suspensions.pol_func_suspended_enum,in_transaction_type_id) ,r_current_date_suspension.suspended_transaction_Set) = 'T'
+                                          or
+                                          r_current_date_suspension.suspended_transaction_Set='0')
+                                       ) --check for all
+
+                                    or
+
+                                       --(v_pt_object_id is  null and v_action_object_type_id <> pkg_os_constant.gobjType_Submission)
+                                       (
+                                            v_pt_object_id is  null and v_action_object_type_id <> pkg_os_constant.gobjType_Submission
+                                            -- OSPRODUCT-26914 (included OSPRODUCT-24993 changes) - Start
+                                            and                                           
+                                            (
+                                                pkg_os_token.fn_find_in_set(in_transaction_type_id ,r_current_date_suspension.suspended_transaction_Set) = 'T'
+                                                or
+                                                r_current_date_suspension.suspended_transaction_Set='0'
+                                            )
+                                            -- OSPRODUCT-26914 (included OSPRODUCT-24993 changes) - End
+                                        )									   
+
+                                    or
+                                       ((v_pt_object_id is  null and v_action_object_type_id = pkg_os_constant.gobjType_Submission)
+									     and
+										 (pkg_os_token.fn_find_in_set(nvl(r_suspensions.pol_func_suspended_enum,in_transaction_type_id) ,r_current_date_suspension.suspended_transaction_Set) = 'T'
+                                          or
+                                          r_current_date_suspension.suspended_transaction_Set='0'))
+                                    )
+                              and
+
+                                (  
+                                    -- OSPRODUCT-26914 (included OSPRODUCT-24993 changes) - Added trim
+                                    pkg_os_token.fn_find_in_set(in_applicable_domain ,trim(r_current_date_suspension.impacted_Area_Set)) = 'T'
+                                )
+
+                              then
+                                   if v_session_control.gLogging_Full
+                                   then
+
+                                   pkg_os_logging.sp_log(in_session_id,in_transaction_id,v_procedure_name,'Condition for  Suspension Encountered : ' || r_current_date_suspension.suspension_id);
+
+                                   end if;
+
+                                       v_valid_cond_satisfied:='T';
+                              end if;
+
+                         --     Now Get the associated event Jurisdiction for the current suspension
+                   if v_valid_cond_satisfied ='T'
+                   then
+
+                         v_associated_event:=  pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,r_current_date_suspension.suspension_id , gbv_ref_associated_event );
+
+                         v_eventJurisdiction_list.delete;
+
+                        pkg_os_object_search.sp_object_children_of_type_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_associated_event,
+                              gObjType_EventJuridisction,
+                              v_eventJurisdiction_list,
+                              null,
+                              true,
+                              false
+                         );
+
+
+                         v_eventJurisdiction_index := v_eventJurisdiction_list.first;
+
+                         while v_eventJurisdiction_index is not null
+
+                         loop
+
+                         -- Get the value of EntireJurisdictionOrSpecificCounty/Zip
+                            v_selected_geographical_area :=  pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_eventJurisdiction_list(v_eventJurisdiction_index),gbv_EntireJurisdOrSpfcCountyZip);
+
+
+                         --LXPRODUCT-177
+							while v_address_index is not null
+							loop
+
+                         -- Check if Jurisdiction is applicable  for  current suspension
+                            if v_selected_geographical_area = genum_EntireJurisdiction
+                            then
+
+
+                                  if fn_jurisd_suspended_tf(in_session_id, in_transaction_id,  v_eventJurisdiction_list(v_eventJurisdiction_index),v_address_list(v_address_index),trunc(v_effective_date  )) = 'T'--v_effective_date
+                                  then
+
+                                         io_action_outcome_id := gOutcome_PolicySuspended;
+                                         io_suspension_object_Id := r_current_date_suspension.suspension_id;
+                                         --  Set the referenece from PolicyTransaction to suspension if in_is_predict_suspension  = false otherwsie , we dont need to set this reference
+
+                                          if (v_pt_object_id is not null)then
+                                                 pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,v_pt_object_id , gbv_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                         else
+                                                pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,in_action_object_id , gbv_submission_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                        end if;
+                                          if v_session_control.gLogging_Full
+                                               then
+
+                                                   pkg_os_logging.sp_log( in_session_id,in_transaction_id,v_procedure_name,'Condition satisfied for selected  Jurisdction Suspension ID :'|| r_current_date_suspension.suspension_id || 'Suspension Name: '||v_suspension_name || 'is applicable for Jurisdiction' );
+                                                end if;
+
+                                         return;   -- Exit as soon as we find any jurisdiction that is suspended regardless of additional jurisdictions of the event object
+                                      end if;
+
+
+                        	      -- Check if County is applicable  for  current suspension
+                                 elsif v_selected_geographical_area = genum_EntireCounty
+                                 then
+                                    if v_session_control.gLogging_Full
+                                    then
+
+                                       pkg_os_logging.sp_log( in_session_id,in_transaction_id,v_procedure_name,'There is County selection for this Suspension :'|| r_current_date_suspension.suspension_id|| 'Suspension Name: '||v_suspension_name);
+
+                                     end if;
+                                    if fn_county_suspended_tf(in_session_id, in_transaction_id, v_eventJurisdiction_list(v_eventJurisdiction_index), v_address_list(v_address_index)) = 'T'
+                                    then
+
+                                         io_action_outcome_id := gOutcome_PolicySuspended;
+                                         io_suspension_object_Id := r_current_date_suspension.suspension_id;
+
+                                              --  Set the referenece from PolicyTransaction to suspension if in_is_predict_suspension  = false otherwsie , we dont need to set this reference
+                                              --LXPRODUCT-251
+                                                if (v_pt_object_id is not null)then
+                                                 pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,v_pt_object_id , gbv_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                                else
+                                                pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,in_action_object_id , gbv_submission_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                                end if;
+
+                                                    if v_session_control.gLogging_Full
+                                                    then
+
+                                                        pkg_os_logging.sp_log( in_session_id,in_transaction_id,v_procedure_name,'Suspension ID :'|| r_current_date_suspension.suspension_id || 'Suspension Name: '||v_suspension_name|| 'is applicable for County' );
+
+                                                     end if;
+
+                                         return;
+                                        end if;
+                             -- Check if Zip Postal code is applicable  for  current suspension
+                                 elsif v_selected_geographical_area = genum_EntireZIPPostalCode
+                                 then
+                                       if v_session_control.gLogging_Full
+                                       then
+
+                                       pkg_os_logging.sp_log( in_session_id,in_transaction_id,v_procedure_name,'There is ZIP/Postal Code selection for this Suspension :'|| r_current_date_suspension.suspension_id  || 'Suspension Name: '||v_suspension_name);
+
+                                     end if;
+
+                                    if fn_zip_postalcode_suspended_tf(in_session_id, in_transaction_id, v_eventJurisdiction_list(v_eventJurisdiction_index), v_address_list(v_address_index)) = 'T'
+                                    then
+
+                                         io_action_outcome_id := gOutcome_PolicySuspended;
+                                         io_suspension_object_Id := r_current_date_suspension.suspension_id;
+
+                                          --  Set the referenece from PolicyTransaction to suspension if in_is_predict_suspension  = false otherwsie , we dont need to set this reference
+                                            if (v_pt_object_id is not null)then
+                                                 pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,v_pt_object_id , gbv_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                             else
+                                                pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id,in_action_object_id , gbv_submission_applicable_suspension,  r_current_date_suspension.suspension_id );
+                                             end if;
+                                               if v_session_control.gLogging_Full
+                                               then
+
+                                                   pkg_os_logging.sp_log( in_session_id,in_transaction_id,v_procedure_name,'Suspension ID :'|| r_current_date_suspension.suspension_id || 'Suspension Name: '||v_suspension_name || 'is applicable for ZIP/Postal Code' );
+
+                                                end if;
+
+                                          return;
+                                    end if;
+                                 end if;
+
+							--LXPRODUCT-177
+							v_address_index := v_address_list.next(v_address_index);
+
+							end loop;  -- end of loop for Address
+                            v_address_index := v_address_list.first;
+                           v_eventJurisdiction_index := v_eventJurisdiction_list.next( v_eventJurisdiction_index );
+
+                          end loop;
+                          end if;
+                        end loop;--- end of c_current_date_suspension
+
+                       end loop; -- end of c_suspensions
+
+                   io_action_outcome_id := gOutcome_ok;
+
+
+     end sp_object_suspension_check ;
+     
+--------------------------------------------------------------------------------------------------------------------------
+--
+-- Function to check the outcome of the sp_policy_suspension_check procedure .
+-- 
+function fn_suspended_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     in_transaction_type_id        in        pd_transaction_type.pd_transaction_type_id%type, 
+     in_applicable_domain          in        object.object_id%type,
+     in_effective_date             in        date default null
+    
+)
+return char is
+
+     v_action_outcome_id           outcome.outcome_id%type;
+     io_suspension_object_id       object.object_id%type;
+     v_procedure_name              system_log.program_name%type            := pkg_name||'fn_suspended_tf';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+  
+begin
+
+	sp_object_suspension_check
+	(
+     	in_session_id                 ,
+     	in_transaction_id             ,
+     	in_action_id                  ,
+     	in_action_object_id           ,
+          in_transaction_type_id        ,
+     	in_applicable_domain          ,
+          in_effective_date             ,
+          io_suspension_object_id       ,
+     	v_action_outcome_id 
+	);
+
+	if v_action_outcome_id  = gOutcome_PolicySuspended then
+		return 'T';
+	else
+		return 'F';
+	end if;
+
+
+exception
+       when no_data_found
+          then
+              
+               pkg_os_logging.sp_log_error
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... No data found Exception:'|| SQLCODE 
+               );
+
+               return 'F';
+       when others
+          then
+              
+               pkg_os_logging.sp_log_error
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... OTHER Exception:'|| SQLCODE 
+               );
+
+               return 'F';
+
+             
+end fn_suspended_tf;
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+--
+-- Function to check the supension object using sp_policy_suspension_check procedure . .
+-- 
+function fn_get_applicable_suspension
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     in_transaction_type_id        in        pd_transaction_type.pd_transaction_type_id%type, 
+     in_applicable_domain          in        object.object_id%type,
+     in_effective_date             in        date default null
+    
+)
+return number 
+is 
+     v_action_outcome_id           outcome.outcome_id%type;
+     io_suspension_object_id       object.object_id%type;
+     v_procedure_name              system_log.program_name%type            := pkg_name||'fn_get_applicable_suspension';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+  
+begin
+
+	sp_object_suspension_check
+	(
+     	in_session_id                 ,
+     	in_transaction_id             ,
+     	in_action_id                  ,
+     	in_action_object_id           ,
+          in_transaction_type_id        ,
+     	in_applicable_domain          ,
+          in_effective_date             ,
+          io_suspension_object_id       ,
+     	v_action_outcome_id 
+	);
+
+	if v_action_outcome_id  = gOutcome_PolicySuspended
+     then
+		return io_suspension_object_id;
+	else
+		return 0;
+	end if;
+
+
+exception
+       when no_data_found
+       then   
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+       when others
+       then   
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+             
+end fn_get_applicable_suspension;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      fn_any_change_in_cvrg
+--
+--  %USAGE
+--     Function to check is there any change in preimium to changes in coverages during endorsement .
+--     This will provide the count of rows which difefer between current transaction and the previous transaction.
+--
+
+
+ function fn_any_change_in_cvrg
+(
+     in_session_id                 object.object_id%type,
+     in_transaction_id             object.object_id%type,
+     in_policy_transaction_id      object.object_id%type,
+     in_master_policy_id           object.object_id%type
+    
+ )
+    
+return number 
+as
+     v_procedure_name                      system_log.program_name%type            := pkg_name||'fn_any_change_in_cvrg';
+     v_session_control                     pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_reference_Basis_Coverage            object_bv_value.business_variable_value%type;
+     v_renewal_amt                         number;
+     v_parent_policy_trx                   number;
+	v_count                               number;
+     v_PTP_ID                              object.object_id%type;
+          
+     
+
+begin
+     ---Get _Reference_Basis Coverages of current transaction
+     v_reference_Basis_Coverage := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_policy_transaction_id,gbv_Reference_BasisCoverages);-- 22605205 );
+     v_parent_policy_trx:=  pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id, v_reference_Basis_Coverage );
+     v_PTP_ID:=  pkg_os_object_search.fn_object_11_child_get(in_session_id,in_transaction_id,in_policy_transaction_id,gObjType_PolicyTransactionPolicy);
+     
+     if v_PTP_ID is not  null then 
+               select count(1) into v_count from
+               (
+                    select 
+                          renewal_amount ,coverage_id, covered_object_id
+                    from
+                          dragon_transaction_stats dts
+                    where           
+                          policy_transaction_id = in_policy_transaction_id 
+                    and
+                          master_policy_id=  in_master_policy_id 
+                          
+                          minus
+                    
+                   select 
+                          renewal_amount ,coverage_id, covered_object_id
+                   from
+                          dragon_transaction_stats dts
+                   where
+                          policy_transaction_id = v_parent_policy_trx
+                   and
+                          master_policy_id= in_master_policy_id 
+                   order by 
+                         coverage_id, covered_object_id
+     
+           );
+           -- 999 is added so that rule should pass the condition in ACTION_POL_SUSPEND_FUNC ID- 16248 when the behaviou
+           -- is to validate the suspension during the creation of transaction 
+       else 
+            v_count  := 999;
+            
+       end if;
+       
+       
+       if v_session_control.gLogging_Full
+       then
+        pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             ' count -'||v_count ||'v_parent_policy_trx- '||v_parent_policy_trx ||
+              'in_policy_transaction_id:' ||in_policy_transaction_id
+              ||'v_PTP_ID '|| v_PTP_ID
+           );
+       end if;
+    
+                return v_count;
+     exception
+     when others
+     then
+          v_count := 0;     
+         pkg_os_logging.sp_log_error
+            (  
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+                v_count := 0;
+
+               return v_count ;
+
+end fn_any_change_in_cvrg;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  %NAME
+--      fn_check_change_summary_user
+--
+--  %USAGE
+--    Function to check is there any change done by external user.
+--    Under PTP, find all the EndorsmentChangeObject and then check who created this object.
+--    If this is created by internal user or dap user then ignore 
+--    If this is created by external user then trigger an underwriting referral to review the change. 
+--
+
+
+ 
+
+function fn_check_authority_to_modify
+(
+     in_session_id                           in        object.object_id%type,
+     in_transaction_id                       in        object.object_id%type,
+     in_action_object_id                     in        object.object_id%type
+)
+return char 
+is
+     v_procedure_name                       system_log.program_name%type            := pkg_name||'fn_check_authority_to_modify';
+     v_session_control                      pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;     
+     v_change_object_list                   pkg_os_object.t_object_list        := pkg_os_object.gnull_object_list;
+     v_change_object_index                  number                             := null;
+     v_object_Creator                       object_bv_value.business_variable_value%type;
+     v_modified_by_unauth_user              number :=0;
+     v_creator_actor_type                   object_bv_value.business_variable_value%type; 
+     v_dragon_user_name                     object_bv_value.business_variable_value%type; 
+     v_pt_object_id                         object.object_id%type;
+     v_renewal_action                       number := 1337048;
+    
+begin
+
+  if v_session_control.gLogging_Full
+  then
+        pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Inside fn_check_authority_to_modify .'||in_action_object_id
+           );
+    end if;
+    v_pt_object_id := pkg_os_object.fn_object_parent_get     ( in_session_id, in_transaction_id, in_action_object_id );
+    v_change_object_list.delete;
+--Get all the endorsment change object under PTP .
+    pkg_os_object_search.sp_object_children_of_type_get
+     (
+          in_session_id                 =>  in_session_id,
+          in_transaction_id             =>  in_transaction_id,
+          in_object_id                  =>  in_Action_object_id,
+          In_Child_Object_Type_Id       =>  gObj_type_PolicyEndorsementChange,
+          io_object_list                =>  v_change_object_list,
+          In_Sort_Bv_Id                 =>  null,
+          in_recurse_flag               =>  true,
+          in_qualification_rule_id      =>  null,
+          in_exclude_deleted_objects_tf =>  true
+     );
+
+  
+     
+     if v_session_control.gLogging_Full
+     then
+        pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Count of Change Objects .'||v_change_object_list.count
+           );
+    end if;
+     if v_change_object_list.count > 0
+     then
+          v_change_object_index := v_change_object_list.first;
+
+     while v_change_object_index is not null
+     loop
+          v_object_Creator := pkg_os_object_io.fn_object_bv_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_change_object_list(v_change_object_index),
+                                   gbv_Reference_Creator 
+                              );
+          v_dragon_user_name := pkg_os_object_io.fn_object_bv_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_object_Creator,
+                                        gbv_Dragon_UserName
+                                   );
+          v_creator_actor_type:=  pkg_os_object_io.fn_object_bv_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_object_Creator,
+                                        gbv_DragonUser_ActorType 
+                                   );
+          if v_session_control.gLogging_Full
+          then
+             pkg_os_logging.sp_log
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  'v_object_Creator .'||v_object_Creator 
+                  ||'v_dragon_user_name.'||v_dragon_user_name
+                  ||'v_creator_actor_type'||v_creator_actor_type
+                );
+         end if;
+
+     --Check if the change object created by internal user or dap user
+
+          
+          if 
+             (  
+                  pkg_os_actor.fn_actor_in_set ( v_creator_actor_type , genum_suspension_Actor_Set ) = 'F'
+     	
+                   and
+
+                  lower(v_dragon_user_name) <>'dapuser' 
+             )
+
+                 
+          then
+                               
+                 v_modified_by_unauth_user :=  v_modified_by_unauth_user + 1 ;
+
+          end if ;
+          if v_session_control.gLogging_Full
+          then
+             pkg_os_logging.sp_log
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  'v_modified_by_unauth_user .'||v_modified_by_unauth_user 
+                 );
+         end if;
+         v_change_object_index := v_change_object_list.next(v_change_object_index);
+	 end loop;
+    end if; 
+                                    
+     if  v_modified_by_unauth_user <> 0
+     then 
+
+         return 'T';
+     else 
+         return 'F';
+     end if;
+
+
+exception
+       when no_data_found
+       then
+         pkg_os_logging.sp_log_error
+            (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+          return 'F';
+       when others
+       then
+
+
+         pkg_os_logging.sp_log_error
+            (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'error.....' || sqlerrm ||
+                    ' Error trace:' || dbms_utility.format_error_backtrace
+             );
+
+               return 'F';
+
+end fn_check_authority_to_modify ;
+-------------------------------------------------------------------------------------------
+--LXPRODUCT-247
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+  --
+  --   %NAME
+  --        sp_event_copy
+  --
+  --   %USAGE
+  --       Create copy  of current active Event and make duplicate Event with references
+  --
+  --   %ALGORITHM
+  --        Not Specified.
+  --
+  --   %PARAM    in_session_id                 Session ID
+  --   %PARAM    in_transaction_id             Transaction ID
+  --   %PARAM    in_object_id                  Action Object ID
+  --   %PARAM    io_action_outcome_id          Action Outcome ID
+  --
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_event_copy
+(
+   in_session_id        in       object.object_id%type,
+   in_transaction_id    in       object.object_id%type,
+   in_object_id         in       object.object_id%type,
+   io_action_outcome_id in out   outcome.outcome_id%type
+)
+
+as
+
+    v_procedure_name      constant system_log.program_name%type := pkg_name ||'sp_event_copy';
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+
+    v_duplicate_object_id object.object_id%type := null;
+    v_parent_object_id    object.object_id%type;
+
+    v_excluded_types      pkg_os_object_copy.t_object_type_list := pkg_os_object_copy.gnull_object_type_list;
+    v_included_types      pkg_os_object_copy.t_object_type_list := pkg_os_object_copy.gnull_object_type_list;
+    v_object_list         pkg_os_object_copy.t_object_list;
+    v_counter             number := 1;
+	v_version			  number :=0;
+    v_datamart_tf         char(1);
+      
+	v_org_event_name                       object_bv_value.business_variable_value%type;
+	v_new_event_name						object_bv_value.business_variable_value%type;
+	
+	
+begin
+
+    --
+    -- List of objects not to be copied
+    --
+	-- v_excluded_types(pkg_os_constant.gobjType_ObjectActionLog) := 0;
+
+    --
+    -- Copying PartnerAgreement object
+    --
+
+    pkg_os_object_copy.sp_object_copy
+    (
+        in_session_id,
+        in_transaction_id,
+        in_object_id,
+        null,
+        v_excluded_types,
+        v_included_types,
+        v_object_list,
+        v_counter,
+        v_duplicate_object_id
+     );
+
+
+    if (v_session_control.gLogging_Full)
+    then
+
+      pkg_os_logging.sp_log
+      (
+        in_session_id,
+        in_transaction_id,
+        v_procedure_name,
+        '............Duplicate Object Created:' || v_duplicate_object_id
+       );
+
+    end if;
+	--
+    -- Setting object state as Created for duplicate object
+    --
+
+    pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_ObjectSate,pkg_os_constant.gObjState_Created);
+	
+	-- Get the version number of the input event object 
+	v_version:=	pkg_os_object_io.fn_object_bv_get
+                                        (
+                                                   in_session_id,
+                                                   in_transaction_id,
+                                                   in_object_id,
+                                                  gbv_EventVersion
+                                         );
+			
+	-- logic to add version number while cipying the Event
+	if v_version is null then
+		
+		v_version :=0;
+		
+		pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_object_id,gbv_EventVersion,v_version);
+        
+		v_version:= v_version+1;
+	else 
+		
+		v_version:= v_version+1;
+	end if;
+					
+    --
+    -- Setting new name  for duplicate object
+    --
+    
+	 pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_EventVersion,v_version);
+		   
+	v_org_event_name:=   pkg_os_object_io.fn_object_bv_get
+                         (
+                             in_session_id,
+                             in_transaction_id,
+                              in_object_id,
+							  gbv_EventName
+                          );
+										 
+	v_new_event_name :=nvl(substr(v_org_event_name,1,instr(v_org_event_name,'_v')-1),v_org_event_name)||'_v'||v_version;
+		   
+    -- set the event name
+	pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_EventName,v_new_event_name);
+
+	-- update the datamart with new event object							 
+	pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,v_duplicate_object_id,v_datamart_tf);
+         
+     -- set the new duplicate object in the session
+	pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, in_session_id,pkg_os_constant_bv.gbv_SessionNewObject, v_duplicate_object_id );
+
+
+   exception
+
+    when others then
+
+      pkg_os_logging.sp_log
+      (
+         in_session_id,
+         in_transaction_id,
+         v_procedure_name,
+         '............Error while duplicating Event:' ||
+         sqlerrm
+       );
+
+  end sp_event_copy;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+  --
+  --   %NAME
+  --        sp_suspension_copy
+  --
+  --   %USAGE
+  --       This procedure is used in the edit active event functionality
+  --		Once user tries to edit a ACTIVE EVENT
+  --		Copy of that event gets created.
+  --		Once user clicks on the >> next button on EDIT ACTIVE EVENT PAGE.
+  --		ALl the suspensions related to the ACTIVE event will be copied.
+  --		New Copied EVent will point to those Suspensions.
+  --		Once Activate is clicked .
+  --        New set of Suspension and events will be activated
+  --		OLD set of Suspensions and EVENTS will be Terminated
+  --
+  --   %ALGORITHM
+  --        We have the new copied event.
+  --        Get the template object(old event from which it is copied) of this new event.
+  --		Get all the suspension object ids associated with the prior event
+  --		Copy all the suspension objects 
+  --        Set reference of new copied suspension objects to event 
+  --        On the page show all the new suspension objects with editable date.
+  --        
+  --
+  --   %PARAM    in_session_id                 Session ID
+  --   %PARAM    in_transaction_id             Transaction ID
+  --   %PARAM    in_object_id                  Action Object ID
+  --   %PARAM    io_action_outcome_id          Action Outcome ID
+  --
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_suspension_copy
+(
+   in_session_id        in       object.object_id%type,
+   in_transaction_id    in       object.object_id%type,
+   in_object_id         in       object.object_id%type,
+   io_action_outcome_id in out   outcome.outcome_id%type
+)
+
+as
+
+    v_procedure_name      constant system_log.program_name%type := pkg_name ||'sp_suspension_copy';
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+
+    v_duplicate_object_id object.object_id%type := null;
+    v_parent_object_id    object.object_id%type;
+
+    v_excluded_types      pkg_os_object_copy.t_object_type_list := pkg_os_object_copy.gnull_object_type_list;
+    v_included_types      pkg_os_object_copy.t_object_type_list := pkg_os_object_copy.gnull_object_type_list;
+    v_object_list         pkg_os_object_copy.t_object_list;
+    v_counter             number := 1;
+    v_datamart_tf         char(1);
+    v_org_sus_name        object_bv_value.business_variable_value%type;
+	v_new_sus_name		  object_bv_value.business_variable_value%type;
+     v_version			  number :=0;   
+	--gbv_EventName constant business_variable.business_variable_id%type := 32810148;   
+	
+	v_suspension_name                       object_bv_value.business_variable_value%type;
+	
+		v_prior_event_id  object.object_id%type;
+		
+		cursor c_get_suspension(in_prior_event_id in number)
+       is
+       Select
+              suspension_id, suspended_lob_Set, suspended_transaction_Set, associated_event_id,impacted_Area_Set ,suspension_effective_Date,suspension_expiration_date
+       from
+              Dragon_Suspension DS
+       where
+              ds.associated_event_id is not null
+       and
+              ds.object_state = pkg_os_constant.gObjState_Alive
+       and
+           associated_event_id = in_prior_event_id;
+     
+begin
+
+    --
+	-- get template for event, this should be object id of actual event edited
+		v_prior_event_id :=  pkg_os_object_io.fn_object_bv_get
+                       (
+                           in_session_id,
+                           in_transaction_id,
+                           in_object_id,
+                           pkg_os_constant_bv.gbv_Template
+                       );
+    --Get all the suspension object ids associated with the prior event from datamart
+	
+	for r_get_suspension in c_get_suspension(v_prior_event_id)
+    loop 
+                        v_suspension_name:= pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,r_get_suspension.suspension_id , gbv_suspension_name );
+                       
+                              if v_session_control.gLogging_Full
+                              then
+                                   pkg_os_logging.sp_log
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_procedure_name,
+                                             'inside cursor  r_get_suspension :'
+                                            ||r_get_suspension.suspension_id 
+                                            || 'Suspension Name: '||v_suspension_name
+                                            ||'Suspension Effective Date : '|| r_get_suspension.suspension_effective_Date
+                                            ||'suspension Expiration Date :'||r_get_suspension.suspension_expiration_date
+                                           
+                                        );
+                              end if;
+							  
+						
+						pkg_os_object_copy.sp_object_copy
+						(
+							in_session_id,
+							in_transaction_id,
+							r_get_suspension.suspension_id,
+							null,
+							v_excluded_types,
+							v_included_types,
+							v_object_list,
+							v_counter,
+							v_duplicate_object_id
+						);	  
+						if (v_session_control.gLogging_Full)
+							then
+
+							  pkg_os_logging.sp_log
+							  (
+								in_session_id,
+								in_transaction_id,
+								v_procedure_name,
+								'............Duplicate Object Created:' || v_duplicate_object_id
+							   );
+
+							end if;
+	--	  
+						 -- Setting object state as Created for duplicate object
+  
+
+						pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_ObjectSate,pkg_os_constant.gObjState_Created);
+						
+						--
+						-- Setting new name  for duplicate object
+						--
+						
+						
+                        v_version:=	pkg_os_object_io.fn_object_bv_get
+                                        (
+                                            in_session_id,
+                                            in_transaction_id,
+                                            r_get_suspension.suspension_id ,
+                                            gbv_SusVersion
+                                         );
+			
+                    -- logic to add version number while copying the Suspension
+                    
+                 	
+                        if v_version is null then
+		
+                            v_version :=0;
+		
+                            pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,r_get_suspension.suspension_id ,gbv_SusVersion,v_version);
+      
+                         v_version:= v_version+1;
+                        else 
+		
+                            v_version:= v_version+1;
+                        end if;
+	
+	
+                        v_org_sus_name:=   pkg_os_object_io.fn_object_bv_get
+                                            (
+                                                   in_session_id,
+                                                   in_transaction_id,
+                                                   r_get_suspension.suspension_id ,
+                                                  gbv_suspension_name
+                                             );
+										 
+                        v_new_sus_name :=nvl(substr(v_org_sus_name,1,instr(v_org_sus_name,'_v')-1),v_org_sus_name)||'_v'||v_version;
+                        
+                     	
+                        pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_SusVersion,v_version);
+
+                        pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_suspension_name,v_new_sus_name);
+  
+                            
+                            -- Setting  Unique Suspension number
+
+					/*	pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_Suspension_Num,pkg_os_object_io.fn_object_bv_get
+                                        (
+                                                   in_session_id,
+                                                   in_transaction_id,
+                                                   r_get_suspension.suspension_id,
+                                                  gbv_Suspension_Num
+                                         )||'_1');*/
+                                         
+							-- Set the state of new created EVent to active 
+                            pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_object_id,gbv_ObjectSate,pkg_os_constant.gObjState_Alive);
+                            
+                            -- Set the reference associated Event from New Suspension to new Event							 
+							pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_duplicate_object_id,gbv_Associated_event_id,in_object_id);		
+							
+							
+							---- set the status of prior Suspensions to Inactive
+							pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,r_get_suspension.suspension_id,gbv_ObjectSate,gObjState_Inactive);
+
+							
+							-- update the datamart for prior event
+							pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,v_prior_event_id,v_datamart_tf);
+							-- update the datamart for new event
+							pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,in_object_id,v_datamart_tf);
+							
+							 -- update the data mart for old suspension object
+							 pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,r_get_suspension.suspension_id,v_datamart_tf);
+							 
+							-- update the data mart for new suspension object
+							pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,v_duplicate_object_id,v_datamart_tf);
+							
+			
+
+
+						
+	 end loop; -- c_get_suspension
+	
+							-- set the status of prior events to Inactive
+							pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_prior_event_id,gbv_ObjectSate,gObjState_Inactive);
+							
+							
+							-- update the data mart for old event 
+							pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,v_prior_event_id,v_datamart_tf);
+							
+   
+   exception
+     when no_data_found then
+
+                pkg_os_logging.sp_log_error( in_session_id, in_transaction_id, v_procedure_name,
+                'No Suspensions associated with this event: '
+                || SQLERRM || ' Error trace:'
+                || dbms_utility.format_error_backtrace );
+
+
+    when others then
+
+      pkg_os_logging.sp_log
+      (
+         in_session_id,
+         in_transaction_id,
+         v_procedure_name,
+         '............Error while duplicating Suspensions:' ||
+         sqlerrm
+       );
+
+	io_action_outcome_id := gOutcome_ok;			
+  end sp_suspension_copy;
+  
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+  --
+  --   %NAME
+  --        fn_check_susp_eligibility
+  --
+  --   %USAGE
+  --       This function returns true/false based on whether the event has any associated suspension in created state
+  --
+  --   %ALGORITHM
+  --        This function returns true/false based on whether the event has any associated suspension in created state
+  --        
+  --
+  --   %PARAM    in_session_id                 Session ID
+  --   %PARAM    in_transaction_id             Transaction ID
+  --   %PARAM    in_object_id                  Action Object ID
+  --   %PARAM    io_action_outcome_id          Action Outcome ID
+  --
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_check_susp_eligibility
+(
+   in_session_id                  in        object.Object_id%type,
+   in_transaction_id              in        object.Object_id%type,
+   in_object_id        			  in        object.object_id%type
+) return number
+is
+v_procedure_name                constant  system_log.program_name%type   :=   pkg_name||'fn_check_susp_eligibility';
+v_session_control               pkg_os_session.r_dragon_session_control  :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+v_eligibility                   number  := pkg_os_constant.gBoolean_No ;
+v_count_sus                       number;
+
+begin
+
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+            in_session_id,
+            in_transaction_id,
+            v_procedure_name,
+            '... Check Suspension Eligibility '||  in_object_id
+          );
+    end if;
+	begin
+       
+              select count(1)
+               into v_count_sus
+       from
+              Dragon_Suspension DS
+       where
+              ds.associated_event_id is not null
+       and
+              ds.object_state = pkg_os_constant.gObjState_Created
+       and
+           associated_event_id = in_object_id;
+
+          exception
+              when no_data_found then
+                  return  v_eligibility;
+
+          end;
+		  if (v_count_sus >0)then
+		  
+			v_eligibility := pkg_os_constant.gBoolean_Yes ;
+			return  v_eligibility;
+            else 
+            return  v_eligibility;
+		  
+		  end if;
+
+exception
+     when no_data_found then
+
+                pkg_os_logging.sp_log_error( in_session_id, in_transaction_id, v_procedure_name,
+                'No active Suspensions found for this Event '
+                || SQLERRM || ' Error trace:'
+                || dbms_utility.format_error_backtrace );
+
+			return  v_eligibility;
+	 when others then
+       
+	   pkg_os_logging.sp_log_error( in_session_id, in_transaction_id, v_procedure_name,
+        'Error while setting the eligibility for the Event : '
+        || SQLERRM
+        || ' Error trace:'
+        || dbms_utility.format_error_backtrace );
+
+                return  v_eligibility;
+
+end fn_check_susp_eligibility;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------
+  --
+  --   %NAME
+  --        sp_activate_suspensions
+  --
+  --   %USAGE
+  --      Get all the Suspensions  in created state that refer to this event .
+  --	  Set the status of Suspensions to ACTIVE
+   --
+  --   %ALGORITHM
+  --       Get all the Suspensions  in created state that refer to this event .
+  --	   Set the status of Suspensions to ACTIVE  
+  --        
+  --
+  --   %PARAM    in_session_id                 Session ID
+  --   %PARAM    in_transaction_id             Transaction ID
+  --   %PARAM    in_object_id                  Action Object ID
+  --   %PARAM    io_action_outcome_id          Action Outcome ID
+  --
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_activate_suspensions
+(
+   in_session_id        in       object.object_id%type,
+   in_transaction_id    in       object.object_id%type,
+   in_object_id         in       object.object_id%type,
+   io_action_outcome_id in out   outcome.outcome_id%type
+)
+
+as
+
+    v_procedure_name      constant system_log.program_name%type := pkg_name ||'sp_activate_suspensions';
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    v_datamart_tf         char(1);
+ 	v_check_event_eligibility    number  := pkg_os_constant.gBoolean_No ;
+	
+	
+	cursor c_get_suspension(in_object_id in number)
+       is
+       Select
+              suspension_id, suspended_lob_Set, suspended_transaction_Set, associated_event_id,impacted_Area_Set ,suspension_effective_Date,suspension_expiration_date
+       from
+              Dragon_Suspension DS
+       where
+              ds.associated_event_id is not null
+       and
+              ds.object_state = pkg_os_constant.gObjState_Created
+       and
+           associated_event_id = in_object_id;
+     
+begin
+
+   
+	-- Check whether there are suspensions in created state under this event
+     v_check_event_eligibility :=  fn_check_susp_eligibility(in_session_id,in_transaction_id,in_object_id);
+	 
+	 
+	 if (v_check_event_eligibility = pkg_os_constant.gBoolean_Yes) then 
+	 
+    --Get all the suspension object ids associated with the  event from datamart
+	
+        for r_get_suspension in c_get_suspension(in_object_id)
+        loop 
+                     
+                              if v_session_control.gLogging_Full
+                              then
+                                   pkg_os_logging.sp_log
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_procedure_name,
+                                             'inside cursor  r_get_suspension :'
+                                            ||r_get_suspension.suspension_id 
+                                            ||'Suspension Effective Date : '|| r_get_suspension.suspension_effective_Date
+                                            ||'suspension Expiration Date :'||r_get_suspension.suspension_expiration_date
+                                           
+                                        );
+                              end if;
+							  
+						 -- Setting object state as Created for duplicate object
+						pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,r_get_suspension.suspension_id,gbv_ObjectSate,pkg_os_constant.gObjState_Alive);
+                     -- update the data mart for  suspension object
+                       pkg_os_datamart.sp_datamart_update_row(in_session_id,in_transaction_id,r_get_suspension.suspension_id,v_datamart_tf);
+							
+
+
+						
+        end loop; -- c_get_suspension
+	 end if;
+	    io_action_outcome_id := gOutcome_ok;							
+   exception
+     when no_data_found then
+        pkg_os_logging.sp_log_error
+        ( 
+            in_session_id, 
+            in_transaction_id, 
+            v_procedure_name,
+            '...........No Suspensions found: '
+            || SQLERRM || ' Error trace:'
+            || dbms_utility.format_error_backtrace 
+        );
+
+			io_action_outcome_id := gOutcome_ok;	
+     when others then
+       pkg_os_logging.sp_log
+       (
+         in_session_id,
+         in_transaction_id,
+         v_procedure_name,
+         '............Error while setting the status of all the supensions:' ||
+         sqlerrm
+       );
+
+	io_action_outcome_id := gOutcome_ok;
+    
+  end sp_activate_suspensions;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+end PKG_PC_SUSPENSION;
+/

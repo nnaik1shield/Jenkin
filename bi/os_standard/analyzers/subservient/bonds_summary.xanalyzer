@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2012-01-31T10:57:48" created="2012-01-31T10:40:00" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Surety/Bonds - Summary.xanalyzer" name="Bonds - Summary"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="SURETY_BOND_CUBE" catalog="Surety Financial Statement Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Bond_Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Liability_Amount]">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Total Bond Liability" locale=""/>
+                </displayLabels>
+                <numberFormat formatShortcut="NONE" formatScale="0" formatCategory="Currency ($)">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Premium]">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Total Open Premium" locale=""/>
+                </displayLabels>
+                <numberFormat formatShortcut="NONE" formatScale="0" formatCategory="Currency ($)">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Bond_Category].[Bond_Category]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Bond_Category].[Bond_Type]">
+                <link fileLabel="Bonds - Detail" fileName="Bonds - Detail.xanalyzer" filePath="/Cubes/Surety" fileSolution="OneShield" target="CURRENT" toolTip="Click to drill down to Sub Types" type="FILE">
+                    <linkParam value="{Bond_Type}" name="Bond_Type"/>
+                </link>
+            </attribute>
+        </rowAttributes>
+        <filters/>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

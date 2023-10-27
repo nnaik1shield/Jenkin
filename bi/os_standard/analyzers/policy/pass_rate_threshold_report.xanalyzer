@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-05-05T21:18:25" created="2011-05-05T21:18:25" description="" updatedBy="joe" createdBy="joe">
+        <path folder="" name="Pass Rate Threshold Report"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="POLICYTRANSACTION" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure calculateSubtotalsUsingFormula="true" id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="EXPRESSION" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Pass Rate" locale=""/>
+                </displayLabels>
+                <expression>[Measures].[UW_NO_Rule_Count]/[Measures].[Transaction Count]</expression>
+                <numberFormat formatShortcut="NONE" formatScale="2" formatCategory="Expression">
+                    <formatExpression>Case
+When [Measures].CurrentMember &gt; .60 Then '|##.#%|style=green'
+When [Measures].CurrentMember &lt; .30 Then '|##.#%|style = red'
+Else '|##.#%|style =yellow'
+End</formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Address].[Jurisdiction]"/>
+        </columnAttributes>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Policy Transaction Type].[Transaction Type]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Address].[Jurisdiction]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Alberta" formula="[Address].[Canada].[Alberta]"/>
+                        <member pos="0" caption="Connecticut" formula="[Address].[United States].[Connecticut]"/>
+                        <member pos="0" caption="Massachusetts" formula="[Address].[United States].[Massachusetts]"/>
+                        <member pos="0" caption="New Jersey" formula="[Address].[United States].[New Jersey]"/>
+                        <member pos="0" caption="Ontario" formula="[Address].[Canada].[Ontario]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="9">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="10">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="11">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="12">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="13">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="14">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="15">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="16">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="17">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

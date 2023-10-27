@@ -1,0 +1,1285 @@
+create or replace package PKG_DB_PAYPLAN_MODIFY
+-------------
+-- $Workfile:   BASE_API.PKG_DB_PAYPLAN_MODIFY.PSK  $
+-- $Revision:   1.17  $
+--   $Author:   vgujral  $
+--     $Date:   Jan 31 2014 15:43:18  $
+-------------
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+pkg_name constant system_log.program_name%type := 'pkg_db_payplan_modify.';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Object Types ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gObjType_ScheduledPayment     constant object_type.object_type_id%type := 2297206;
+gObjType_ScheduledElement     constant object_type.object_type_id%type := 2365546;
+gObjType_ScheduledInstallment constant object_type.object_type_id%type := 2365446;
+gObjType_FITransaction        constant object_type.object_type_id%type := 2365046;
+gObjType_FItem                constant object_type.object_type_id%type := 2365246;
+gObjType_FIChange             constant object_type.object_type_id%type := 2365146;
+gObjType_BillingAccount       constant object_type.object_type_id%type := 2365346;
+gObjType_PolicyTerm           constant object_type.object_type_id%type := 2389401;
+gObjType_BillingAccountTrxSet constant object_type.object_type_id%type := 2365946;
+gObjType_GenericObject        constant object_type.object_type_id%type := 0;
+gObjType_PayPlan              constant object_type.object_type_id%type := 638;
+gObjType_BA_BinderObject      constant object_type.object_type_id%type := 3393646;
+gObjType_BA_ScheduledPayment  constant object_type.object_type_id%type := 3393746;
+gObjType_BASchedPymntComponent constant object_type.object_type_id%type := 3393846;
+gObjTypePolicyAll             constant object_type.object_type_id%type := 3357846;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Business Variables ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Session
+gbv_SessionRefPolicy constant business_variable.business_variable_id%type := 29650546;
+
+-- PaymentPlan
+gbv_PaymentPlanChildPayment constant business_variable.business_variable_id%type := 29105606;
+gbv_PaymentPlanCurrentStub  constant business_variable.business_variable_id%type := 31689146;
+gbv_PaymentPlanLumpsum_id   constant business_variable.business_variable_id%type := 27146;
+gbv_PaymentPlanQuarterly_id constant business_variable.business_variable_id%type := 27046;
+gbv_PaymentPlanMonthly_id   constant business_variable.business_variable_id%type := 26946;
+gbv_PaymentPlanMDID         constant business_variable.business_variable_id%type := 212015;	--OSPRODUCT-15991
+--@@@@@@@@ OSBILLING - 1839
+gbv_PayPlan_Spread_Indicator constant business_variable.business_variable_id%type := 33815846;
+gbv_PayPlan_Stub_Indicator  constant business_variable.business_variable_id%type := 33815946;
+--@@@@@@@@ OSBILLING - 1839
+gbv_PayPlan_DefStubsCount   constant business_variable.business_variable_id%type := 33982646;
+
+--PaymentPlanScheduledPayment
+gbv_PaymentParentPaymentPlan constant business_variable.business_variable_id%type := 29105506;
+gbv_billing_issue_date       constant business_variable.business_variable_id%type := 29105806;
+gbv_billing_due_date         constant business_variable.business_variable_id%type := 29105906;
+gbv_billing_withdr_date      constant business_variable.business_variable_id%type := 32178546;
+gbv_actual_due_date          constant business_variable.business_variable_id%type := 30745246;
+gbv_scheduled_payment_type   constant business_variable.business_variable_id%type := 31202846;
+gbv_actual_end_date          constant business_variable.business_variable_id%type := 31206846;
+gbv_SchedPayment_Stub_Num    constant business_variable.business_variable_id%type := 31907646;
+gbv_SchedPayment_Stubs_Cnt   constant business_variable.business_variable_id%type := 31907546;
+gbv_schedpayment_total_payment constant business_variable.business_variable_id%type := 29756446;  --PMADEV-760
+gbv_sched_balance_amount       constant business_variable.business_variable_id%type := 33860646;
+gbv_SchedCustomCommAmount    constant business_variable.business_variable_id%type := 34002146;
+gbv_SchedCalcCommAmount      constant business_variable.business_variable_id%type := 32740846;
+
+--Billing Response Error Message OSPRODUCT-25266
+gbv_BillingResponse_ErrorMessage   constant business_variable.business_variable_id%type := 34467748;
+
+-- BillingAccountScheduledPayment
+gbv_ba_transaction_id          constant business_variable.business_variable_id%type := 34119346;
+gbv_ba_schedule_key            constant business_variable.business_variable_id%type := 32598048;
+
+gbv_ba_schd_profile_detail     constant business_variable.business_variable_id%type := 32599248;
+gbv_Ref_AssociatedBillPlan     constant business_variable.business_variable_id%type := 34234446;
+gbv_Ref_AssociatedCTF          constant business_variable.business_variable_id%type := 32600748;
+
+-- BillingAccountScheduledPaymentComponenet
+gbv_Ref_MasterPolicy           constant business_variable.business_variable_id%type := 34119546;
+gbv_Ref_AssociatedTerm         constant business_variable.business_variable_id%type := 34119646;
+gbv_Ref_CreateByCompTrx        constant business_variable.business_variable_id%type := 34119446;
+
+gbv_Ref_AssociatedPaymentSched constant business_variable.business_variable_id%type := 34117246;
+
+-- BillingAccount
+gbv_BillingAccountType      constant business_variable.business_variable_id%type := 29711346;
+gbv_BillingAccountParent    constant business_variable.business_variable_id%type := 29704546;
+gbv_BillingAcc_RecentPayTrx constant business_variable.business_variable_id%type := 29995446;
+gbv_BillingAcc_PayPlanTiming  constant business_variable.business_variable_id%type := 34200246;
+gbv_BillingAcc_RefreshSched   constant business_variable.business_variable_id%type := 33013948; --3015
+-- OSPRODUCT-9879
+gbv_BAStartOfTermIndicator    constant business_variable.business_variable_id%type := 32914248;
+
+-- BillingAccountTransactionSet
+gbv_bats_pref_pay_day       constant business_variable.business_variable_id%type := 34106346;
+gbv_bats_trx_eff_date       constant business_variable.business_variable_id%type := 32926748; -- OSPRODUCT-9870
+
+-- FITransaction
+gbv_FITrxProcessDate        constant business_variable.business_variable_id%type := 29708446;
+gbv_FITransactionType       constant business_variable.business_variable_id%type := 29708346;
+gbv_FITransactionDesc       constant business_variable.business_variable_id%type := 29743946;
+gbv_FITrxRefPolicy          constant business_variable.business_variable_id%type := 29721146;
+gbv_FITrxRefPolicyTxn       constant business_variable.business_variable_id%type := 29744046;
+gbv_FitransactionChildCnt   constant business_variable.business_variable_id%type := 29703946;
+gbv_FITrxRefActionPolicyTxn constant business_variable.business_variable_id%type := 29974146;
+gbv_FITrxParentFITrxSet     constant business_variable.business_variable_id%type := 29703446;
+gbv_FITransaction_Amount    constant business_variable.business_variable_id%type := 29708946;
+--OSBilling-1397 : Moved constants from Package Body to Package Spec.
+gProductPropertyCreateStub         constant pd_property.pd_property_type_id%type        := 12446; --- @@@ This PD_PROPERTY should be retired.
+gbv_PTP_Generate_Stub              constant business_variable.business_variable_id%type := 32188546;
+gbv_PTP_Spread_Amount              constant business_variable.business_variable_id%type := 32718646;
+gbv_PayPlan_LateBookUpfront        constant business_variable.business_variable_id%type := 32086546;
+gbv_PTP_Preferred_Pay_Day          constant business_variable.business_variable_id%type := 32178446;
+gbv_PTP_Comm_Type                  constant business_variable.business_variable_id%type := 33996546;
+gbv_PTP_Comm_Percentage            constant business_variable.business_variable_id%type := 30588246;
+gbv_PTP_Comm_Amount                constant business_variable.business_variable_id%type := 32725846;
+gbv_PT_Comm_Mismatch               constant business_variable.business_variable_id%type := 34001546;
+gBilling_ExcludePaidInstal         constant  pd_property_type.pd_property_type_id%type  := 12946;
+gBilling_ExcludeInvoicedInstal     constant  pd_property_type.pd_property_type_id%type  := 13746;
+gbv_BusinessAmtCalculated          constant business_variable.business_variable_id%type := 32080746;
+gbv_Is_valid_payer_tf              constant business_variable.business_variable_id%type := 32993324; /*OSPRODUCT-3536*/
+
+gbv_ptp_cpp_term_start_ind         constant business_variable.business_variable_id%type := 32907548; -- CR      
+-- PaymentSchedule
+gbv_ScheduledRefInstallment  constant business_variable.business_variable_id%type := 29705446;
+
+gbv_ScheduledElementRefAsset constant business_variable.business_variable_id%type := 29717346;
+
+-- FItem
+gbv_FItemRefInstallment     constant business_variable.business_variable_id%type := 29704446;
+gbv_FItemRefAsset           constant business_variable.business_variable_id%type := 29719446;
+gbv_FItemRefPolicy          constant business_variable.business_variable_id%type := 29721246;
+gbv_fitem_debit_credit      constant business_variable.business_variable_id%type := 29710046;
+gbv_fitem_category          constant business_variable.business_variable_id%type := 29710146;
+gbv_fitem_subcategory       constant business_variable.business_variable_id%type := 29710246;
+gbv_fitem_effective_date    constant business_variable.business_variable_id%type := 29710446;
+gbv_fitem_billing_status    constant business_variable.business_variable_id%type := 29710946;
+gbv_fitem_processing_status constant business_variable.business_variable_id%type := 29711146;
+gbv_fitem_bill_status_date  constant business_variable.business_variable_id%type := 29711046;
+gbv_fitem_amount_due        constant business_variable.business_variable_id%type := 29710546;
+gbv_FItemRefPolicyTxn       constant business_variable.business_variable_id%type := 29748446;
+gbv_FItemRefEntityBelongsTo constant business_variable.business_variable_id%type := 29748546;
+gbv_FItemRefActionPolicyTxn constant business_variable.business_variable_id%type := 29974746;
+
+-- FIChange
+gbv_FIChangeProcessDate   constant business_variable.business_variable_id%type := 29719346;
+gbv_FIChangeRefFItem      constant business_variable.business_variable_id%type := 29704046;
+gbv_fichange_action       constant business_variable.business_variable_id%type := 29709546;
+gbv_fichange_action_delta constant business_variable.business_variable_id%type := 29709646;
+gbv_fichange_sum_include  constant business_variable.business_variable_id%type := 29709846;
+gbv_FIchangeRefPolicy     constant business_variable.business_variable_id%type := 29748246;
+gbv_FIchangeRefPolicyTxn  constant business_variable.business_variable_id%type := 29748346;
+gbv_FIchangeRefBelongsTo  constant business_variable.business_variable_id%type := 29748646;
+
+-- Installment
+gbv_installment_due_date    constant business_variable.business_variable_id%type := 29711846;
+gbv_installment_issue_date  constant business_variable.business_variable_id%type := 29712246;
+gbv_installment_number      constant business_variable.business_variable_id%type := 29718346;
+gbv_instal_actual_due_date  constant business_variable.business_variable_id%type := 30745146;
+gbv_installment_invoiced_tf constant business_variable.business_variable_id%type := 31212946;
+
+-- SchedulePaymentElement
+gbv_ScheduledPayment_num     constant business_variable.business_variable_id%type := 29107006;
+gbv_installment_fee          constant business_variable.business_variable_id%type := 29107206;
+gbv_element_name             constant business_variable.business_variable_id%type := 29712346;
+gbv_create_debit_flag        constant business_variable.business_variable_id%type := 29712446;
+gbv_debit_category           constant business_variable.business_variable_id%type := 29712546;
+gbv_debit_sub_category       constant business_variable.business_variable_id%type := 29712646;
+gbv_create_credit_flag       constant business_variable.business_variable_id%type := 29712746;
+gbv_credit_category          constant business_variable.business_variable_id%type := 29712846;
+gbv_credit_sub_category      constant business_variable.business_variable_id%type := 29712946;
+gbv_element_amount           constant business_variable.business_variable_id%type := 29713846;
+gbv_billing_element_id       constant business_variable.business_variable_id%type := 30790846;
+gbv_ScheduleElementFitem_id  constant business_variable.business_variable_id%type := 30792846;
+gbv_payment_schedule_flag    constant business_variable.business_variable_id%type := 31975846;
+gbv_ElementRefDebitBillAcc   constant business_variable.business_variable_id%type := 31975646;
+gbv_ElementRefCreditBillAcc  constant business_variable.business_variable_id%type := 31975746;
+gbv_ElementRefCreatorPolTrns constant business_variable.business_variable_id%type := 31983746;
+gbv_ElementCategory          constant business_variable.business_variable_id%type := 33852946;
+gbv_ElementValidTF           constant business_variable.business_variable_id%type := 34002346;
+--OSDEMO-11103
+gbv_SplittableFlag constant business_variable.business_variable_id%type := 32086646;
+--OSDEMO-11103
+
+-- Policy
+gbv_PolicyBillingMethod       constant business_variable.business_variable_id%type := 27372305;
+gbv_PolicyRefProdAgency       constant business_variable.business_variable_id%type := 26590907;
+gbv_PolicyPayment_Amount      constant business_variable.business_variable_id%type := 212037;
+gbv_PolicyAppliedCashFromAcc  constant business_variable.business_variable_id%type := 29753646;
+gbv_PolicyRefChosenPlan       constant business_variable.business_variable_id%type := 212021;
+gbv_PolicyRefModPayPlan       constant business_variable.business_variable_id%type := 31906646;
+gbv_PolicyDateEffective       constant business_variable.business_variable_id%type := 504;
+gbv_PolicyChangePayPlanFlag   constant business_variable.business_variable_id%type := 31867946;
+gbv_PolicyAdvanceDate         constant business_variable.business_variable_id%type := 31532046; --31532146;
+gbv_PolicyRolledDate          constant business_variable.business_variable_id%type := 31532046; --31532146;
+gbv_Policy_basicTariffPremium constant business_variable.business_variable_id%type := 31905746;
+gbv_PolicyDirectBilled        constant business_variable.business_variable_id%type := 27372305;
+gbv_PolicyBilledTo            constant business_variable.business_variable_id%type := 29608209;
+gbv_PolicyDefinitionID        constant business_variable.business_variable_id%type := 211636;
+gbv_PTPPayer_RefModPayPlan    constant business_variable.business_variable_id%type := 32967024; /*OSPRODUCT-3536*/
+gbv_RefObjectOfInterest       constant business_variable.business_variable_id%type := 28987309; /*OSPRODUCT-3536*/
+
+--OSDEMO-11103
+gbv_PolicySplitBillingFlag constant business_variable.business_variable_id%type := 32086846;
+--OSDEMO-11103
+
+-- Invoice
+gbv_invoice_amount_premium    constant business_variable.business_variable_id%type := 29106006;
+gbv_invoice_amount_taxes      constant business_variable.business_variable_id%type := 29106106;
+gbv_invoice_amount_surcharges constant business_variable.business_variable_id%type := 29106206;
+gbv_invoice_amount_fees       constant business_variable.business_variable_id%type := 29106306;
+gbv_invoice_amount_commission constant business_variable.business_variable_id%type := 29106406;
+gbv_invoice_amount_total      constant business_variable.business_variable_id%type := 29107106;
+
+-- PolicyTransaction
+gbv_PolTrxAppliedCashFromAcc  constant business_variable.business_variable_id%type := 29753746;
+gbv_PolTrxAppliedCashFromPol  constant business_variable.business_variable_id%type := 29753846;
+gbv_PolicyTrxRefPolicyTerm    constant business_variable.business_variable_id%type := 29728801;
+gbv_PolicyTrxRefActionPolTrx  constant business_variable.business_variable_id%type := 29944346;
+gbv_PolicyTrxRefCoverages     constant business_variable.business_variable_id%type := 212318;
+--OSBilling-1397: defined new constant
+gbv_PolicyTrxRefBasisCoverage constant business_variable.business_variable_id%type := 21912302;
+gbv_PolicyTrxTransactionType  constant business_variable.business_variable_id%type := 212030;
+-- OSBILLING-22
+gbv_PolicyTrxCurrPremTotal    constant business_variable.business_variable_id%type := 212297;
+gbv_PolicyTrxType_Current     constant business_variable.business_variable_id%type := 26590601;
+gbv_PolicyTrx_NewBusiness     constant business_variable.business_variable_id%type := 26590007;
+gbv_PolicyTrx_BasisRefTrx     constant business_variable.business_variable_id%type := 22605205;
+gbv_PolicyTrx_SubType         constant business_variable.business_variable_id%type := 26542407;
+-- OSPRODUCT-9879
+gbv_PTOriginalProcessDate     constant business_variable.business_variable_id%type := 32630948;
+
+-- PolicyTerm
+gbv_PolicyTerm_pref_PayDay    constant business_variable.business_variable_id%type := 32853540;
+gbv_PolicyTermType            constant business_variable.business_variable_id%type := 29706046;
+-- OSPRODUCT-9879
+gbv_PolicyTermCreatedByTrx    constant business_variable.business_variable_id%type := 29749301;
+
+--OSPRODUCT-2496
+gbv_totalelementamount        constant business_variable.business_variable_id%type := 32806548;
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gAudit                 constant lookup_list_value.lookup_enum%type := 11;
+gEndSubType_DefPrem    constant lookup_list_value.lookup_enum%type := 26;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+-- DDWIDEV-216
+g_pp_Pref_Withdrawal_days          pd_property.pd_property_type_id%type:= 13732;
+
+--gBilling_EligibleInstalFlag        constant  pd_property_type.pd_property_type_id%type  := 15448;
+gbv_PPDownAmountOverride           constant business_variable.business_variable_id%type := 33554148;--UTXPRODUCT-580
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gAdjustmentType_First         constant lookup_list_value.lookup_enum%type := 2146;
+gAdjustmentType_Last          constant lookup_list_value.lookup_enum%type := 2246;
+gChangePaymentPlan                constant lookup_list_value.lookup_enum%type := 5; --OSBILLING-7128
+gChangeBillingMethod               constant lookup_list_value.lookup_enum%type := 2; --OSBILLING-7128
+gTrxType_Endorse              constant lookup_list_value.lookup_enum%type := 4; --OSBILLING-6984
+gScheduledPayType_Installment constant lookup_list_value.lookup_enum%type := 1;
+gScheduledPayType_Stub        constant lookup_list_value.lookup_enum%type := 2;
+
+PolicyTransactionTypeList     constant lookup_list.lookup_list_id%type := 50158;
+TransactionSubTypeList        constant lookup_list.lookup_list_id%type := 5433046;
+gCommissionadj                constant lookup_list_value.lookup_enum%type := 23;
+gAudit                        constant lookup_list_value.lookup_enum%type := 11;
+gEndSubType_ILRDefPrem        constant lookup_list_value.lookup_enum%type := 26;
+gEndSubType_PLRDefPrem        constant lookup_list_value.lookup_enum%type := 34046;
+gTrxSubType_BillMethodChange  constant lookup_list_value.lookup_enum%type := 2;
+gTrxSubType_ChangePayPlan     constant lookup_list_value.lookup_enum%type := 5;
+gTrxSubType_Endorsement       constant lookup_list_value.lookup_enum%type := 1;--OSBILLING-7223
+gCommissionType_Flat          constant lookup_list_value.lookup_enum%type := 2;
+gRule_Installment constant rule.rule_id%type := 8782746;
+
+gPayPlan_Linear        constant number(12) := 1;
+gPayPlan_Monthly       constant number(12) := 2;
+gPayPlan_Formulaic     constant number(12) := 3;
+gPayPlan_FullPay       constant number(12) := 1401;
+gPayPlan_Quarterly     constant number(12) := 1606;
+gSplit_On_Payment_Plan constant number(12) := 346;
+gSplit_On_Custom_Plan  constant number(12) := 446;
+gSplit_On_Upfront      constant number(12) := 246;
+gSplit_On_Stub         constant number(12) := 5046;
+gBilling_offsetagency  constant  pd_property_type.pd_property_type_id%type  := 13648;  --OSBILLING-6617 20190326 Cheryl
+
+--2016-06-08 Cheryl pmadev-552 - custom pay plan
+gCustom_pay_plan                  number  := 34746;
+gFITrxType_Disbursement       constant lookup_list_value.lookup_enum%type   :=   901;
+gFITrxType_Disburse_Reversal  constant lookup_list_value.lookup_enum%type   :=   1101;
+gFITrxType_Cash_Apply         constant lookup_list_value.lookup_enum%type   :=   101;
+gFITrxType_Cash_Reversal      constant lookup_list_value.lookup_enum%type   :=   301;
+gFITrxType_CashApply_Rev      constant lookup_list_value.lookup_enum%type   :=   201;
+gFITrxType_CreditApply        constant lookup_list_value.lookup_enum%type   :=   1601;
+gFITrxType_CreditApply_Rev    constant lookup_list_value.lookup_enum%type   :=   6001;
+gFITrxType_WithdrawalDt_Update constant lookup_list_value.lookup_enum%type   :=  4001;
+gFITrxType_cashCrdTrnsfer_Rev  constant lookup_list_value.lookup_enum%type   :=  1301;
+gFITrxType_CreditApp_Rev    constant lookup_list_value.lookup_enum%type   :=  1701;
+gFITrxType_Credit_Transfer   constant lookup_list_value.lookup_enum%type   :=  4401;
+gFITrxType_Credit_Apply_rev  constant lookup_list_value.lookup_enum%type   :=  5001;
+
+--Start Kiran changes OSPRODUCT-31717
+gFITrxType_CashTransfer       constant lookup_list_value.lookup_enum%type   :=    401;
+gFITrxType_ReconCashTrf       constant lookup_list_value.lookup_enum%type   :=    4401;
+gFITrxType_CashTrf_Rev        constant lookup_list_value.lookup_enum%type   :=   1301;
+gFITrxType_DeffApply          constant lookup_list_value.lookup_enum%type   :=   6005;
+--End Kiran changes OSPRODUCT-31717
+
+gOutcome_Comm_Mismatch        constant outcome.outcome_id%type   :=   70546;
+gOutcome_SprdPremCrteStubF    constant outcome.outcome_id%type   :=   117148;  --OSPRODUCT-15833
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+gBooleanTrue  constant number := 1;
+gBooleanFalse constant number := 2;
+gTimeInterval_Feb constant number := 28;
+gTimeInterval_Feb_leap constant number := 29;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+--
+--     Time Units
+--
+
+gTimeUnit_Calendar_Day     time_unit.time_unit_id%type := 506;
+gTimeUnit_Calendar_Week    time_unit.time_unit_id%type := 406;
+gTimeUnit_Calendar_Month   time_unit.time_unit_id%type := 102;
+gTimeUnit_Calendar_Quarter time_unit.time_unit_id%type := 606;
+gTimeUnit_Calendar_Year    time_unit.time_unit_id%type := 202;
+gTimeUnit_Working_Day      time_unit.time_unit_id%type := 146;
+
+gILRDeferred_Premium_inst  constant number(3) := 100;
+
+gYes                       constant number := 1;
+gNo                        constant number := 2;
+
+--1. Due Date, 2. Bill Plan, 3. Profile
+gBASchedKey_DueDate        constant number := 1;
+gBASchedKey_BillPlan       constant number := 2;
+gBASchedKey_Profile        constant number := 3;
+
+
+--OSPRODUCT-1992
+gBilling_WdrwlDateByndDueDate         constant  pd_property_type.pd_property_type_id%type  := 15348;
+gBilling_EligibleInstalFlag           constant  pd_property_type.pd_property_type_id%type  := 15448;
+--OSPRODUCT-1992
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+     --Object State --OSBILLING-6984
+     gObjState_Created   constant  object_state.object_state_id%type:=15402;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Type Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type t_fitem_list is table of number(38) index by varchar2(20);       --OSPRODUCT-1446,modified size
+type t_due_date_list is table of date index by varchar2(5);
+type t_payment_list is table of number(38) index by binary_integer;   --OSPRODUCT-1446,modified size
+
+type schedule_element_record is record(
+element_id          number(12, 0),
+element_amount      number,
+element_label       varchar2(100),
+create_debit_flag   char(1),
+debit_category      number,
+debit_sub_category  number,
+create_credit_flag  char(1),
+credit_category     number,
+credit_sub_category number);
+
+type schedule_element_tab is table of schedule_element_record index by varchar2(12);
+
+type scheduled_payment_record is record(
+installment_fee           number,
+invoice_amount_premium    number, --   this is really the portion where the premium is being collected
+invoice_amount_fees       number,
+invoice_amount_taxes      number,
+invoice_amount_commission number,
+invoice_amount_surcharges number,
+invoice_amount_total      number,
+billing_issue_date        date,
+billing_due_date          date,
+schedule_element_list     schedule_element_tab -- Added
+);
+
+type scheduled_payment_tab is table of scheduled_payment_record index by varchar2(12);
+
+type t_AllScheduledPayment is table of object.object_id%type index by varchar2(500);
+
+g_scheduled_payment_cache t_AllScheduledPayment;
+
+type t_FutureScheduledPayment is table of object.object_id%type index by varchar2(500);
+
+g_FutureScheduledPayment_cache t_FutureScheduledPayment;
+
+type t_schedule_element_tab is table of object.object_id%type index by varchar2(500);
+
+g_scheduled_element_cache t_schedule_element_tab;
+
+type t_StubScheduledPayment is table of object.object_id%type index by varchar2(500);
+
+g_StubScheduledPayment_cache t_StubScheduledPayment;
+
+g_Payment_Cache t_payment_list;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Cursors ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+-- Cursor for getting the Payment Plan Detail records
+
+cursor c_payment_plan_detail
+(
+     in_payment_plan_id in payment_plan_detail.payment_plan_id%type,
+     in_product_id      in payment_plan_detail.pd_product_id%type,
+     in_filing_id       in payment_plan_detail.pd_filing_id%type
+)
+is
+select a.payment_plan_detail_id,
+      a.db_billing_element_id,
+      a.element_split_method,
+      a.element_installment_count,
+      a.element_rounding,
+      a.adjustment_type,
+      b.create_debit_tf,
+      b.debit_fitem_category,
+      b.create_credit_tf,
+      b.credit_fitem_category,
+      b.credit_fitem_sub_category,
+      b.billing_element_name,
+      b.debit_billing_account_path,
+      b.credit_billing_account_path
+ from db_payment_plan_detail a, db_billing_element b
+where a.payment_plan_id = in_payment_plan_id
+  and a.db_billing_element_id = b.db_billing_element_id
+  and (a.pd_product_id in
+      (in_product_id, pkg_os_reference_lookup.gDefaultProductID) or
+      a.pd_product_id is null)
+  and (a.pd_filing_id <= in_filing_id or a.pd_filing_id is null)
+  and (a.last_pd_filing_id >= in_filing_id or
+      a.last_pd_filing_id is null)
+  and nvl(b.active_tf, 'T') = 'T'
+  and nvl(a.active_tf, 'T') = 'T'
+/*and
+b.payment_schedule_tf = 'T'*/
+order by a.apply_order, a.db_billing_element_id;
+
+/*cursor getBillingElementList is
+select * from db_billing_element;*/
+
+-- Added by AJ on 11/15/2010 (OSDEMO-3879)
+-- Process element only when either debit or credit is set for the element.
+
+cursor getBillingElementMapInfo
+(
+     in_billing_element_id in DB_billing_element_map.DB_billing_element_id%type,
+     in_product_id         in payment_plan_detail.pd_product_id%type,
+     in_filing_id          in payment_plan_detail.pd_filing_id%type
+)
+is
+select a.*
+ from db_billing_element_map a, db_billing_element b
+where a.DB_billing_element_id = in_billing_element_id
+  and a.DB_billing_element_id = b.DB_billing_element_id
+  and (a.pd_product_id in
+      (in_product_id, pkg_os_reference_lookup.gDefaultProductID) or
+      a.pd_product_id is null)
+  and (a.pd_filing_id <= in_filing_id or a.pd_filing_id is null)
+  and (a.last_pd_filing_id >= in_filing_id or
+      a.last_pd_filing_id is null)
+  and (b.create_credit_tf = 'T' or b.create_debit_tf = 'T')
+  and nvl(a.active_tf, 'T') = 'T'
+  and nvl(b.active_tf, 'T') = 'T'
+order by b.apply_order;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+/*cursor getBillingElementMapList is
+select * from db_billing_element_map;*/
+
+cursor getPaymentPlanList
+is
+
+     select
+          pp.payment_plan_id,
+          nvl(ppt.payment_plan_timing_type_id, pp.payment_plan_type_id) payment_plan_type_id,
+          pp.payment_plan_name,
+          nvl(ppt.pd_term_id, pp.payment_term_months) payment_term_months,
+          nvl(ppt.min_down_payment_pct, pp.min_down_payment_pct) min_down_payment_pct,
+          pp.new_business_tf,
+          pp.renewal_tf,
+          nvl(ppt.num_of_installments, pp.num_instalments) num_instalments,
+          pp.first_payment_grace_period_day,
+          pp.installment_grace_period_days,
+          pp.linear_installment_premium_pct,
+          pp.linear_installment_interval,
+          pp.linear_installment_units_id,
+          nvl(ppt.nonlinear_payment_fla, pp.nonlinear_payment_fla) nonlinear_payment_fla,
+          nvl(ppt.nonlinear_interval_fla, pp.nonlinear_interval_fla) nonlinear_interval_fla,
+          pp.payment_date_adjustment_fla,
+          pp.payment_plan_notes,
+          pp.installment_fee,
+          pp.restriction_rule_id,
+          pp.surcharge_rule_id,
+          pp.payment_plan_code,
+          pp.alr_code,
+          --pp.carrier_id,
+          pp.pd_product_id,
+          pp.pd_transaction_set_id,
+          pp.pd_term_id,
+          pp.installment_fee_variable_path,
+          pp.installment_fee_expression_id,
+          pp.availability_rule_id,
+          pp.mandatory_rule_id,
+          pp.availability_effective_date,
+          pp.availability_expiration_date,
+          pp.active_tf,
+          pp.display_order,
+          pp.default_tf,
+          pp.default_rule_id,
+          pp.last_pd_filing_id,
+          pp.spread_policy_fee_tf,
+          pp.pd_filing_id,
+          pp.premium_variable_path,
+          pp.premium_expression_id,
+          pp.down_payment_offset_days,
+          pp.other_payment_offset_days,
+          pp.installments_on_anniversary_tf,
+          pp.stub_payment_offset_time,
+          pp.down_payment_offset_units,
+          pp.inst_payment_offset_units,
+          pp.stub_payment_offset_units,
+          pp.stub_payment_offset_rule,
+          --nvl(ppt.stub_create_tf, pp.stub_create_tf) stub_create_tf,
+          pp.stub_create_tf stub_create_tf,  --OSPRODUCT-2327
+          pp.next_install_offset_time,
+          pp.nonlinear_interval_fla_units,
+          pp.instal_anniversary_date_tf,
+          pp.extend_payment_schedule_tf,
+          pp.spread_tf,
+          pp.next_nid_threshold_days,
+          pp.spread_rule_tf,
+          pp.next_nid_threshold_amnt,
+          pp.set_stub_due_date_rule_id,
+          pp.stub_creation_rule_id,
+          pp.db_payer_type_set_id,
+          pp.payment_plan_timing_id,
+          pp.program_set_id --OSPRODUCT-1839
+     from
+          payment_plan pp, payment_plan_timing ppt
+     where
+          pp.payment_plan_timing_id = ppt.payment_plan_timing_id (+)
+     ;
+
+type t_payment_plan_list is table of getPaymentPlanList%rowtype    index by  pls_integer;
+
+payment_plan_tab t_payment_plan_list;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Type Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type t_billing_element_list is table of db_billing_element%rowtype index by pls_integer;
+type t_billing_element_map_list is table of db_billing_element_map%rowtype index by pls_integer;
+
+billing_element_tab     t_billing_element_list;
+billing_element_map_tab t_billing_element_map_list;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Function and Procedure Definitions ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- 2016-11-16 Cheryl osbilling-3101 needed to add to call from another package
+function fn_get_next_withdrawal_date
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_theoretical_due_date               in          date,
+     in_preferred_withdrawal_day          in          integer,
+     in_policy_image_id                 in      object.object_id%type default null  --OSBILLING-7265
+
+) return date;
+--------------------------------------------------------------------------------------------------------
+
+
+procedure sp_payment_schedule_update
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time               in             date default trunc(sysdate),
+     in_payer_entity_id   in object.object_id%type default null, -- #MP
+     in_new_term          in number default null--OSBILLING-7005
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_payment_mod_sched_generate
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type,
+     in_policy_image_id       in object.object_id%type,
+     io_action_outcome_id     in out nocopy outcome.outcome_id%type,
+     in_current_date_time     in date,
+     in_next_installment_date in date
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_payment_schedule_generate
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type,
+     in_policy_image_id       in object.object_id%type,
+     in_is_a_new_term         in number,
+     in_payment_plan_id       in object.object_id%type,
+     in_current_date_time     in date,
+     in_next_installment_date in date,
+     in_retain_existing_plan            in             boolean default false,
+     in_override_payplan_id             in             object.object_id%type   default null,  -- DDWIDEV-222
+     in_change_payplan        in char default 'F'-- VAULTDEV-6645
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_payment_schedule_generate
+(
+     in_session_id            in object.object_id%type,
+     in_transaction_id        in object.object_id%type,
+     in_policy_image_id       in object.object_id%type,
+     in_is_a_new_term         in number,
+     in_payment_plan_id       in object.object_id%type,
+     in_current_date_time     in date,
+     in_next_installment_date in date,
+     in_retain_existing_plan            in             boolean default false,
+     in_override_payplan_id             in             object.object_id%type   default null,  -- DDWIDEV-222
+     in_change_payplan        in char default 'F',-- VAULTDEV-6645
+     io_action_outcome_id     in out nocopy            outcome.outcome_id%type  --OSPRODUCT-15833
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_purge_scheduled_payments
+(
+     in_session_id      in         object.object_id%type,
+     in_transaction_id  in         object.object_id%type,
+     in_payment_plan_id in         object.object_id%type,
+     io_payment_count   in out     number
+);
+
+ --OSBILLING-1798
+procedure sp_set_balance_amount
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     v_current_payment_id          in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_purge_outdated_stubs
+(
+     in_session_id      in object.object_id%type,
+     in_transaction_id  in object.object_id%type,
+     in_payment_plan_id in object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+
+procedure sp_allocate_installment_amts
+(
+     in_session_id                in object.object_id%type,
+     in_transaction_id            in object.object_id%type,
+     in_policy_image_id           in object.object_id%type,
+     in_policy_trx_id             in object.object_id%type,
+     in_payment_plan_id           in object.object_id%type,
+     in_policy_trx_effective_date in date,
+     in_is_a_new_term             in number,
+     in_current_date_time         in date,
+     in_start_installment_number  in number,
+     in_stub_payment_id           in object.object_id%type,
+     in_modifying_payment_plan    in number,
+     in_transaction_spread_tf     in char,
+     in_overridden_plan_md_row    in getPaymentPlanList%rowtype, --OSPRODUCT-3108
+     in_amount_to_next_nid_tf           in             char -- OSBILLING-4232
+);
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_load_sched_payment_cache
+(
+     in_session_id              in object.object_id%type,
+     in_transaction_id          in object.object_id%type,
+     in_chosen_payment_plan_id  in object.object_id%type,
+     io_scheduled_payment_count in out number
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_clear_sched_payment_cache
+(
+     in_session_id     in object.object_id%type,
+     in_transaction_id in object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_schedule_interval_get
+(
+     in_session_id                in        object.object_id%type,
+     in_transaction_id            in        object.object_id%type,
+     in_payment_plan_rec          in        getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     in_current_date              in        date,
+     in_installment_number        in        integer,
+     v_modified_fla               in        varchar2 default null,
+     in_start_installment_no      in        number default 1
+)
+return number; -- PMADEV297 - 20150915 change from integer to number Cheryl
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function sp_determine_next_installment
+(
+     in_session_id                in object.object_id%type,
+     in_transaction_id            in object.object_id%type,
+     in_policy_trx_id             in object.object_id%type,
+     in_policy_trx_effective_date in date,
+     in_policy_trx_process_date   in date,
+     in_payment_plan_row          in getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     in_policy_cost_change        in float,
+     io_next_installment_id       in out object.object_id%type,
+     in_modify_payplan            in number default 2,
+     in_is_a_new_term             in number default 2,
+     in_override_payplan_id       in number default null -- OSBILLING-6727
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_determine_installment_id
+(
+     in_session_id         in object.object_id%type,
+     in_transaction_id     in object.object_id%type,
+     in_installment_number in integer
+
+) return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+procedure sp_populate_plan_anew
+(
+     in_session_id                    in  object.object_id%type,
+     in_transaction_id                in  object.object_id%type,
+     in_policy_image_id               in  object.object_id%type,
+     in_policy_transaction_id         in  object.object_id%type,
+     in_payment_plan_id               in  object.object_id%type,
+     in_policy_trx_effective_date     in  date,
+     in_next_installment_date         in  date,
+     in_overridden_plan_md_row        in  getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     in_start_installment_number      in  number,
+      in_current_date_time             in  date default null  -- XXXPRDSUP-2245
+
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+function fn_get_stub_sequence
+(
+     in_session_id                    object.object_id%type,
+     in_transaction_id                object.object_id%type,
+     in_base_installment_id           object.object_id%type,
+     in_payment_plan_id               object.object_id%type default null
+
+) return number;
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_schedule_elements_create
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_policy_trx_date                 in        date,
+     in_payment_plan_id                 in        object.object_id%type,
+     in_start_installment_number        in        number,
+     in_current_stub_id                 in        object.object_id%type,
+     in_product_id                      in        pd_product.pd_product_id%type,
+     in_filing_id                       in        pd_filing.pd_filing_id%type,
+     in_billing_element_id              in        db_billing_element.db_billing_element_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     in_modifying_payment_plan          in        number,
+     in_payment_plan_md_row             in        getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     in_md_split_method                 in        db_payment_plan_detail.element_split_method%type,
+     in_split_installment_count         in        db_payment_plan_detail.element_installment_count%type,
+     in_split_element_rounding          in        db_payment_plan_detail.element_rounding%type,
+     in_split_adjustment_type           in        db_payment_plan_detail.adjustment_type%type,
+     in_md_spread_overridable_tf        in        db_payment_plan_detail.transaction_spread_override_tf%type, -- OSBILLING-3689
+     in_transaction_spread_tf           in        char, -- OSBILLING-3689
+     in_split_billing_flag              in        char,
+     in_amount_to_next_nid_tf           in        char, -- OSBILLING-4232
+     in_rounding_precision       in number default 5,
+     in_change_payer_tf                 in        char default 'F', --VAULTDDEV-6645
+     in_old_payer_tf                    in        char default 'F',
+     v_old_payer_account                in        object.object_id%type --OSBILLING-7451
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_schedule_element_create
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_scheduled_payment_id            in        object.object_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     in_billing_element_md_row          in        db_billing_element%rowtype,
+     in_element_amount                  in        float,
+     in_split_billing_flag              in        char,
+
+     in_old_payer_tf                    in        char default 'F'
+);
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_restore_payment_schedule
+(
+     in_session_id       in object.object_id%type,
+     in_transaction_id   in object.object_id%type,
+     in_action_object_id in object.object_id%type,
+     in_payer_entity_id  in object.object_id%type default null, -- #MP
+     in_override_payplan_id             in        object.object_id%type   default null,
+     in_override_last_payplan_id        in        object.object_id%type   default null
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_payment_plan_row
+(
+     in_payment_plan_id in payment_plan.payment_plan_id%type
+
+) return getPaymentPlanList%rowtype;--OSPRODUCT-3108
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_payplan_timing
+(
+     in_session_id        in    object.object_id%type,
+     in_transaction_id    in    object.object_id%type,
+     in_payment_plan_id   in    object.object_id%type
+) return payment_plan_timing.payment_plan_timing_id%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_payplan_timing_name
+(
+     in_session_id        in    object.object_id%type,
+     in_transaction_id    in    object.object_id%type,
+     in_payment_plan_id   in    object.object_id%type default null, -- Chosen payment plan
+     in_timing_id         in    lookup_list_value.lookup_enum%type default null
+) return payment_plan_timing.payment_plan_timing_name%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_billing_element_row
+(
+     in_session_id         in object.object_id%type,
+     in_transaction_id     in object.object_id%type,
+     in_billing_element_id in db_billing_element.db_billing_element_id%type
+
+) return db_billing_element%rowtype;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_calculate_due_dates
+(
+     in_session_id                in    object.object_id%type,
+     in_transaction_id            in    object.object_id%type,
+     in_policy_image_id           in    object.object_id%type,
+     in_policy_transaction_id     in    object.object_id%type,
+     in_payment_plan_md_row       in    getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     in_installment_count         in    number,
+     in_policy_trx_effective_date in    date,
+     in_policy_trx_process_date   in    date,
+     in_policy_image_exp_date     in    date,
+     in_next_installment_date     in    date,
+     out_actual_due_date_list     out   t_due_date_list,
+     out_actual_end_date_list     out   t_due_date_list,
+     out_billing_due_date_list    out   t_due_date_list,
+     out_withdrawal_date_list     out   t_due_date_list,
+     in_start_installment_no      in    number default 1,
+     in_transaction_type_id       in    pd_transaction_type.pd_transaction_type_id%type default null, -- DDWIDEV-595
+     in_existing_customer_flag    in    char default 'F' -- DDWIDEV-1653
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_schedule_payment_cleanse
+(
+     in_session_id        in object.object_id%type,
+     in_transaction_id    in object.object_id%type,
+     in_policy_image_id   in object.object_id%type,
+     in_current_date_time in date default null,
+     io_action_outcome_id in out nocopy outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_adjust_applied_payment
+(
+     in_session_id             in object.object_id%type,
+     in_transaction_id         in object.object_id%type,
+     in_chosen_payment_plan_id in object.object_id%type,
+     in_policy_image_id        in object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_calendar_days_add
+(
+  in_session_id     in object.object_id%type,
+  in_transaction_id in object.object_id%type,
+  in_date           in date,
+  in_period         in integer,
+  in_units          in time_unit.time_unit_id%type
+
+) return date;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ procedure sp_payment_withdrawal_update
+(
+     in_session_id                       in        object.object_id%type,
+     in_transaction_id                   in        object.object_id%type,
+     in_action_object_id                 in        object.object_id%type,
+     in_process_tf                       in        char default 'F',
+     in_billing_account_id               in        object.object_id%type default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- 2016-06-22 Cheryl pmadev-522 added here so can call from function
+
+procedure sp_cash_applied_get
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_billing_element_id              in        db_billing_element.db_billing_element_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     in_payment_plan_md_row             in        getPaymentPlanList%rowtype,--OSPRODUCT-3108
+     io_cash_applied                    in out     float,
+     in_all_inst_tf                     in        char default 'F',
+     in_payplan_id                      in        char default null, -- OSBILLING-4478
+     in_billing_account_id              in        object.object_id%type default null, --OSBILLING-7451
+     in_current_inst_tf                 in        char default 'F' --OSPRODUCT-34206 	 
+	 
+);
+procedure sp_billed_amount_get
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_billing_element_id              in        db_billing_element.db_billing_element_id%type,
+     in_coverage_object_id              in        object.object_id%type,
+     io_amount_billed                   in out     float,
+     in_billing_account_id              in        object.object_id%type default null --OSBILLING-7451
+
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_element_earned_amount
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_transaction_id           in        object.object_id%type,
+     in_payment_plan_md_id              in        payment_plan.payment_plan_id%type,
+     in_billing_element_md_row          in        db_billing_element%rowtype,
+     in_all_inst_tf                      in       char default 'F',
+     in_payplan_id                      in        char default null,  -- OSBILLING-4478
+      in_coverage_object_id              in        object.object_id%type default null--OSBilling-5665
+)
+return float;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_cat_applied_amount
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_installment_id                  in        object.object_id%type,
+     in_category_id                     in        db_fitem_category.db_fitem_category_id%type
+)
+return float;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_validate_comm_attribute
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_modify_comm_elements
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_recreate_deferred_stubs
+     (
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_olg_payplan_id                 in             object.object_id%type,
+     in_new_payplan_id               in               object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_trx_starts_new_term
+(
+     in_transaction_type_id   in pd_transaction_type.pd_transaction_type_id%type
+
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_payment_withdrawal_upd
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+	 io_message_list                    in out         pkg_os_message.t_message_list, --OSPRODUCT-30875
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_pmnt_withdrawal_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_pmnt_withdrawal_exit
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_delete_action_object_tf         in             char default 'T'
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_sched_payment_generate
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_image_id                 in             object.object_id%type,
+     in_payment_plan_id                 in             object.object_id%type,
+     in_mod_bill_plan_id                in             object.object_id%type default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-3015
+procedure sp_ba_change_payplan_exit
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-3015
+procedure sp_refresh_ba_schedule
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_ba_sched_payment_cleanup
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_ba_change_payplan_trx_setup
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list                    in out         pkg_os_message.t_message_list,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+
+procedure sp_ba_change_payplan_init
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_policy_object_list              in             pkg_os_token.t_string_table,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list                    in out         pkg_os_message.t_message_list,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+
+procedure sp_ba_change_payplan_process
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_action_object_id                in             object.object_id%type,
+     in_object_cache                    in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list                    in out         pkg_os_message.t_message_list,
+     io_action_outcome_id               in out         outcome.outcome_id%type
+);
+function fn_get_withdrawal_date
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_installment_number              in        integer default 1
+
+) return date;
+
+procedure sp_copy_account_payplan
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type,
+     in_object_cache       in out nocopy pkg_os_object_cache.t_object_cache,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+);
+function fn_validate_bill_plan
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type
+) return char;
+
+procedure sp_ba_sched_payment_generate
+(
+     in_session_id         in     object.object_id%type,
+     in_transaction_id     in     object.object_id%type,
+     in_action_object_id   in     object.object_id%type,
+     in_mod_pay_plan_tf    in     char := 'F',
+     in_mod_bill_plan_tf   in     char := 'F'
+);
+-- OSPRODUCT-1607
+function fn_restriction_payplan_tf
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_policy_image_id                 in        object.object_id%type,
+     in_payplan_object_id               in        object.object_id%type,
+     in_payplan_md_id                   in        payment_plan.restriction_rule_id%type
+)    return char;
+-- OSPRODUCT-1607
+
+-- OSPRODUCT-2839
+procedure sp_set_inst_reinstate_balance
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type
+);
+
+-- UTPRODUCT-3925
+function fn_actual_effective_date_get
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_policy_image_id            in  object.object_id%type,
+     in_payer_id                   in  object.object_id%type
+)
+return date;	
+--UTPRODUCT-4119
+procedure sp_set_bal_CPP_strt_trm_elem
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_pay_plan_id                 in             object.object_id%type
+
+);
+procedure sp_reset_scheduled_payments
+(
+     in_session_id      in object.object_id%type,
+     in_transaction_id  in object.object_id%type,
+     in_payment_plan_id in object.object_id%type,
+     in_policy_trx_id   in object.object_id%type
+) ;
+-- UTPRODUCT-4159
+procedure sp_set_bal_CPP_strt_trm_inst
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_pay_plan_id                     in             object.object_id%type,
+     in_chosen_payplan_id               in             object.object_id%type 
+     
+);
+-- UTPRODUCT-4159
+function fn_sub_category_priority_get
+(
+     in_fitem_category_id       in        number,
+     in_fitem_sub_category_id       in        number
+)
+return float;
+function fn_payplan_bal_get
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_pay_plan_id                 in             object.object_id%type
+)
+return float;	
+
+--UTXPRODUCT-315
+function fn_term_has_credits
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_ptp_id                          in             object.object_id%type
+)
+return char;
+
+--OSPRODUCT-21916
+function fn_check_start_term_indicator
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_ptp_id                  in        object.object_id%type,
+     in_policy_id               in        object.object_id%type
+)
+return number;
+		
+-- OSPRODUCT-22131 Start 
+function fn_future_inst_invoiced_tf
+(
+     in_session_id                 object.object_id%type,
+     in_transaction_id             object.object_id%type,
+     in_current_payment_id         object.object_id%type,
+     in_current_instalment_id      object.object_id%type
+)    return number;
+-- OSPRODUCT-22131 End
+
+--OSPRODUCT-25266 Start
+function fn_billingaccount_found_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,	
+     in_policy_image_id            in        object.object_id%type
+)return char;
+--OSPRODUCT-25266 End
+
+-- start OSPRODUCT-32901
+function  fn_element_amount_get                    
+(
+     in_session_id                      in        object.object_id%type,
+     in_transaction_id                  in        object.object_id%type,
+     in_coverage_id                     in        pc_coverage.pc_coverage_id%type,
+     in_change_tf                       in        char default 'F',   -- T - return change amount, F - return total amount     
+     in_policy_image_id                 in        object.object_id%type     
+)return     number;
+--OSPRODUCT-32901 End
+
+--Kiran start OSPRODUCT-29817
+procedure sp_element_associate
+(
+     in_session_id                in         object.object_id%type,
+     in_transaction_id            in         object.object_id%type,
+     in_product_id                in         object.object_id%type,
+     in_policy_image_id           in         object.object_id%type,
+     in_policy_trx_id             in         object.object_id%type,
+     in_payment_plan_id           in         object.object_id%type
+     
+);
+--Kiran start OSPRODUCT-29817
+
+--OSPRODUCT-34837 start
+function fn_cp_check_start_term_indicator(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_ptp_id                  in        object.object_id%type,
+     in_policy_id               in        object.object_id%type
+)
+return number;
+
+function fn_get_cpp_start_term_indicator(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_ptp_id                  in        object.object_id%type,
+     in_policy_id               in        object.object_id%type
+)
+return number;
+--OSPRODUCT-34837 end
+
+end PKG_DB_PAYPLAN_MODIFY;
+/

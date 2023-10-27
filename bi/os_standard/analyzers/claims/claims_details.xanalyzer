@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2018-03-29T14:59:24.004+05:30" update="2022-08-01T11:52:36.873+05:30">
+        <path name="claims_details" folder="/home/OneShieldBI/analyzers/claims/claims_details.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield Claims Cubes" cube="CLAIM_CUBE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyCells="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="0" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[Reserve_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Actual_Paid_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[Recovery_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]"/>
+            <measure formula="[Measures].[Incurred_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Claim Creation Date].[Creation Year]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Claim Creation Date].[Creation Month]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Current Owner].[Current Owner Name]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Customer].[Customer Name]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Policy].[Policy Number]" showSubtotal="false" sortOrderEnum="DESC"/>
+            <attribute formula="[Claim Status].[Claim Status]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Claim Status].[Claim Status]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL" parameterName="{Claim Status}">
+                        <member formula="[Claim Status].[Active]" caption="Active" pos="0"/>
+                        <member formula="[Claim Status].[Bound]" caption="Bound" pos="0"/>
+                        <member formula="[Claim Status].[Closed]" caption="Closed" pos="0"/>
+                        <member formula="[Claim Status].[Completed]" caption="Completed" pos="0"/>
+                        <member formula="[Claim Status].[Created]" caption="Created" pos="0"/>
+                        <member formula="[Claim Status].[Generated]" caption="Generated" pos="0"/>
+                        <member formula="[Claim Status].[Identification]" caption="Identification" pos="0"/>
+                        <member formula="[Claim Status].[In Force]" caption="In Force" pos="0"/>
+                        <member formula="[Claim Status].[Incomplete]" caption="Incomplete" pos="0"/>
+                        <member formula="[Claim Status].[Issue]" caption="Issue" pos="0"/>
+                        <member formula="[Claim Status].[MarkedForIssue and Complete]" caption="MarkedForIssue and Complete" pos="0"/>
+                        <member formula="[Claim Status].[MarkedForIssue and Incomplete]" caption="MarkedForIssue and Incomplete" pos="0"/>
+                        <member formula="[Claim Status].[N/A]" caption="N/A" pos="0"/>
+                        <member formula="[Claim Status].[Open]" caption="Open" pos="0"/>
+                        <member formula="[Claim Status].[Pending]" caption="Pending" pos="0"/>
+                        <member formula="[Claim Status].[Pending Bind]" caption="Pending Bind" pos="0"/>
+                        <member formula="[Claim Status].[Processed]" caption="Processed" pos="0"/>
+                        <member formula="[Claim Status].[Prospect]" caption="Prospect" pos="0"/>
+                        <member formula="[Claim Status].[Rated]" caption="Rated" pos="0"/>
+                        <member formula="[Claim Status].[Referred To Underwriting]" caption="Referred To Underwriting" pos="0"/>
+                        <member formula="[Claim Status].[Referred to Underwriting]" caption="Referred to Underwriting" pos="0"/>
+                        <member formula="[Claim Status].[RiskEvaluation]" caption="RiskEvaluation" pos="0"/>
+                        <member formula="[Claim Status].[Rolledback]" caption="Rolledback" pos="0"/>
+                        <member formula="[Claim Status].[Schedule Incomplete]" caption="Schedule Incomplete" pos="0"/>
+                        <member formula="[Claim Status].[Terminated]" caption="Terminated" pos="0"/>
+                        <member formula="[Claim Status].[Underwriting Referral Accepted]" caption="Underwriting Referral Accepted" pos="0"/>
+                        <member formula="[Claim Status].[Underwriting Referred to Peer]" caption="Underwriting Referred to Peer" pos="0"/>
+                        <member formula="[Claim Status].[Unverified Claim]" caption="Unverified Claim" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+            <filter formula="[Claim Creation Date].[Creation Month]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="EQUAL" parameterName="{Claim Month}">
+                        <member formula="[Claim Creation Date].[2022].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q2].[Apr]" caption="Apr" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q3].[Aug]" caption="Aug" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q4].[Dec]" caption="Dec" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q1].[Feb]" caption="Feb" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[1900].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q1].[Jan]" caption="Jan" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q3].[Jul]" caption="Jul" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q2].[Jun]" caption="Jun" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q1].[Mar]" caption="Mar" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q2].[May]" caption="May" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q4].[Nov]" caption="Nov" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q4].[Oct]" caption="Oct" pos="0"/>
+                        <member formula="[Claim Creation Date].[2022].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2016].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2018].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2019].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2020].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2021].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2017].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2024].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2025].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2026].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2027].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2028].[Q3].[Sep]" caption="Sep" pos="0"/>
+                        <member formula="[Claim Creation Date].[2023].[Q3].[Sep]" caption="Sep" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="false" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="152,248,144,210,126,101">
+            <labelWidth index="0">
+                <width>-72</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>-168</width>
+            </labelWidth>
+            <labelWidth index="10">
+                <width>-34</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

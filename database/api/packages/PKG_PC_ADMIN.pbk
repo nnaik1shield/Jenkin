@@ -1,0 +1,794 @@
+CREATE OR REPLACE PACKAGE BODY PKG_PC_ADMIN
+-------------
+-- $Workfile:   PKG_PC_ADMIN.PBK  $
+-- $Revision:   1.0  $
+--   $Author:   ajacob $
+--     $Date:   20th May 2016
+-------------
+ AS
+
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  --
+  --     %NAME
+  --          sp_writing_company_sync
+  --
+  --     %USAGE
+  --         1. Check the ST schema for writing companies which exists in MD(carrier table) but not in ST; add them in ST as Partner objects and create billing accounts for them
+  --         2. Check the MD schema (carrier table) for writing companies which exists in ST but not in MD.
+  --            If they donot exists in carrier table or have sponsor_tf column marked as 'F' then mark the object state of the Partner object as Terminated.
+  --            Hence they should not display on UI as well.
+  --
+  --     %ALGORITHM
+  --          Not Specified.
+  --
+  --     %PARAM     in_session_id          Session ID
+  --     %PARAM     in_transaction_id     Transaction ID
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  procedure sp_writing_company_sync(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type) as
+    --
+    -- Cursor to fetch values from carrier table with sponsor_tf column as 'T'.
+    --
+    cursor c_sponsor_carrier is
+      select * from carrier where sponsor_tf = 'T';
+
+    --
+    -- Cursor to fetch values from dragon_partner table.
+    --
+    cursor c_writing_partner is
+      select *
+        from dragon_partner
+       where partner_type = 'Writing Company'
+         and partner_object_status = 'Approved';
+
+    --
+    --  Variable Declaration
+    --
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,
+                                                                                                       in_transaction_id);
+    v_procedure_name  system_log.program_name%type := 'sp_writing_company_sync';
+
+    v_usersession_exchange_id     object.object_id%type;
+    v_exchange_sponsor_partner_id object.object_id%type;
+    v_writing_company_id          object.object_id%type;
+    v_billing_account_id          object.object_id%type;
+    v_billing_account_status      object_state.object_state_id%type;
+    v_writing_company_status      object_state.object_state_id%type;
+    v_datamart_tf                 char(1);
+    v_carrier_id                  number(12);
+
+  begin
+
+    v_usersession_exchange_id := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                   in_transaction_id,
+                                                                   in_session_id,
+                                                                   gbv_exchange_id
+
+                                                                   );
+
+    v_exchange_sponsor_partner_id := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                       in_transaction_id,
+                                                                       v_usersession_exchange_id,
+                                                                       gbv_sponsor_partner_id);
+    --
+    -- 1. Check the ST schema for writing companies which exists in MD(carrier table) but not in ST; add them in ST  and create billing accounts for them if not present
+    --
+
+    for r_sponsor_carrier in c_sponsor_carrier loop
+
+      if v_session_control.gLogging_Full then
+        pkg_os_logging.sp_log(in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              ' Check the ST schema for writing company ' ||
+                              r_sponsor_carrier.carrier_name ||
+                              ' carrier id:' ||
+                              r_sponsor_carrier.carrier_id);
+      end if;
+
+      -- Check if the Writing Comapnay exists as a Partner object
+      v_writing_company_id := null;
+
+      v_writing_company_id := pkg_os_object_search.fn_object_with_attribute_get(in_session_id,
+                                                                                in_transaction_id,
+                                                                                v_exchange_sponsor_partner_id,
+                                                                                63,
+                                                                                gbv_writing_company_id,
+                                                                                r_sponsor_carrier.carrier_id);
+
+      -- If no Partner object exists then create a Partner object as a Writing Company and set its attributes
+      if v_writing_company_id is null then
+
+        pkg_os_object.sp_object_create(in_session_id,
+                                       in_transaction_id,
+                                       63,
+                                       v_exchange_sponsor_partner_id,
+                                       v_writing_company_id);
+
+        if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                ' Added writing company' ||
+                                r_sponsor_carrier.carrier_name ||
+                                ' writing comapany object id:' ||
+                                v_writing_company_id);
+        end if;
+
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          gbv_writing_company_id,
+                                          r_sponsor_carrier.carrier_id);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          200900,
+                                          v_exchange_sponsor_partner_id);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          29236514,
+                                          4);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          29235814,
+                                          2);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          200909,
+                                          1501);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          210153,
+                                          32905);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_writing_company_id,
+                                          29238814,
+                                          r_sponsor_carrier.carrier_name);
+
+        -- Add the Writing Company record to Datamart
+        pkg_os_datamart.sp_datamart_update_row(in_session_id,
+                                               in_transaction_id,
+                                               v_writing_company_id,
+                                               v_datamart_tf);
+
+      else
+        -- Check if the Partner object for the writing company exists but the object status is Terminated
+        v_writing_company_status := null;
+
+        v_writing_company_status := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                      in_transaction_id,
+                                                                      v_writing_company_id,
+                                                                      pkg_os_constant_bv.gbv_GenObjObjectState);
+
+        if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                'Writing company id:' ||
+                                v_writing_company_id ||
+                                ' has object status as ' ||
+                                v_writing_company_status);
+        end if;
+
+        if v_writing_company_status = gbv_terminated_state then
+          -- Set the Object state of the partner as approved
+          pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                            in_transaction_id,
+                                            v_writing_company_id,
+                                            pkg_os_constant_bv.gbv_GenObjObjectState,
+                                            gbv_approved_state);
+          -- Datamart Updation.
+          pkg_os_datamart.sp_datamart_update_row(in_session_id,
+                                                 in_transaction_id,
+                                                 v_writing_company_id,
+                                                 v_datamart_tf);
+
+        end if;
+
+        if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                ' Writing company ' ||
+                                r_sponsor_carrier.carrier_name ||
+                                ' object id: ' || v_writing_company_id ||
+                                ' already exists in ST schema');
+        end if;
+
+      end if;
+
+      -- Check the Billing Account
+      v_billing_account_id := null;
+
+      v_billing_account_id := pkg_os_object_search.fn_object_11_child_get(in_session_id,
+                                                                          in_transaction_id,
+                                                                          v_writing_company_id,
+                                                                          2365346 --gObjType_BillingAccount
+                                                                          );
+
+      -- If does not exist, then create Billing Account
+      if v_billing_account_id is null then
+
+        pkg_os_object.sp_object_create(in_session_id,
+                                       in_transaction_id,
+                                       2365346, ---gObjType_BillingAccount,
+                                       v_writing_company_id,
+                                       v_billing_account_id);
+        if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                ' Created billing account id ' ||
+                                v_billing_account_id ||
+                                'for the writing company object id ' ||
+                                v_writing_company_id);
+        end if;
+        dbms_output.put_line(' Created billing account id ' ||
+                             v_billing_account_id ||
+                             'for the writing company object id ' ||
+                             v_writing_company_id);
+
+        --
+        --     Set the Billing Account attributes
+        --
+
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_billing_account_id,
+                                          210153,
+                                          37246);
+        pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                          in_transaction_id,
+                                          v_billing_account_id,
+                                          29711346,
+                                          1501);
+
+        --
+        --     Add the BillingAccount record to Datamart
+        --
+
+        pkg_os_datamart.sp_datamart_update_row(in_session_id,
+                                               in_transaction_id,
+                                               v_billing_account_id,
+                                               v_datamart_tf);
+
+      else
+
+        v_billing_account_status := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                      in_transaction_id,
+                                                                      v_billing_account_id,
+                                                                      pkg_os_constant_bv.gbv_GenObjObjectState);
+        if v_billing_account_status <> 37246 then
+          --
+          --     Set the Billing Account attributes
+          --
+
+          pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                            in_transaction_id,
+                                            v_billing_account_id,
+                                            210153,
+                                            37246);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                            in_transaction_id,
+                                            v_billing_account_id,
+                                            29711346,
+                                            1501);
+
+        end if;
+
+        --
+        --     Add the BillingAccount record to Datamart
+        --
+
+        pkg_os_datamart.sp_datamart_update_row  --OSPRODUCT-12335 moved Datamart update outside above if
+                        (
+                             in_session_id,
+                             in_transaction_id,
+                             v_billing_account_id,
+                             v_datamart_tf
+                         );
+
+      end if; --     if v_billing_account_id is null
+
+    end loop;
+
+    --
+    -- 2. Check the MD schema (carrier table) for writing companies which exists in ST but not in MD.
+    --    If they donot exists in carrier table or have sponsor_tf column marked as 'F' then mark the object state of the writing comapny as terminated. Hence they should not display on UI as well.
+    --
+    for r_writing_partner in c_writing_partner loop
+      if v_session_control.gLogging_Full then
+        pkg_os_logging.sp_log(in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              ' Check the carrier table for writing company ' ||
+                              r_writing_partner.partner_name ||
+                              ' with partner id:' ||
+                              r_writing_partner.partner_id);
+      end if;
+
+      v_writing_company_id := null;
+
+      v_writing_company_id := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                in_transaction_id,
+                                                                r_writing_partner.partner_id,
+                                                                gbv_writing_company_id);
+
+      if v_writing_company_id is null then
+        if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                'No writing company is assigned to this partner ' ||
+                                r_writing_partner.partner_id);
+        end if;
+
+      else
+
+        select count(carrier_id)
+          into v_carrier_id
+          from carrier
+         where sponsor_tf = 'T'
+           and carrier_id = v_writing_company_id;
+
+        if v_carrier_id = 0 then
+          -- Set the Object state of the partner as terminated
+          pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                            in_transaction_id,
+                                            r_writing_partner.partner_id,
+                                            pkg_os_constant_bv.gbv_GenObjObjectState,
+                                            gbv_terminated_state);
+
+          -- Datamart Updation.
+          pkg_os_datamart.sp_datamart_update_row(in_session_id,
+                                                 in_transaction_id,
+                                                 r_writing_partner.partner_id,
+                                                 v_datamart_tf);
+
+          if v_session_control.gLogging_Full then
+            pkg_os_logging.sp_log(in_session_id,
+                                  in_transaction_id,
+                                  v_procedure_name,
+                                  'Status of the writing company id :' ||
+                                  v_writing_company_id ||
+                                  ' has been marked Terminated');
+          end if;
+
+        end if;
+      end if;
+    end loop;
+
+  end sp_writing_company_sync;
+  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  --      OSPRODUCT-29500
+  --      %NAME
+  --           sp_external_writing_company
+  --
+  --      %USAGE
+  --           1. Setup the Carrier based on writing company object and set the partner type,entity type agency code and status.
+  --           2. Setup the writing company business variable and parent as Carrier wrriting company.
+  --
+  --      %ALGORITHM
+  --      Not Specified.
+  --
+  --      %PARAM     in_session_id          Session ID
+  --      %PARAM     in_transaction_id      Transaction ID
+  --      %PARAM     in_action_object_id    Partner ID
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+procedure sp_new_writing_company_setup
+(
+     in_session_id                in object.object_id%type,
+     in_transaction_id            in object.object_id%type,
+     in_action_object_id          in object.object_id%type
+) 
+as
+    --
+    --  Variable Declaration
+    --
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    v_procedure_name  system_log.program_name%type := 'sp_new_writing_company_setup';
+    v_usersession_exchange_id     object.object_id%type;
+    v_exchange_sponsor_partner_id object.object_id%type;
+    v_billing_account_id          object.object_id%type;
+    v_billing_account_status      object_state.object_state_id%type;
+    v_writing_company_status      object_state.object_state_id%type;
+    v_datamart_tf                 char(1);
+    v_carrier_id                  object.object_id%type;
+    v_entity_type                 char(1);
+begin
+     
+     v_carrier_id := pkg_os_object.fn_object_parent_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id
+                    );
+                    
+     if v_session_control.gLogging_Full then
+          
+          pkg_os_logging.sp_log
+          (   
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '.. Partner id: '|| in_action_object_id||
+               '.. Carrier id: '|| v_carrier_id
+          );
+     end if;
+	 
+     if v_carrier_id is null then
+     
+          -- Step 1: Setup the Carrier
+          pkg_os_object.sp_object_create
+          (
+               in_session_id,
+               in_transaction_id,
+               PKG_OS_CONSTANT.gObjType_Partner,
+               null,
+               v_carrier_id
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_carrier_id,
+               gbv_partner_type,
+               gPartnerType_Carrier
+          );
+          -- Get the entity type selected on writing company partner object     
+          v_entity_type := pkg_os_object_io.fn_object_bv_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   in_action_object_id,
+                                   gbv_entity_type -- Entity Type (Individual/Business)
+                              );
+          -- Set the entity type to carrier partner object
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_carrier_id,
+               gbv_entity_type,
+               v_entity_type
+          );
+          
+          --
+          -- if entity type enum is 2(business) then get the business name from  writing company partner and set to carrier partner.
+          -- if entiry type enum is 1(individual) then get the first name and last name from writing partner and set to carrier partner.
+          --
+          if v_session_control.gLogging_Full then
+               
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    ' Entity type selected: ' || v_entity_type
+               );
+               
+          end if;		  
+          if v_entity_type = gEntityType_Business then 
+                
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_carrier_id,
+                    gbv_business_name, 
+                    pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id,
+                         gbv_business_name 
+                    )
+               );
+               
+          elsif v_entity_type = gEntityType_Individual then 
+               
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_carrier_id,
+                    gbv_individual_first_name,
+                    pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id,
+                         gbv_individual_first_name
+                    )
+               );
+               
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_carrier_id,
+                    gbv_individual_last_name,
+                    pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id,
+                         gbv_individual_last_name
+                    )
+               );          
+          
+          end if;
+          --Get the Agency code from writing company and set to carrier partner.     
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_carrier_id,
+               gbv_agency_code,
+               pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id,
+                         gbv_agency_code
+                    )
+          );
+          -- set the carrier partner status as approved.
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_carrier_id,
+               gbv_partner_status,
+               gPartnerStatus_Approved
+          );     
+          --
+          -- Datamart Update
+          --
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               v_carrier_id,
+               v_datamart_tf
+          );
+
+          -- Step 1.1: Set the Billing Account attributes
+          v_billing_account_id := null;
+          v_billing_account_id := pkg_os_object_search.fn_object_11_child_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_carrier_id,
+                                        pkg_db_constant.gObjType_BillingAccount
+                                   );
+								   
+          if v_session_control.gLogging_Full then            
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    ' Billing Account: ' || v_billing_account_id
+               );          
+          end if;
+		  
+          -- If Billing Account exist
+          if v_billing_account_id is not null then          
+               v_billing_account_status := pkg_os_object_io.fn_object_bv_get
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_billing_account_id,
+                                                  pkg_os_constant_bv.gbv_GenObjObjectState
+                                             );
+               if v_billing_account_status <> gBAStatus_Active then
+                    --
+                    --     Set the Billing Account attributes
+                    --
+                    pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_billing_account_id,
+                         pkg_os_constant_bv.gbv_GenObjObjectState,
+                         gBAStatus_Active
+                    );
+                    pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_billing_account_id,
+                         pkg_db_billing.gbv_BillingAccountType,
+                         gBAType_WritingCompany
+                    );
+               end if;
+               --
+               --     Add the BillingAccount record to Datamart
+               --
+               pkg_os_datamart.sp_datamart_update_row 
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_billing_account_id,
+                    v_datamart_tf
+               );
+
+          end if; 
+
+          if v_session_control.gLogging_Full then
+               
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    ' Carrier partner setup completed: ' || v_carrier_id
+                    ||' Billing Account: ' || v_billing_account_id
+               );
+               
+          end if;
+             
+          -- Step 2 Writing Company Setup   
+          -- set the status for writing company partner
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               gbv_partner_status,
+               gPartnerStatus_Prospect 
+          );
+          -- set the carrier as parent for writing company partner
+          pkg_os_object.sp_object_parent_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               v_carrier_id
+          );
+     elsif v_carrier_id = gExchange_sponsor_partner then
+	       -- set the status for internal writing company partner to Approve
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               gbv_partner_status,
+               gPartnerStatus_Approved
+          );
+     else
+          -- set the status for external writing company partner to prospect
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               gbv_partner_status,
+               gPartnerStatus_Prospect
+          );
+     end if;
+
+     -- Step 2.1: Set the Billing Account attributes
+     v_billing_account_id := null;		  
+     v_billing_account_id := pkg_os_object_search.fn_object_11_child_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   in_action_object_id,
+                                   PKG_DB_CONSTANT.gObjType_BillingAccount
+                              );
+     -- If Billing Account exist
+     if v_billing_account_id is not null then
+          v_billing_account_status := pkg_os_object_io.fn_object_bv_get
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_billing_account_id,
+                                             pkg_os_constant_bv.gbv_GenObjObjectState
+                                        );
+          if v_billing_account_status <> gBAStatus_Active then
+               --
+               --     Set the Billing Account attributes
+               --        
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_billing_account_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    gBAStatus_Active
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_billing_account_id,
+                    pkg_db_billing.gbv_BillingAccountType,
+                    gBAType_WritingCompany
+               );          
+          end if;     
+          --
+          --     Add the BillingAccount record to Datamart
+          --
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               v_billing_account_id,
+               v_datamart_tf
+          );     
+     end if; 
+
+     if v_session_control.gLogging_Full then
+          
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               ' Writing Company setup completed: ' || in_action_object_id
+               ||' Billing Account: ' || v_billing_account_id
+          );
+          
+     end if;
+     --
+     -- Datamart Update
+     --   
+     pkg_os_datamart.sp_datamart_update_row 
+     (
+         in_session_id,
+         in_transaction_id,
+         in_action_object_id,
+         v_datamart_tf
+     );
+     
+end sp_new_writing_company_setup;
+  
+-------------------------------------------------------------------------------------------------
+--
+--     %NAME
+--          fn_get_bi_profit_center_code
+--
+--     %USAGE
+--         Return the BI_PROFIT_CENTER_CODE. 
+--
+--     %ALGORITHM
+--          Not Specified.
+--
+--     %PARAM     in_session_id          Session ID
+--     %PARAM     in_transaction_id     Transaction ID
+-----------------------------------------------------------------------------------------------
+  
+function fn_get_bi_profit_center_code 
+(
+     in_session_id           	  in	object.object_id%type,
+     in_transaction_id       	  in	object.object_id%type
+)
+return    varchar2
+is
+     v_profit_center_code	constant	varchar2(100)  := 'OSE';
+begin
+      
+
+     return v_profit_center_code;
+
+exception
+
+     when others 
+	 then
+
+		raise;
+
+end fn_get_bi_profit_center_code;  
+-----------------------------------------------------------------------------------------------
+END PKG_PC_ADMIN;
+/

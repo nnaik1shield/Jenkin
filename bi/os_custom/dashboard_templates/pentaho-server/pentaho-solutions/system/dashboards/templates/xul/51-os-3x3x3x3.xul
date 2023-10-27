@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<window id="Dashboard"
+	xmlns:pho="http://www.pentaho.com"
+	xmlns="http://www.pentaho.org/there.is.only.xul">
+
+	<box id="titlebar" pho:type="pagetitle" height="23" hidden="true">
+	</box>
+	
+	<vbox id="widget-area" pho:type="scrollarea" flex="1" height="1100"> 
+
+		<box id="FilterPanel" pho:type="povpanel" height="100" hidden="true">
+		</box>
+
+		<hbox id="hbox1" pho:type="layout" flex="1">
+
+			<box id="Panel_1" pho:type="titled-panel" pho:title="${widget1}" flex="1">
+			</box>
+			
+			<box id="Panel_2" pho:type="titled-panel" pho:title="${widget2}" flex="1">
+			</box>
+
+			<box id="Panel_3" pho:type="titled-panel" pho:title="${widget3}" flex="1" >
+			</box>
+
+		</hbox>
+		
+		<hbox id="hbox2" pho:type="layout" flex="1">
+
+			<box id="Panel_4" pho:type="titled-panel" pho:title="${widget1}" flex="1">
+			</box>
+
+			<box id="Panel_5" pho:type="titled-panel" pho:title="${widget2}" flex="1">
+			</box>
+
+			<box id="Panel_6" pho:type="titled-panel" pho:title="${widget3}" flex="1" >
+			</box>
+
+		</hbox>
+	
+		<hbox id="hbox3" pho:type="layout" flex="1">
+
+			<box id="Panel_7" pho:type="titled-panel" pho:title="${widget1}" flex="1">
+			</box>
+
+			<box id="Panel_8" pho:type="titled-panel" pho:title="${widget2}" flex="1">
+			</box>
+
+			<box id="Panel_9" pho:type="titled-panel" pho:title="${widget3}" flex="1" >
+			</box>
+
+		</hbox>
+
+		<hbox id="hbox4" pho:type="layout" flex="1">
+
+			<box id="Panel_10" pho:type="titled-panel" pho:title="${widget1}" flex="1">
+			</box>
+
+			<box id="Panel_11" pho:type="titled-panel" pho:title="${widget2}" flex="1">
+			</box>
+
+			<box id="Panel_12" pho:type="titled-panel" pho:title="${widget3}" flex="1" >
+			</box>
+
+		</hbox>
+		
+	</vbox>
+
+</window>

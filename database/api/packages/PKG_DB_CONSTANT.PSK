@@ -1,0 +1,326 @@
+CREATE OR REPLACE PACKAGE PKG_DB_CONSTANT
+AS
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- 	Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Object Types ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gObjType_BillingAccount              constant          object_type.object_type_id%type := 2365346;
+gObjType_BillPlan                    constant          object_type.object_type_id%type := 3398446;
+gObjType_PaymentPlan                 constant          object_type.object_type_id%type := 638;
+gObjType_PolicyTerm                  constant          object_type.object_type_id%type := 2389401;
+gobjType_PTPPayer                    constant          object_type.object_type_id%type := 3347724;
+gObjType_CashTransferProfile         constant          object_type.object_type_id%type := 2384446;    
+gObjType_FITransaction               constant          object_type.object_type_id%type := 2365046;
+gObjType_DisbProfileUsage            constant          object_type.object_type_id%type := 2384646;
+gObjType_PaymentProfileUsage         constant          object_type.object_type_id%type := 2384546;
+gObjType_DragonUser                  constant          object_type.object_type_id%type := 309;
+gObjType_PendingInstallment          constant          object_type.object_type_id%type := 3370624;
+gObjType_BillingAccountTrxSet        constant          object_type.object_type_id%type := 2365946;
+gObjType_ProfileUsageUpdate          constant          object_type.object_type_id%type := 3209140;
+gObjType_RelatedPolicyEntity         constant          object_type.object_type_id%type := 3376048; --UTPRODUCT-3610
+-- OSPRODUCT-2839
+gObjType_PolicyTermInstallment       constant          object_type.object_type_id%type := 2365446;
+
+--Kiran start OSPRODUCT-28996
+gObjType_ScheduledElement            constant          object_type.object_type_id%type := 2365546;
+--Kiran end OSPRODUCT-28996
+--Kiran start OSPRODUCT-29816 / 34066
+gObjType_FItem                       constant          object_type.object_type_id%type := 2365246;
+--Kiran end OSPRODUCT-29816 / 34066
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Business Variables ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- Customer
+gbv_CustRefPrimaryEntity             constant business_variable.business_variable_id%type   :=   29253414;
+
+gbv_GenericObjValueStream      constant business_variable.business_variable_id%type   :=   32773148; --OSPRODUCT-1931 
+
+-- Customer Entity
+gbv_CustEntityMailingAddress         constant business_variable.business_variable_id%type   :=   29254114;
+gbv_CustEntityPrimaryAddress         constant business_variable.business_variable_id%type   :=   29254014;
+gbv_EntityType                       constant business_variable.business_variable_id%type   :=   29235814;
+gbv_EntityDisplayName                constant business_variable.business_variable_id%type   :=   29382614;
+gbv_BusinessDisplayName              constant business_variable.business_variable_id%type   :=   29238814;
+
+-- Partner
+gbv_PartnerPrimaryAddress            constant business_variable.business_variable_id%type   :=   29367314;
+gbv_PartnerMailingAddress            constant business_variable.business_variable_id%type   :=   29367214;
+
+-- FitransactionSet
+gbv_FiTransactionSet_enddate         constant business_variable.business_variable_id%type   :=   29886946;
+gbv_FiTransactionSet_startdate       constant business_variable.business_variable_id%type   :=   29886846;
+gbv_FiTrxSet_ref_Billplan            constant business_variable.business_variable_id%type   :=   32760248;
+
+-- Fitem
+--Kiran start OSPRODUCT-32906
+gbv_FinancialBusinessRelation        constant business_variable.business_variable_id%type := 35237048;
+--Kiran end OSPRODUCT-32906
+
+--Kiran start OSPRODUCT-29816 / 34066
+gbv_FitemBillingElementId            constant business_variable.business_variable_id%type        :=   32199046;
+--Kiran end OSPRODUCT-29816 / 34066
+
+--BillingAccount VAULTDEV-3747
+gbv_BillingAcct_NID                  constant business_variable.business_variable_id%type   :=   32764324;
+
+-- PaymentPlanScheduledPayment
+gbv_sch_withdrawaldate               constant business_variable.business_variable_id%type   :=   32178546;
+
+--Kiran start OSPRODUCT-28996
+-- PaymentPlanScheduledPaymentElement
+gbv_ElementBusinessRelation          constant business_variable.business_variable_id%type := 35234948;
+--Kiran end OSPRODUCT-28996
+
+--Kiran start OSPRODUCT-29817
+gbv_ElementCreatedBy                 constant business_variable.business_variable_id%type := 31983746;
+--Kiran end OSPRODUCT-29817
+
+-- Policy
+gbv_prfe_withdr_date                 constant business_variable.business_variable_id%type   :=   32178446;
+gbv_PolicyRefmodifiedPlan            constant business_variable.business_variable_id%type   :=   31906646;
+gbv_Policy_RefMostRctFuncTrx         constant business_variable.business_variable_id%type   :=   31909746;
+gbv_PolicyTrxRefCoverages            constant business_variable.business_variable_id%type   :=   212318;
+gbv_path_PolRefRctFuncTrxImg         constant business_variable_path.business_variable_path%type  :=   gbv_Policy_RefMostRctFuncTrx||'.'||gbv_PolicyTrxRefCoverages;
+gbv_policy_current_term              constant business_variable.business_variable_id%type   :=   31844846; --OSBILLING-4960
+gbv_term_pas_status                  constant business_variable.business_variable_id%type := 29706246; --UTPRODUCT-301
+gbv_PolicyCurrentDue                 constant business_variable.business_variable_id%type   :=   31762946; --OSPRODUCT-10290
+gbv_PolicyPastDue                    constant business_variable.business_variable_id%type   :=   31762846; --OSPRODUCT-10290
+gbv_Ref_CurrPolPendCancel            constant business_variable.business_variable_id%type   :=   30792946; --OSPRODUCT-11059
+gbv_Ref_BORCommissionPartner         constant business_variable.business_variable_id%type   :=   33310048; --OSPRODUCT-15394
+-- Kiran start OSPRODUCT-28998 Start
+gbv_Ref_ResponsibleBillingAccount    constant business_variable.business_variable_id%type   :=   33887946;
+--Kiran start OSPRODUCT-28998 end
+                                                                                         
+-- PolicyTerm
+gbv_mostrecent_processed_trx         constant business_variable.business_variable_id%type   :=   32605246; --OSBILLING-7478
+gbv_mostrecent_trx                   constant business_variable.business_variable_id%type   :=   32967524; --OSBILLING-4960
+gbv_PolicyTerm_PaymentPlan           constant business_variable.business_variable_id%type   :=   32204446;
+-- OSPRODUCT-11624
+gbv_PolicyTermCreatedByTrx           constant business_variable.business_variable_id%type   :=   29749301;
+
+-- Payment Plan
+gbv_PayPlan_Spread_Premium           constant business_variable.business_variable_id%type   :=   33815846;
+gbv_PayPlan_Create_Stub              constant business_variable.business_variable_id%type   :=   33815946;
+gbv_PaymentPlanTimingID              constant business_variable.business_variable_id%type   :=   34204746;
+
+-- Policy Transaction Policy
+gbv_PTP_Spread_Premium               constant business_variable.business_variable_id%type   :=   32718646;
+gbv_PTP_Create_Stub                  constant business_variable.business_variable_id%type   :=   32188546;
+gbv_PTP_ChangePayerAmountOpt         constant business_variable.business_variable_id%type   :=   32614548; --OSBILLING-7451
+gbv_PTP_Associated_Billlan           constant business_variable.business_variable_id%type   :=   34207146;
+gbv_PTP_BillingMethod                constant business_variable.business_variable_id%type   :=   27372305;
+-- kiran start OSPRODUCT-29368 / 29370
+gbv_AgencyRequiresBilling            constant business_variable.business_variable_id%type   := 35965248; -- Policy Agency Billled With Agency requires Billing
+-- kiran end OSPRODUCT-29368 / 29370
+--kiran start OSPRODUCT-29003 / 35200
+gbv_PTPBillPlanEnabledTF             constant business_variable.business_variable_id%type   := 32572348;
+--kiran end OSPRODUCT-29003 / 35200
+
+-- ReconciliationRollup
+gbv_Recon_trxtype_display            constant business_variable.business_variable_id%type   :=   34017646;
+gbv_Recon_associated_BA              constant business_variable.business_variable_id%type   :=   29763946;
+gbv_recon_rollup_type                constant business_variable.business_variable_id%type   :=   34005446;
+gbv_recon_associated_asset           constant business_variable.business_variable_id%type   :=   32785724;
+gbv_Recon_AgingStatus                constant business_variable.business_variable_id%type   :=   34017846;
+
+-- BillingTrxInfo
+gbv_object_type_BATSInfo             constant business_variable.business_variable_id%type   :=   3396146; --OSBILLING-7311
+gbv_BATSInfo_RefPT                   constant business_variable.business_variable_id%type   :=   34181746; --OSBILLING-7311
+gbv_BATSInfo_RefObject               constant business_variable.business_variable_id%type   :=   32572948; --OSBILLING-7311
+gbv_OverrideProcess_Flag             constant business_variable.business_variable_id%type   :=   34200946; /*OSPRODUCT-3536*/
+-- 5979
+gbv_BATS_CPPEffectiveDate            constant business_variable.business_variable_id%type   :=   32926748;
+
+-- PTPPayer
+gbv_ProfilePayment_mode              constant business_variable.business_variable_id%type   := 30010546;
+gbv_RefPTPPayerCardPlaceholder       constant business_variable.business_variable_id%type   := 32573948;
+gbv_RefPTPPayerEFTPlaceholder        constant business_variable.business_variable_id%type   := 32574048;
+gbv_CardExpMonth                     constant business_variable.business_variable_id%type   := 30011246;
+gbv_CardExpYear                      constant business_variable.business_variable_id%type   := 30011146;
+g_Pymnt_Mode_CC                      constant lookup_list_value.lookup_enum%type            := 4;
+g_Pymnt_Mode_EFT                     constant lookup_list_value.lookup_enum%type            := 5;
+g_Pymnt_Mode_CHQ                     constant lookup_list_value.lookup_enum%type            := 2;
+
+-- kiran start OSPRODUCT-29003
+gbv_PTPayerBusinessRelation          constant business_variable.business_variable_id%type   := 36420348;
+-- kiran end OSPRODUCT-29003
+
+-- Policy Transaction
+gbv_Ref_PT_PlaceholderCC             constant business_variable.business_variable_id%type   := 33993546;
+gbv_Ref_PT_PlaceholderEFT            constant business_variable.business_variable_id%type   := 33993646;
+gbv_Ref_Derived_From                 constant business_variable.business_variable_id%type   := 29606209;--GCNA-2503
+gbv_Ref_PTRefBillingAccTrxSet        constant business_variable.business_variable_id%type   := 31866546;
+gbv_Trx_Seq_Num                      constant business_variable.business_variable_id%type   := 32214598; /*OSPRODUCT-3536*/
+gbv_Trx_Eff_Dt                       constant business_variable.business_variable_id%type   := 212029;   /*OSPRODUCT-3536*/
+gbv_Ref_PTBelongsToTerm              constant business_variable.business_variable_id%type   := 29728801;
+gbv_Ref_PaymentBillngTrx             constant business_variable.business_variable_id%type   := 34244246; -- UTPRODUCT-3477
+gbv_PT_BusinessRelationShip          constant business_variable.business_variable_id%type   := 35981248; --OSPRODUCT-29007
+
+-- Billing Account
+gbv_Ref_BAPlaceholderCC              constant business_variable.business_variable_id%type := 30023746;
+gbv_Ref_BAPlaceholderEFT             constant business_variable.business_variable_id%type := 30023846;
+gbv_Ref_BAPlaceholderCheque          constant business_variable.business_variable_id%type := 30744246;
+gbv_Ref_BAPlaceholderDPU             constant business_variable.business_variable_id%type := 31705646;
+gbv_BAResponsMsg                     constant business_variable.business_variable_id%type := 32835148;  /*OSPRODUCT-3536*/
+-- kiran start OSPRODUCT-29003
+gbv_BAType                           constant business_variable.business_variable_id%type := 29711346;
+-- kiran end OSPRODUCT-29003
+
+-- BillingTransactionPendingInstallment
+gbv_PendingInst_Amount               constant business_variable.business_variable_id%type := 32948824;
+gbv_PendingInst_WithdrawalDate       constant business_variable.business_variable_id%type := 32948924;
+gbv_PendingInst_RelBAInst            constant business_variable.business_variable_id%type := 32949024;
+
+--UTPRODUCT-3610
+--RelatedPolicyEntity
+gbv_RelPolEntity_Ref_PTP             constant business_variable.business_variable_id%type := 33003748;
+gbv_RelPolEntity_Ref_Entity          constant business_variable.business_variable_id%type := 33003648;
+-- OSPRODUCT-2839
+-- Policy Term Installment
+gbv_InstallmentReinstateBalAmt       constant business_variable.business_variable_id%type := 32816348;
+
+-- Exchange
+gbv_UserSessionRefConnectedTo        constant business_variable.business_variable_id%type := 210090;
+gbv_UserSessionObjectOfIntrst        constant business_variable.business_variable_id%type := 28987309;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--  Enums
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gFitem_Future_Due                    constant number(12) := 1;
+gFitem_Current_Due                   constant number(12) := 2;
+gFitem_Past_Due                      constant number(12) := 3;
+gObjectState_Unbooked                constant lookup_list_value.lookup_enum%type := 58446;
+gObjectState_Processed               constant lookup_list_value.lookup_enum%type := 43046;
+gObjectState_Excluded                constant lookup_list_value.lookup_enum%type := 64146;
+gStatus_Omitted                      constant lookup_list_value.lookup_enum%type := 58346;
+gStatus_MarkedExclude                constant lookup_list_value.lookup_enum%type := 64246;
+gStatus_New                          constant lookup_list_value.lookup_enum%type := 57946;
+gStatus_Premiumandcommdiff           constant lookup_list_value.lookup_enum%type := 58046;
+gStatus_commdiff                     constant lookup_list_value.lookup_enum%type := 58146;
+gStatus_Premiumdiff                  constant lookup_list_value.lookup_enum%type := 58246;
+gStatus_Reconciled                   constant lookup_list_value.lookup_enum%type := 58546;
+gStatus_RCD                          constant lookup_list_value.lookup_enum%type := 64446;
+gStatus_RPCD                         constant lookup_list_value.lookup_enum%type := 64546;
+gStatus_RPD                          constant lookup_list_value.lookup_enum%type := 64346;
+gStatus_MarkedExcludeWithAging       constant lookup_list_value.lookup_enum%type := 67746;
+gStatus_MarkedChangeExclude          constant lookup_list_value.lookup_enum%type := 67946;
+gBatchStatus_Created               constant number(12) := 23;
+gOutcomeFichangeNotBalanced        constant lookup_list_value.lookup_enum%type := 71946;
+gStatus_PolicyBillingTermActive    constant lookup_list_value.lookup_enum%type := 43746;  --OSPRODUCT-10394
+gFItem_Cat_Cont_Commission         constant lookup_list_value.lookup_enum%type :=   5248;				
+--OSBILLING-7311
+g_SetType_InvceAcctRollupStmt      constant object_bv_value.business_variable_value%type  := 9801;
+g_SetType_LteNot1AcctRolupStmt     constant object_bv_value.business_variable_value%type  := 9802;
+g_SetType_LteNot2AcctRolupStmt     constant object_bv_value.business_variable_value%type  := 9803;
+g_SetType_AccountRollUpInvoice     constant lookup_list_value.lookup_enum%type            :=   9804;
+g_SetType_Statement                constant object_bv_value.business_variable_value%type  := 801;
+g_SetType_AccountCurrent           constant object_bv_value.business_variable_value%type  := 1201;
+g_SetType_AccountStatement         constant object_bv_value.business_variable_value%type  := 9807;-- UTPRODUCT2-5																											 
+--OSBILLING-7451
+g_changepayer_option_total         constant object_bv_value.business_variable_value%type  := 1;
+g_changepayer_option_Unearned      constant object_bv_value.business_variable_value%type  := 2;
+g_changepayer_option_trx           constant object_bv_value.business_variable_value%type  := 3;
+g_changepayer_option_unpaid        constant object_bv_value.business_variable_value%type  := 4;
+g_changepayer_option_unbilled      constant object_bv_value.business_variable_value%type  := 5;
+--OSBilling-4830
+--gAgingDateCriteria               constant lookup_list_value.lookup_enum%type         := 19546; --OSPRODUCT-2561
+gInvoicingDateCriteria  		   constant pd_property_type.pd_property_type_id%type     := 19446;
+gDisbursementProfileCheckTF        constant pd_property_type.pd_property_type_id%type     := 17548; --UTPRODUCT-2828				  
+gCreateCustmerDefaultProf_tf         constant pd_property_type.pd_property_type_id%type     := 44148; -- UTXPRODUCT-91
+gCreditInvoiceAllowed  		       constant pd_property_type.pd_property_type_id%type     := 18446;
+gSubjBillingAllowed                constant pd_property_type.pd_property_type_id%type     := 28148; --OSPRODUCT-13644
+gBillingDueDateInvcCriteria        constant pd_property.pd_property_value%type            := 1;
+gWithdrawalDateInvcCriteria        constant pd_property.pd_property_value%type            := 2;
+gSurchargeAtJurisdiction           constant pd_property.pd_property_value%type            :=16448;
+gbv_most_rec_invc			       constant business_variable.business_variable_id%type   := 34082746;--DDWIDEV-678
+gbv_previous_invc			       constant business_variable.business_variable_id%type   := 29887946;--DDWIDEV-678
+--OSBILLING-7005
+gOutcome_Change_Bill_pay           constant business_variable.business_variable_id%type   := 63346;
+--OSBILLING-7831
+gbv_Orig_Transaction_Date          constant business_variable.business_variable_id%type   := 32630948;
+g_Yes                              constant lookup_list_value.lookup_enum%type            := 1;
+g_No                               constant lookup_list_value.lookup_enum%type            := 2;
+gBillingAcType_Customer            constant lookup_list_value.lookup_enum%type            := 201;
+-- Kiran start OSPRODUCT-28998 Start
+gBillingAcType_AgentBroker         constant lookup_list_value.lookup_enum%type            := 101;
+--Kiran start OSPRODUCT-28998 end
+g_EntityType_Individual            constant lookup_list_value.lookup_enum%type            := 1;
+g_EntityType_Business              constant lookup_list_value.lookup_enum%type            := 2;                                  
+gBillAccType_FinanInst             constant lookup_list_value.lookup_enum%type            :=   1546; --UTPRODUCT-301 
+gBillAccType_Payer                 constant lookup_list_value.lookup_enum%type            := 21648; --OSPRODUCT-28820
+gBillTrxType_PendingCancel         constant db_transaction_set_type.db_trxset_enum%type := 4212;--UTPRODUCT-3610
+gBillTrxType_LateNotice            constant db_transaction_set_type.db_trxset_type_id%type := 1546;  --  OSPRODUCT-29006
+gBillTrxType_FirstReminderNotice   constant db_transaction_set_type.db_trxset_type_id%type := 4931;  --  OSPRODUCT-29006
+gBillTrxType_SecondReminderNotice  constant db_transaction_set_type.db_trxset_type_id%type := 5031;  --  OSPRODUCT-29006
+gBillTrxType_IntentToCancel        constant db_transaction_set_type.db_trxset_type_id%type := 4531;  --  OSPRODUCT-29006
+gbv_checkdigit_billacc             constant business_variable.business_variable_id%type   := 32833548;--UTPRODUCT-1045
+gbv_checkdigit_policy              constant business_variable.business_variable_id%type   := 32833448;--UTPRODUCT-1045
+gbv_billacc_no                     constant business_variable.business_variable_id%type   := 29711246;--UTPRODUCT-1045                     
+gbvPrevDisburseBatchID             constant business_variable.business_variable_id%type   := 32899348;--OSPRODUCT-3715
+gbvPrevDisburseAmount              constant business_variable.business_variable_id%type   := 32899548;--OSPRODUCT-3715
+gbvCurrDisburseAmount              constant business_variable.business_variable_id%type   := 32899448;--OSPRODUCT-3715	
+
+--UTPRODUCT-3925
+gbv_payer_effective_date           constant business_variable.business_variable_id%type   := 33023948;
+gbv_payer_process_date             constant business_variable.business_variable_id%type   := 33024048;
+
+--LIOPRODUCT-124 START
+gPendingInstAllowed                constant pd_property_type.pd_property_type_id%type     := 18448;
+gObjType_PendingInstallComp        constant object_type.object_type_id%type               := 3377748;
+gbvRefBillActInstComp              constant business_variable.business_variable_id%type   := 33037648;
+gbvPendingInstallCompAmt           constant business_variable.business_variable_id%type   := 33037548;
+gbvBillAccInstWithdrawalAmt        constant business_variable.business_variable_id%type   := 32842240;
+--LIOPRODUCT-124 END
+			
+-- UTPRODUCT-4159
+gAdjustPaidAmountOption            constant pd_property_type.pd_property_type_id%type     := 18348;
+gbv_ba_cpp_term_start_ind          constant business_variable.business_variable_id%type := 32914248; 
+gbv_Installment_initial_amt        constant business_variable.business_variable_id%type   := 32080646;
+			
+--UTPRODUCT2-7
+gRollup_profile_type               constant business_variable.business_variable_id%type   :=28248;
+
+gOutcome_AddrPartialFailure   	constant	number(12) := 26514;   -- UTXPRODUCT-190
+--UTPRODUCT2-13
+gDefaultInvoice_Pref               constant pd_property_type.pd_property_type_id%type     := 62248;
+g_InvoicePref_AccountStmt          constant object_bv_value.business_variable_value%type  := 2;
+g_InvoicePref_Policy_Invoice       constant object_bv_value.business_variable_value%type  := 1;
+
+--UTPRODUCT2-14
+gTaskType_Account_Stmt             constant task_type.task_type_id%type  := 86748;
+gTaskStatus_OverDue                constant lookup_list_value.lookup_enum%type := 42346;
+gTaskStatus_Incomplete             constant lookup_list_value.lookup_enum%type := 2;
+gStatus_taskforNoProfile           constant outcome.outcome_id%type:= 161148;
+gbv_BATS_isItAdhocStmt             constant business_variable.business_variable_id%type   := 33682348;
+--
+--	Package Type Defintions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--	None
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--	Package Cursors ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--	None
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--	Function and Procedure Definitions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+end pkg_db_constant;
+/

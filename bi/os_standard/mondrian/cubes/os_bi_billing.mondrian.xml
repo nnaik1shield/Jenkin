@@ -1,0 +1,317 @@
+<!--
+	$Modified By By: Ssingh
+	$Date:   01 December 2022  $
+-->
+<Schema name="Oneshield BI - Billing">
+
+  <Dimension highCardinality="false" name="Dim_Line_of_Business" caption="Line of Business">
+    <Hierarchy hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+      <Table name="BI_DIM_PRODUCT_DETAIL">
+      </Table>
+      <Level name="Line of Business" column="PD_LOB_NAME" nameColumn="PD_LOB_NAME" ordinalColumn="PD_LOB_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Line of Business" description="Line of Business">
+      </Level>
+      <Level name="Product" column="PD_PRODUCT_NAME" nameColumn="PD_PRODUCT_NAME" ordinalColumn="PD_PRODUCT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Product" description="Product Name">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Customer">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE" nameColumn="CD_INSURED_TYPE" ordinalColumn="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Dim_Billing_Account" caption="Billing Account">
+    <Hierarchy hasAll="true" allMemberName="All Billing Accounts" primaryKey="BA_BILLING_ACCOUNT_ID">
+      <Table name="BI_DIM_BILLING_ACCOUNT">
+      </Table>
+      <Level name="Account Type" column="BA_BILLING_ACCOUNT_TYPE" nameColumn="BA_BILLING_ACCOUNT_TYPE" ordinalColumn="BA_BILLING_ACCOUNT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The type of Billing Account">
+      </Level>
+      <Level name="Account Holder Name" column="BA_BILLING_ACCOUNT_HOLDER_NAME" nameColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" ordinalColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Account Holder">
+      </Level>
+      <Level name="Billing Account Number" column="BA_BILLING_ACCOUNT_NUMBER" nameColumn="BA_BILLING_ACCOUNT_NUMBER" ordinalColumn="BA_BILLING_ACCOUNT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Billing Account Number">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Dim_Partner">
+    <Hierarchy hasAll="true" allMemberName="Partner" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Partner_Agent">
+      </Table>
+      <Level name="Partner Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Type">
+	  <Property name="Partner Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Partner Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+	<Property name="Partner Effective Date" column="PE_PARTNER_EFF_DATE" type="String">
+        </Property>
+	<Property name="Partner Expiry Date" column="PE_PARTNER_EXP_DATE" type="String">
+        </Property>
+	  </Level>
+	<Level name="Partner Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Partner Status">
+	</Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Dim_Policy" caption="Associated Policy">
+    <Hierarchy hasAll="true" allMemberName="All Associated Policies" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL" alias="Associated Policy">
+      </Table>
+      <Level name="Policy Number" column="POD_POLICY_NUMBER" nameColumn="POD_POLICY_NUMBER" ordinalColumn="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+      </Level>
+      <Level name="Policy Term" column="POD_POLICY_TERM" nameColumn="POD_POLICY_TERM" ordinalColumn="POD_POLICY_TERM" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Term">
+      </Level>
+      <Level name="Policy Primary Risk Address" column="POD_PRIMARY_RISK_STATE" nameColumn="POD_PRIMARY_RISK_STATE" ordinalColumn="POD_PRIMARY_RISK_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Primary Risk State">
+	   <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension highCardinality="false" name="Dim_Policy_State" caption="Associated Policy State">
+    <Hierarchy hasAll="true" allMemberName="All Associated Policies State" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL" alias="Associated Policy State">
+      </Table>
+      <Level name="Policy Primary Risk Address" column="POD_PRIMARY_RISK_STATE" nameColumn="POD_PRIMARY_RISK_STATE" ordinalColumn="POD_PRIMARY_RISK_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Primary Risk State">
+	   <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Dim_Suspended_Policy">
+    <Hierarchy hasAll="true" allMemberName="All Policies" primaryKeyTable="BI_DIM_POLICY_DETAIL" primaryKey="POD_POLICY_ID" visible="true">
+      <Join leftKey="POD_POLICY_CURRENT_TERM_ID" rightKey="POLT_ID">
+        <Table name="BI_DIM_POLICY_DETAIL" alias="DIM_POLICY">
+        </Table>
+        <Table name="BI_DIM_POLICY_TERM_DETAIL" alias="DIM_POLICY_TERM">
+        </Table>
+		   <SQL dialect="generic"> 
+		    <KeyExpression>
+		    <![CDATA[(POLT_SUSPENSION_STATUS = 'Billing Suspended')]]>           
+		    </KeyExpression>
+		   </SQL>
+      </Join>
+		 <Level name="Policy Number" visible="true" table="DIM_POLICY" column="POD_POLICY_NUMBER" nameColumn="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Policy Number" description="Policy Number">
+		 </Level>
+		 <Level name="Policy Term" visible="true" table="DIM_POLICY" column="POD_POLICY_TERM" nameColumn="POD_POLICY_TERM" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Policy Term" description="Policy Term">
+		 </Level>
+		 <Level name="Policy Suspension Reason" visible="true" table="DIM_POLICY_TERM" column="POLT_SUSPENSION_REASON" nameColumn="POLT_SUSPENSION_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Policy Suspension Reason" description="Policy Suspension Reason">
+		 </Level>
+		 <Level name="Policy Suspension Type" visible="true" table="DIM_POLICY_TERM" column="POLT_SUSPENSION_TYPE" nameColumn="POLT_SUSPENSION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Policy Suspension Type" description="Policy Suspension Type">
+		 </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="ACCOUNT_RECEIVABLE" caption="Account Receivable" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_FITEM_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[((%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_FITEM_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%) AND BI_FACT_FITEM_DETAIL.fid_fitem_type = 146 AND BI_FACT_FITEM_DETAIL.fid_category_id not in (646, 946, 1546,5046,5248) AND BI_FACT_FITEM_DETAIL.fid_balance_amt != 0
+		 AND  FID_CREATION_DT >= add_months(trunc(sysdate), -12)
+		 )]]>           
+      </SQL>
+    </Table>
+    
+	<DimensionUsage source="Dim_Line_of_Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+     </DimensionUsage>
+     
+	<DimensionUsage source="Dim_Billing_Account" name="Billing Account" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+	</DimensionUsage>
+	
+	<DimensionUsage source="Dim_Partner" name="Partner" foreignKey="PE_POLICY_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+    
+	<DimensionUsage source="Dim_Policy_State" name="Associated Policy State" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+
+	<Dimension type="StandardDimension" highCardinality="false" name="Account Receivable Type" caption="Account Receivable Type">
+      <Hierarchy hasAll="true">
+        <Level name="Type of Receivables" column="FID_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Type of Receivables">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="Account Receivable Age" caption="Account Receivable Age">
+      <Hierarchy hasAll="true">
+	   <Level name="Receivable Age" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  caption="Receivable Age" description="Receivable Age">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[(case when ((round(sysdate - nvl(fid_installment_due_date, sysdate), 0) < 0) or (round(sysdate - nvl(fid_installment_due_date, sysdate), 0) between 0 and 30))
+						   then '0-30 days'
+					   when round(sysdate - nvl(fid_installment_due_date, sysdate), 0) between 31 and 60
+						   then '31-60 days'
+					   when round(sysdate - nvl(fid_installment_due_date, sysdate), 0) between 61 and 90
+						   then '61-90 days'
+					   when round(sysdate - nvl(fid_installment_due_date, sysdate), 0) > 90
+						   then 'Above 90 days'
+					   else
+						   'Others'
+				   end)
+				  ]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Suspended_Policy" name="Suspended Policy" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Measure name="Total_Receivable_Count" column="FID_FITEM_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Receivables Count" description="Total Receivables">
+    </Measure>
+    <Measure name="Total_Receivable_Amount" column="FID_BALANCE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Receivables Amount" description="Total Receivable Amount">
+    </Measure>
+    <Measure name="Total_Paid_Amount" column="FID_PAID_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Paid Amount" description="Total Paid Amount">
+    </Measure>
+    <Measure name="Total_Customers" column="CD_CUSTOMER_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Customers" description="Total Customers">
+    </Measure>
+  </Cube>
+  
+    <Cube name="BILLING_SUSPENDED_POLICIES" caption="Billing Suspended Policies" visible="true" cache="true" enabled="true">
+    <View alias="vw_billing_suspended_policies">
+          <SQL dialect="generic">    
+		Select
+			td.polt_suspension_reason,
+			td.polt_suspension_type,
+			pd.pod_policy_id,
+			pd.pod_policy_number
+		from
+			bi_dim_policy_term_detail td,
+			bi_dim_policy_detail pd
+		where
+			td.pod_policy_id = pd.pod_policy_id 
+		and
+			td.polt_id = pd.pod_policy_current_term_id 
+		and
+			td.polt_suspension_status = 'Billing Suspended'	
+		</SQL>
+     </View>
+    
+	<Dimension type="StandardDimension" highCardinality="false" name="Suspension Reason" caption="Billing Suspension Reason">
+      <Hierarchy hasAll="true">
+        <Level name="Suspension Reason" column="POLT_SUSPENSION_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Suspension Reason">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+	<Dimension type="StandardDimension" highCardinality="false" name="Suspension Type" caption="Billing Suspension Type">
+      <Hierarchy hasAll="true">
+        <Level name="Suspension Type" column="POLT_SUSPENSION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Suspension Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Policy Number" caption="Policy Number">
+      <Hierarchy hasAll="true">
+        <Level name="Suspended Policy Number" column="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Suspended Policy Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Measure name="Total_Suspended_Policies_Count" column="POD_POLICY_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Suspended Policies" description="Suspended Policies">
+    </Measure>
+
+  </Cube>
+  
+  <Cube name="ACCOUNT_PAYABLE" caption="Account Payable" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_FITEM_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[((%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_FITEM_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%) AND BI_FACT_FITEM_DETAIL.fid_fitem_type = 246 AND BI_FACT_FITEM_DETAIL.fid_category_id in (346, 546, 446, 6646) AND BI_FACT_FITEM_DETAIL.fid_balance_amt != 0
+		 AND  FID_CREATION_DT >= add_months(trunc(sysdate), -12)
+		 )]]>        
+      </SQL>
+    </Table>
+    
+	<Dimension type="StandardDimension" highCardinality="false" name="Account Payable Type" caption="Account Payable Type">
+      <Hierarchy hasAll="true">
+        <Level name="Type of Payables" column="FID_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Type of Payables">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+	<Dimension type="StandardDimension" highCardinality="false" name="Account Payable Age" caption="Account Payable Age">
+      <Hierarchy hasAll="true">
+	   <Level name="Payable Age" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  caption="Payable Age" description="Payable Age">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[(case when ((round(sysdate - nvl(fid_installment_due_date, sysdate), 0) < 0) or (round(sysdate - nvl(fid_installment_due_date, sysdate), 0) between 0 and 2))
+						   then '0-2 days'
+					   when round(sysdate - nvl(fid_installment_due_date, sysdate), 0) between 2 and 7
+						   then '2-7 days'
+					   when round(sysdate - nvl(fid_installment_due_date, sysdate), 0) > 7
+						   then 'Above 7 days'
+					   else
+						   'Others'
+				   end)
+				  ]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <DimensionUsage source="Dim_Line_of_Business" name="Line of Business" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+     </DimensionUsage>
+     
+	<DimensionUsage source="Dim_Billing_Account" name="Billing Account" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+	</DimensionUsage>
+	
+	<DimensionUsage source="Dim_Partner" name="Partner" foreignKey="PE_POLICY_PARTNER_ID" highCardinality="false">
+    </DimensionUsage>
+	
+    <DimensionUsage source="Dim_Policy" name="Policy" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+	
+    <DimensionUsage source="Customer" name="Customer" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <Measure name="Total_Payable_Count" column="FID_FITEM_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Payables Count" description="Total Payables">
+    </Measure>
+    <Measure name="Total_Payable_Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Payables Amount" description="Total Payables Amount">
+    <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[((-1*FID_BALANCE_AMT))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total_Policies" column="POD_POLICY_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Policies" description="Total Policies">
+    </Measure>
+	
+    <Measure name="Total_Customers" column="CD_CUSTOMER_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Customers" description="Total Customers">
+    </Measure>	
+  </Cube>
+ 
+   <!-- Combination of ACCOUNT_RECEIVABLE, BILLING_SUSPENDED_POLICIES -->
+	
+  <VirtualCube name="VC_ACCOUNT_RECEIVABLE_AND_BILLING_SUSPENDED_POLICIES">
+	<CubeUsages>
+	<CubeUsage cubeName="ACCOUNT_RECEIVABLE" ignoreUnrelatedDimensions="true"/>
+	<CubeUsage cubeName="BILLING_SUSPENDED_POLICIES"/>
+	</CubeUsages>
+	<VirtualCubeDimension cubeName="ACCOUNT_RECEIVABLE" name="Suspended Policy"/>
+	<VirtualCubeDimension cubeName="ACCOUNT_RECEIVABLE" name="Customer"/>
+	<VirtualCubeDimension cubeName="BILLING_SUSPENDED_POLICIES" name="Policy Number"/>
+	<VirtualCubeMeasure cubeName="ACCOUNT_RECEIVABLE" name="[Measures].[Total_Customers]"/>
+	<VirtualCubeMeasure cubeName="ACCOUNT_RECEIVABLE" name="[Measures].[Total_Receivable_Count]"/>
+	<VirtualCubeMeasure cubeName="ACCOUNT_RECEIVABLE" name="[Measures].[Total_Receivable_Amount]"/>
+	<VirtualCubeMeasure cubeName="BILLING_SUSPENDED_POLICIES" name="[Measures].[Total_Suspended_Policies_Count]"/>
+
+  </VirtualCube>
+
+</Schema>

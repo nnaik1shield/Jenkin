@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2014-12-18T04:49:06" created="2014-12-18T04:36:15" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Surety/Customer Project Analysis.xanalyzer" name="Customer Project Analysis"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="8" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="CUST_PROJECT_ANALYSIS_CUBE" catalog="Surety Financial Statement Cubes">
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Cost to Complete Amount]"/>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Total Contract Price Amount]"/>
+            <measure id="[MEASURE:3]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Billed to Date Amount]"/>
+            <measure id="[MEASURE:4]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Avg Gross Profit-All Contracts]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Type of Construction].[Type of Construction]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[BondNumber].[Bond Number]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Bonded].[Bonded]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Contract Price].[Contract Price]"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions legendFontFamily="Default" labelFontFamily="Default" legendStyle="PLAIN" legendColor="#000000" legendSize="12" legendBackgroundColor="#ffffff" labelStyle="PLAIN" backgroundColorEnd="#ffffff" maxChartsPerRow="3" backgroundFill="NONE" labelSize="12" labelColor="#000000" backgroundColor="#ffffff" maxValues="100" lineShape="CIRCLE" lineWidth="2" displayUnitsSecondary="UNITS_0" autoRangeSecondary="true" displayUnits="UNITS_0" autoRange="true" showLegend="true" legendPosition="RIGHT" customChartType="ccc_bar" chartType="CUSTOM"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelScalingPageTall="1" excelScalingPageWide="1" excelScalingPercent="100" excelScalingType="PERCENT" pdfOrientation="LANDSCAPE" excelOrientation="LANDSCAPE" pdfPageSize="LETTER" excelPageSize="LETTER"/>
+    </report>
+    <uiAttributes showFilterPanel="false" showFieldLayout="true" showFieldList="true">
+        <rowFieldWidths actualWidths="117,100,80,80"/>
+        <columnDataFieldWidths actualWidths="120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

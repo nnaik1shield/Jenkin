@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-01-10T17:52:47.005+05:30" update="2023-06-05T01:57:11.614-04:00">
+        <path name="BIAllTaskMeasures" folder="/home/OneShieldBI/analyzers/policy/BIAllTaskMeasures.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="ALL_TASKS" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="true" totalsOnTopLeft="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="14" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Task_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[Avg_TAT_Time]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Open_Task_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[Open_Overdue_Task_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]"/>
+            <measure formula="[Measures].[Completed_Task_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes/>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" excelMergePivotCells="true" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Assignee].[Assignee Role]</drillColumn>
+            <drillColumn>[Assignee].[Assignee User]</drillColumn>
+            <drillColumn>[Creator].[Creator Role]</drillColumn>
+            <drillColumn>[Creator].[Creator User]</drillColumn>
+            <drillColumn>[Internal Indicator].[Internal]</drillColumn>
+            <drillColumn>[Measures].[Avg_TAT_Time]</drillColumn>
+            <drillColumn>[Measures].[Total_Completion_Time]</drillColumn>
+            <drillColumn>[Overdue].[Overdue]</drillColumn>
+            <drillColumn>[Task_Age].[Task_Age]</drillColumn>
+            <drillColumn>[Task ID].[Task ID]</drillColumn>
+            <drillColumn>[Task Rejection Reason].[Task Rejection Reason]</drillColumn>
+            <drillColumn>[Task Status].[Task Status]</drillColumn>
+            <drillColumn>[Task_TAT].[Task_TAT]</drillColumn>
+            <drillColumn>[Task Type].[Task Type]</drillColumn>
+            <drillColumn>[Task Type].[Task Title]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Year]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Quarter]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Month]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Week]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Day]</drillColumn>
+            <drillColumn>[Time (Completed Date)].[Date]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Year]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Quarter]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Month]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Week]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Day]</drillColumn>
+            <drillColumn>[Time (Creation Date)].[Date]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="">
+            <labelWidth index="2">
+                <width>-88</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

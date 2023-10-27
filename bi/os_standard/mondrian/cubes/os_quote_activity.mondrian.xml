@@ -1,0 +1,32 @@
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 July 2020  $
+-->
+<Schema name="Quote Activity">
+  <Cube name="Quote Activity" caption="Quote Activity for Dashboard" cache="true" enabled="true">
+    <Table name="BI_QUOTE_DASHBOARD">
+    </Table>
+    <Dimension type="StandardDimension" highCardinality="false" name="Period">
+      <Hierarchy hasAll="true" allMemberName="All Periods">
+        <Level name="Period Type" column="TIME_PERIOD_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Time period type">
+        </Level> 
+        <Level name="Period" column="TIME_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Time period">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Status">
+      <Hierarchy hasAll="true" allMemberName="All Status">
+        <Level name="Status" column="OBJECT_STATE_SET_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Quote status">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" highCardinality="false" name="Jurisdiction">
+      <Hierarchy hasAll="true" allMemberName="All Jurisdiction">
+        <Level name="Jurisdiction" column="JURISDICTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Quote status">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Quote_Count" column="QUOTE_COUNT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Quote Count" description="Total number of quotes">
+    </Measure>
+  </Cube>
+</Schema>

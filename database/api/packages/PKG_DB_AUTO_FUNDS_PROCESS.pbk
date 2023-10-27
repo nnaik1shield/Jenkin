@@ -1,0 +1,295 @@
+create or replace package body pkg_db_auto_funds_process
+-------------
+-- $Workfile:   PKG_DB_AUTO_FUNDS_TRANSFER.PBK  $
+-- $Revision: 46864 $
+--   $Author: kdubin@OSHQ.ONESHIELD.COM $
+
+--     $Date: 2016-12-28 12:08:43 +0200 (??N?, 28 ?????? 2016) $
+-------------
+as
+
+pkg_name  constant  system_log.program_name%type := 'pkg_db_auto_funds_process.';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_disb_resp_imp_stg
+(
+     in_session_id            in   object.object_id%type,
+     in_transaction_id        in   object.object_id%type,
+     in_action_object_id      in   object.object_id%type,
+     in_action_id             in   action.action_id%type,
+     io_action_outcome_id     in   out outcome.outcome_id%type
+)
+is
+     v_procedure_name constant     system_log.program_name%type := pkg_name || 'sp_disb_resp_imp_stg';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+     v_operation_label             Object_Bv_Value.Business_Variable_Value%type;
+     v_tpr_spl_bv                Object_Bv_Value.Business_Variable_Value%type;
+     v_tpr_new_prop                System_Attribute_Value.System_Attribute_Value%type;                
+
+Begin
+    v_tpr_new_prop := pkg_os_system_attribute.fn_get_system_attribute_value('NEW_TPR_ENABLE_TF');
+    v_tpr_spl_bv   := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_action_object_id,32698751);
+       pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '.... Entered sp_disb_resp_imp_stg .....'||v_tpr_new_prop || ' v_tpr_spl_bv :'||v_tpr_spl_bv
+             
+          ) ;
+      if v_tpr_new_prop ='T' --and v_tpr_spl_bv='New'
+           then
+                 pkg_cs_db_auto_funds_transfer.sp_populate_stg_tables
+                  (
+                  in_session_id,
+                  in_transaction_id,
+                  in_action_object_id,
+                  in_action_id,
+                  io_action_outcome_id
+                  
+                  );
+      else
+             pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '.... Not IMplemented .....'||in_action_object_id
+             
+          ) ;
+      end if;
+ io_action_outcome_id := pkg_os_constant.goutcome_ok;
+end;  
+-------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_get_sequence_nextval
+--
+--   %USAGE
+--        This is used to return the current sequence for the passed instruction id
+--        
+--   %ALGORITHM
+--        not specified
+--
+--
+--   %PARAM    in_session_id                       Session Id
+--   %PARAM    in_transaction_id                   Transaction Id
+--   %PARAM    in_instr_id                         chec generation instruction id
+--   %PARAM    in_bats_id                          billing transaction
+--   %PARAM    in_check_num_start_seq              start sequence of check generation
+--   %PARAM    in_increment_by                     increment by
+--   %PARAM    io_sequence_number                  preturn check number
+--
+----------------------------------------------------------------------------------------------------------------------
+procedure sp_get_sequence_nextval
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_instr_id                   in            number,
+     in_bats_id                    in            object.object_id%type,
+     in_check_num_start_seq        in            number,
+     in_increment_by               in            number,
+     io_sequence_number            out           varchar2
+     
+)
+is
+     pragma			          autonomous_transaction;
+     v_procedure_name              constant system_log.program_name%type := pkg_name||'sp_get_sequence_nextval';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+
+     v_idx                         binary_integer;
+     v_sequence                    number;
+     v_next_value                  number;
+     v_current_value               number;
+     v_checknum_pref               varchar2(10);
+     v_datamart_tf                 char(1):= 'T';
+     v_checnum_startsequence       number;
+     v_increment_by                number;
+     v_max_val                     number;
+     v_limit                       number := 30000000000;
+     v_instr_count                 number := 0;
+     
+begin
+     
+	select count(*)
+	  into v_instr_count
+	  from db_checknumber_sequence
+	 where instr_id = in_instr_id;
+      
+     if v_session_control.gLogging_Full
+     then    
+           pkg_os_logging.sp_log
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                ' Instruction ID: ' || in_instr_id ||
+                ' BATS ID: '        || in_bats_id ||
+                ' Count: '          || v_instr_count  ||
+                ' Start Sequence Num: ' || in_check_num_start_seq ||
+                ' Increment By: '       || in_increment_by
+           );
+     end if;  
+     
+     if v_instr_count = 0 then         
+          
+          v_current_value    := in_check_num_start_seq;
+          v_next_value       := v_current_value + in_increment_by;
+                    
+		insert into db_checknumber_sequence
+			(
+                    instr_id,
+                    minval,
+                    maxval,
+                    currentval,
+                    nextvalue,
+                    incrementby
+               )
+		values
+			(
+                    in_instr_id,
+                    in_check_num_start_seq,
+                    v_limit,
+                    v_current_value,
+                    v_next_value,
+                    in_increment_by
+               );               
+          
+          if v_session_control.gLogging_Full
+          then    
+                pkg_os_logging.sp_log
+                (
+                     in_session_id,
+                     in_transaction_id,
+                     v_procedure_name,
+                     '.. Adding new instruction...' ||
+                     '.. Current Value: ' || v_current_value ||
+                     '.. Next Values: '   || v_next_value
+                );
+          end if;          
+          
+     elsif v_instr_count = 1 then
+          
+          select
+              currentVal,
+              nextvalue,
+              incrementby,
+              maxval
+          into
+              v_current_value,
+              v_next_value,
+              v_increment_by,
+              v_max_val
+          from          
+             db_checknumber_sequence
+          where
+             instr_id = in_instr_id;
+             
+          if (v_current_value + in_increment_by) >  v_max_val
+          then
+               
+               pkg_os_logging.sp_log_error
+               (
+                 in_session_id,
+                 in_transaction_id,
+                 v_procedure_name,
+                 '.. Check number has reached maximum limit ' 
+               );
+             
+             raise LIMIT_EXCEEDED;
+          
+          else
+             
+               update db_checknumber_sequence
+                  set currentVal = v_next_value,
+                      nextvalue  = v_next_value + in_increment_by
+                where instr_id = in_instr_id; 
+               
+               v_current_value := v_next_value;
+               
+               if v_session_control.gLogging_Full
+               then    
+                     pkg_os_logging.sp_log
+                     (
+                          in_session_id,
+                          in_transaction_id,
+                          v_procedure_name,
+                          '.. Updating existing instruction...' ||
+                          '.. Current Value: ' || v_current_value ||
+                          '.. Next Value: '   || v_next_value
+                     );
+               end if;  
+                
+          end if;
+          
+     else
+          raise TOO_MANY_INSTR_REC;
+     
+     end if; 
+     
+     if v_session_control.gLogging_Full
+     then    
+           pkg_os_logging.sp_log
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '.. Current Value: ' || v_current_value
+           );
+     end if;  
+     
+     if v_current_value is not null then    
+          
+          insert into db_batch_check_sequence
+               (bats_id, sequence_value)
+          values
+               (in_bats_id, v_current_value);
+               
+          io_sequence_number := v_current_value;
+               
+     end if;  
+          
+     commit;
+     
+exception
+     
+     when LIMIT_EXCEEDED then
+          
+          pkg_os_logging.sp_log_error
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                'The max value has been reached for instruction ID:' || in_instr_id || ' Please contact the administrator..' || dbms_utility.format_error_backtrace
+           );
+           
+           raise;
+           
+     when TOO_MANY_INSTR_REC then
+          
+          pkg_os_logging.sp_log_error
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                'More than one sequence configuration found for intructions id: ' || in_instr_id || ' Please get it fixed before proceeding.' || dbms_utility.format_error_backtrace
+           );
+           
+           raise;
+                
+     when others then
+          
+          pkg_os_logging.sp_log_error
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                'Error occured during sequence number.. Error: ' || sqlerrm||dbms_utility.format_error_backtrace
+           );
+           
+           raise;
+           
+end sp_get_sequence_nextval;
+------------------------------------------------------------------------------------------------------------
+end pkg_db_auto_funds_process;
+/

@@ -1,0 +1,628 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="CLAIMDOC" type="CLAIMDOCType"/>
+  <xs:complexType name="DATE_CREATEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TIME_CREATEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="HOUR" use="optional" />
+        <xs:attribute type="xs:byte" name="MINUTE" use="optional"/>
+        <xs:attribute type="xs:byte" name="SECOND" use="optional"/>
+        <xs:attribute type="xs:string" name="TIME_ZONE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="HEADERType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="DOC_NAME"/>
+      <xs:element type="xs:string" name="DESCRIPTION"/>
+      <xs:element type="xs:string" name="RqUID"/>
+      <xs:element type="DATE_CREATEDType" name="DATE_CREATED"/>
+      <xs:element type="TIME_CREATEDType" name="TIME_CREATED"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="DOCVERSION"/>
+    <xs:attribute type="xs:string" name="SOURCEAPP"/>
+    <xs:attribute type="xs:string" name="SOURCEDB"/>
+    <xs:attribute type="xs:string" name="APPVERSION"/>
+    <xs:attribute type="xs:string" name="USERID"/>
+    <xs:attribute type="xs:string" name="PASSWORD"/>
+    <xs:attribute type="xs:string" name="SESSIONID"/>
+  </xs:complexType>
+  <xs:complexType name="DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:string" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:string" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TIMEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="HOUR"  use="optional"/>
+        <xs:attribute type="xs:byte" name="MINUTE" use="optional"/>
+        <xs:attribute type="xs:byte" name="SECOND" use="optional"/>
+        <xs:attribute type="xs:string" name="TIME_ZONE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="REQUESTING_DOCType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="APPLICATION"/>
+      <xs:element type="xs:string" name="SOURCEDB"/>
+      <xs:element type="DATEType" name="DATE"/>
+      <xs:element type="TIMEType" name="TIME"/>
+      <xs:element type="xs:string" name="RqUID"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="REPONSE_MESSAGEType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="MESSAGE"/>
+      <xs:element type="REQUESTING_DOCType" name="REQUESTING_DOC"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="TYPE"/>
+  </xs:complexType>
+  <xs:complexType name="PROCESSING_MESSAGEType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="FUNCTION"/>
+      <xs:element type="xs:string" name="RESPOND_TO"/>
+      <xs:element type="xs:string" name="RESPOND_BY"/>
+      <xs:element type="REPONSE_MESSAGEType" name="REPONSE_MESSAGE"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="TYPE"/>
+  </xs:complexType>
+  <xs:complexType name="LINE_OF_BUSINESSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="CLAIM_TYPEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="CLAIM_STATUSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="DATE_OF_LOSSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TIME_OF_LOSSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="HOUR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MINUTE" use="optional"/>
+        <xs:attribute type="xs:byte" name="SECOND" use="optional"/>
+        <xs:attribute type="xs:string" name="TIME_ZONE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="DATE_REPORTEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+   <xs:complexType name="DATE_CLOSEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TIME_REPORTEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="HOUR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MINUTE" use="optional"/>
+        <xs:attribute type="xs:byte" name="SECOND" use="optional"/>
+        <xs:attribute type="xs:string" name="TIME_ZONE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="SELF_INSUREDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="INDICATOR" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="SPECIAL_HANDLINGType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="INDICATOR" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ACCIDENT_STATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="POLICY_NUMBERType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="SYMBOL"/>
+        <xs:attribute type="xs:string" name="MODULE"/>
+        <xs:attribute type="xs:string" name="LOCATION"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="MASTER_COMPANYType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="EFFECTIVE_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="EXPIRATION_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="BRANCHType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="POLICYType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="POLICY_NUMBERType" name="POLICY_NUMBER" />
+      <xs:element type="MASTER_COMPANYType" name="MASTER_COMPANY"/>
+      <xs:element type="EFFECTIVE_DATEType" name="EFFECTIVE_DATE"/>
+      <xs:element type="EXPIRATION_DATEType" name="EXPIRATION_DATE"/>
+      <xs:element type="LINE_OF_BUSINESSType" name="LINE_OF_BUSINESS"/>
+      <xs:element type="BRANCHType" name="BRANCH"/>
+      <xs:element type="xs:string" name="AGENT_NUMBER"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="ID" />
+  </xs:complexType>
+  <xs:complexType name="LOSS_CLAIMANTType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="ID" use="optional"/>
+        <xs:attribute type="xs:string" name="CLAIMANT_NUMBER" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="RESERVE_TYPEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="CAUSE_OF_LOSSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="COV_EFF_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="INSURANCE_LINEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="PERIL_OF_COVERAGEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="POLICY_COVERAGEType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="COV_EFF_DATEType" name="COV_EFF_DATE"/>
+      <xs:element type="INSURANCE_LINEType" name="INSURANCE_LINE"/>
+      <xs:element type="xs:string" name="LOCATION"/>
+      <xs:element type="xs:string" name="SUB_LOCATION"/>
+      <xs:element type="PERIL_OF_COVERAGEType" name="PERIL_OF_COVERAGE"/>
+      <xs:element type="xs:string" name="COVERAGE_SEQUENCE"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="POLICY_ID"/>
+    <xs:attribute type="xs:string" name="LEGACY_COVERAGE_KEY"/>
+  </xs:complexType>
+  <xs:complexType name="ACTIVITY_TYPEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="DATE_OF_TRANSACTIONType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="TIME_OF_TRANSACTIONType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:byte" name="HOUR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MINUTE" use="optional"/>
+        <xs:attribute type="xs:byte" name="SECOND" use="optional"/>
+        <xs:attribute type="xs:string" name="TIME_ZONE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="RESERVE_STATUSType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="RESERVE_TRANSACTIONType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:float" name="BALANCE_AMOUNT"/>
+      <xs:element type="xs:float" name="CHANGE_AMOUNT"/>
+      <xs:element type="xs:float" name="RESERVE_AMOUNT"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="FINANCIAL_TRANSACTIONType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="ACTIVITY_SEQUENCE"/>
+      <xs:element type="ACTIVITY_TYPEType" name="ACTIVITY_TYPE"/>
+      <xs:element type="xs:string" name="ADDED_BY_USER"/>
+      <xs:element type="DATE_OF_TRANSACTIONType" name="DATE_OF_TRANSACTION"/>
+      <xs:element type="TIME_OF_TRANSACTIONType" name="TIME_OF_TRANSACTION"/>
+      <xs:element type="TRANSACTION_TYPEType" name="TRANSACTION_TYPE" minOccurs="0"/>
+      <xs:element type="RESERVE_STATUSType" name="RESERVE_STATUS"/>
+      <xs:element type="RESERVE_TRANSACTIONType" name="RESERVE_TRANSACTION" minOccurs="0"/>
+      <xs:element type="PAYMENT_TRANSACTIONType" name="PAYMENT_TRANSACTION" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="LOSS_DETAILType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="LOSS_CLAIMANTType" name="LOSS_CLAIMANT"/>
+      <xs:element type="xs:string" name="UNIT_NUMBER"/>
+      <xs:element type="RESERVE_TYPEType" name="RESERVE_TYPE"/>
+      <xs:element type="CAUSE_OF_LOSSType" name="CAUSE_OF_LOSS"/>
+      <xs:element type="POLICY_COVERAGEType" name="POLICY_COVERAGE"/>
+      <xs:element type="FINANCIAL_TRANSACTIONType" name="FINANCIAL_TRANSACTION"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="ID" use="optional"/>
+    <xs:attribute type="xs:string" name="RESERVE_CLAIMANT_SEQ" />
+    <xs:attribute type="xs:string" name="VENDOR_CODE" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="PARTY_INVOLVEDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="ENTITY_ID"/>
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="CLAIMType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="CLAIM_NUMBER"/>
+      <xs:element type="LINE_OF_BUSINESSType" name="LINE_OF_BUSINESS"/>
+      <xs:element type="CLAIM_TYPEType" name="CLAIM_TYPE"/>
+      <xs:element type="CLAIM_STATUSType" name="CLAIM_STATUS"/>
+      <xs:element type="DATE_OF_LOSSType" name="DATE_OF_LOSS"/>
+      <xs:element type="TIME_OF_LOSSType" name="TIME_OF_LOSS"/>
+      <xs:element type="DATE_REPORTEDType" name="DATE_REPORTED"/>
+	  <xs:element type="DATE_CLOSEDType" name="DATE_CLOSED"/>
+      <xs:element type="TIME_REPORTEDType" name="TIME_REPORTED"/>
+      <xs:element type="SELF_INSUREDType" name="SELF_INSURED"/>
+      <xs:element type="SPECIAL_HANDLINGType" name="SPECIAL_HANDLING"/>
+      <xs:element type="xs:string" name="ACCIDENT_DESCRIPTION"/>
+      <xs:element type="ACCIDENT_STATEType" name="ACCIDENT_STATE"/>
+      <xs:element type="xs:string" name="ActivityId"/>
+      <xs:element type="xs:string" name="TOTAL_CLAIM_RESERVE_BALANCE"/>
+      <xs:element type="POLICYType" name="POLICY"/>
+      <xs:element type="LOSS_DETAILType" name="LOSS_DETAIL"/>
+      <xs:element type="PARTY_INVOLVEDType" name="PARTY_INVOLVED"/>
+      <xs:element type="xs:string" name="EXAMINERCD"/>
+      <xs:element name="EXAMINER">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute type="xs:string" name="ENTITY_ID" use="optional"/>
+              <xs:attribute type="xs:string" name="CODE" use="optional"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element type="xs:string" name="ClaimCatastrophe"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="ID" use="optional"/>
+    <xs:attribute type="xs:string" name="EVENT" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="TRANSACTION_TYPEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="VOUCHER_REFERENCEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="ID" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="INVOICE_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="PAYMENT_TRANSACTIONType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:float" name="PAYMENT_AMOUNT"/>
+      <xs:element type="VOUCHER_REFERENCEType" name="VOUCHER_REFERENCE"/>
+      <xs:element type="xs:string" name="INVOICE_NUMBER" minOccurs="0"/>
+      <xs:element type="INVOICE_DATEType" name="INVOICE_DATE"/>
+      <xs:element type="xs:float" name="INVOICE_AMOUNT"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="ORIGINATING_BANKType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="ACCOUNT_NUMBER"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="CODE"/>
+  </xs:complexType>
+  <xs:complexType name="VOUCHER_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="PRINT_DATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="INVOICEType">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element type="xs:string" name="NUMBER"/>
+      <xs:element type="DATEType" name="DATE"/>
+      <xs:element type="xs:float" name="AMOUNT"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="VOUCHERType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:float" name="VOUCHER_AMOUNT"/>
+      <xs:element type="xs:string" name="CONTROL_NUMBER"/>
+      <xs:element type="ORIGINATING_BANKType" name="ORIGINATING_BANK"/>
+      <xs:element type="xs:string" name="DOCUMENT_NUMBER"/>
+      <xs:element type="VOUCHER_DATEType" name="VOUCHER_DATE"/>
+      <xs:element type="PRINT_DATEType" name="PRINT_DATE"/>
+      <xs:element type="xs:string" name="VOUCHER_BATCH_NUMBER"/>
+      <xs:element type="INVOICEType" name="INVOICE" minOccurs="0"/>
+      <xs:element type="PARTY_INVOLVEDType" name="PARTY_INVOLVED" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="SERDTEFROMType" name="SERDTEFROM" minOccurs="0"/>
+      <xs:element type="SERDTETOType" name="SERDTETO" minOccurs="0"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="ID" use="optional"/>
+    <xs:attribute type="xs:string" name="TYPE" use="optional"/>
+    <xs:attribute type="xs:string" name="MANUAL_IND"/>
+  </xs:complexType>
+  <xs:complexType name="SERDTEFROMType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="SERDTETOType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="VOUCHERSType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="VOUCHERType" name="VOUCHER" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="NEXT_ID"/>
+    <xs:attribute type="xs:string" name="COUNT"/>
+  </xs:complexType>
+  <xs:complexType name="BUSINESSType">
+   <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="BUSINESS_NAME"/>
+      <xs:element type="xs:string" name="LEGAL_NAME"/>
+      <xs:element type="xs:string" name="DOING_BUSINESS_AS" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="ENTITY_NAMEType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="BUSINESSType" name="BUSINESS" minOccurs="0"/>
+      <xs:element type="INDIVIDUALType" name="INDIVIDUAL" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="ADDRESS_REFERENCEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="ADDRESS_ID" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="CONTACTType" mixed="true">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="INFORMATION" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="ENTITYType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="ENTITY_NAMEType" name="ENTITY_NAME"/>
+      <xs:element type="TAX_IDType" name="TAX_ID" minOccurs="0"/>
+      <xs:element type="xs:string" name="REPORTABLE_TYPE_1099" minOccurs="0"/>
+      <xs:element type="ADDRESS_REFERENCEType" name="ADDRESS_REFERENCE"/>
+      <xs:element name="DEMOGRAPHICS" minOccurs="0">
+        <xs:complexType mixed="true">
+          <xs:choice maxOccurs="unbounded" minOccurs="0">
+            <xs:element type="GENDERType" name="GENDER" minOccurs="0"/>
+            <xs:element type="DATE_OF_BIRTHType" name="DATE_OF_BIRTH" minOccurs="0"/>
+          </xs:choice>
+        </xs:complexType>
+      </xs:element>
+      <xs:element type="CONTACTType" name="CONTACT" minOccurs="0"/>
+      <xs:element type="xs:string" name="ID_NUMBER" minOccurs="0"/>
+      <xs:element type="xs:string" name="AddrSeqNo" minOccurs="0"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="ID" use="optional"/>
+    <xs:attribute type="xs:string" name="TYPE" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="INDIVIDUALType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="FIRST_NAME" minOccurs="0"/>
+      <xs:element type="xs:string" name="MIDDLE_NAME" minOccurs="0"/>
+      <xs:element type="xs:string" name="LAST_NAME"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="TAX_IDType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="TYPE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="GENDERType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="DATE_OF_BIRTHType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:short" name="YEAR" use="optional"/>
+        <xs:attribute type="xs:byte" name="MONTH" use="optional"/>
+        <xs:attribute type="xs:byte" name="DAY" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="DEMOGRAPHICSType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="GENDERType" name="GENDER" minOccurs="0"/>
+      <xs:element type="DATE_OF_BIRTHType" name="DATE_OF_BIRTH" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="ENTITIESType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="ENTITYType" name="ENTITY" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="NEXT_ID"/>
+    <xs:attribute type="xs:string" name="COUNT"/>
+  </xs:complexType>
+  <xs:complexType name="STATEType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ADDRESSType">
+  <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="xs:string" name="ADDRESS_LINE" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="xs:string" name="CITY"/>
+      <xs:element type="COUNTYType" name="COUNTY" minOccurs="0"/>
+      <xs:element type="STATEType" name="STATE"/>
+      <xs:element type="xs:string" name="POSTAL_CODE"/>
+	</xs:choice>
+    <xs:attribute type="xs:string" name="ID" use="optional"/>
+  </xs:complexType>
+  <xs:complexType name="COUNTYType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="xs:string" name="CODE"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="ADDRESSESType">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="ADDRESSType" name="ADDRESS" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:choice>
+    <xs:attribute type="xs:string" name="NEXT_ID"/>
+    <xs:attribute type="xs:string" name="COUNT"/>
+  </xs:complexType>
+  <xs:complexType name="CLAIMDOCType">
+	<xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element type="HEADERType" name="HEADER"/>
+      <xs:element type="PROCESSING_MESSAGEType" name="PROCESSING_MESSAGE"/>
+      <xs:element type="CLAIMType" name="CLAIM" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="VOUCHERSType" name="VOUCHERS" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="ENTITIESType" name="ENTITIES" maxOccurs="unbounded" minOccurs="0"/>
+      <xs:element type="ADDRESSESType" name="ADDRESSES" maxOccurs="unbounded" minOccurs="0"/>
+	  <xs:element type="GENDERType" name="GENDER" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+</xs:schema>

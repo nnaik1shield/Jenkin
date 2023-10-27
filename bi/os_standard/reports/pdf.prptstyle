@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-definition xmlns="http://reporting.pentaho.org/namespaces/engine/classic/bundle/style/1.0" xmlns:layout="http://reporting.pentaho.org/namespaces/engine/classic/bundle/layout/1.0" xmlns:core="http://reporting.pentaho.org/namespaces/engine/attributes/core" xmlns:html="http://reporting.pentaho.org/namespaces/engine/attributes/html" xmlns:swing="http://reporting.pentaho.org/namespaces/engine/attributes/swing" xmlns:pdf="http://reporting.pentaho.org/namespaces/engine/attributes/pdf" xmlns:designtime="http://reporting.pentaho.org/namespaces/report-designer/2.0" xmlns:crosstab="http://reporting.pentaho.org/namespaces/engine/attributes/crosstab" xmlns:pentaho="http://reporting.pentaho.org/namespaces/engine/attributes/pentaho" xmlns:table="http://reporting.pentaho.org/namespaces/engine/attributes/table" xmlns:page="http://jfreereport.sourceforge.net/namespaces/reports/legacy/ext">
+  <rule>
+    <selector>.os-master</selector>
+    <styles>
+      <content-styles dynamic-height="true" color="#3c3c3c"/>
+      <text-styles font-face="SansSerif" font-size="12"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header label.title</selector>
+    <styles>
+      <spatial-styles x="0" y="0"/>
+      <text-styles bold="true" font-size="18"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header content.logo</selector>
+    <styles>
+      <common-styles alignment="right" vertical-alignment="top"/>
+      <content-styles scale="false" keep-aspect-ratio="true" dynamic-height="false"/>
+      <spatial-styles y="0" min-width="236" min-height="55"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header date-field.subtitle</selector>
+    <styles>
+      <content-styles color="gray"/>
+      <spatial-styles y="25"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header band.param-names</selector>
+    <styles>
+      <band-styles layout="row"/>
+      <spatial-styles y="70" min-width="100%"/>
+      <text-styles font-size="10"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header</selector>
+    <styles>
+      <border-styles padding="20"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-bordered-row band</selector>
+    <selector>.os-nonbordered-row band</selector>
+    <selector>.os-bottom-bordered-row band</selector>
+    <styles>
+      <band-styles layout="row"/>
+      <spatial-styles min-width="100%"/>
+      <text-styles text-wrap="wrap"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-bordered-row</selector>
+    <styles>
+      <border-styles padding-top="10" padding-bottom="10" border-top-width="1" border-bottom-width="1" border-top-color="gray" border-bottom-color="gray" border-top-style="solid" border-bottom-style="solid"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>no-data-band label</selector>
+    <styles>
+      <common-styles alignment="center"/>
+      <spatial-styles min-width="100%"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>number-field</selector>
+    <selector>.number-header</selector>
+    <styles>
+      <border-styles padding-right="5"/>
+      <common-styles alignment="right"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-nonbordered-row</selector>
+    <styles>
+      <border-styles padding-top="10" padding-bottom="10"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-bottom-bordered-row</selector>
+    <styles>
+      <border-styles padding-top="10" padding-bottom="10" border-bottom-width="1" border-bottom-color="gray" border-bottom-style="solid"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>group-header</selector>
+    <selector>itemband</selector>
+    <styles>
+      <content-styles color="gray"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>details-header</selector>
+    <styles>
+      <common-styles vertical-alignment="bottom"/>
+      <page-band-styles repeat="true"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-space-top-md</selector>
+    <styles>
+      <border-styles padding-top="40"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-avoid-page-break</selector>
+    <styles>
+      <common-styles avoid-page-break="true"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header band.param-values</selector>
+    <styles>
+      <band-styles layout="row"/>
+      <spatial-styles y="85" min-width="100%"/>
+      <text-styles font-size="10"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>page-footer</selector>
+    <styles>
+      <band-styles layout="row"/>
+      <border-styles padding-top="5"/>
+      <common-styles vertical-alignment="bottom"/>
+      <content-styles color="gray"/>
+      <text-styles font-size="9"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>page-footer .page-number</selector>
+    <styles>
+      <common-styles alignment="right"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-space-top-xs</selector>
+    <styles>
+      <border-styles padding-top="10"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-space-bottom-sm</selector>
+    <styles>
+      <border-styles padding-bottom="25"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-bordered-row label</selector>
+    <selector>.os-nonbordered-row label</selector>
+    <selector>.os-bottom-bordered-row label</selector>
+    <selector>.os-bordered-row date-field</selector>
+    <selector>.os-nonbordered-row date-field</selector>
+    <selector>.os-bottom-bordered-row date-field</selector>
+    <selector>.os-bordered-row text-field</selector>
+    <selector>.os-nonbordered-row text-field</selector>
+    <selector>.os-bottom-bordered-row text-field</selector>
+    <styles>
+      <border-styles padding-left="5"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.row-band</selector>
+    <selector>.os-row-band</selector>
+    <styles>
+      <band-styles layout="row"/>
+      <spatial-styles min-width="100%"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-space-top-lg</selector>
+    <styles>
+      <border-styles padding-top="80"/>
+    </styles>
+  </rule>
+  <rule>
+    <selector>.os-report-header band.param-names label</selector>
+    <styles>
+      <content-styles color="gray"/>
+    </styles>
+  </rule>
+</style-definition>

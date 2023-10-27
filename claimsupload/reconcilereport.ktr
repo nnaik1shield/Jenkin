@@ -1,0 +1,3987 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<transformation>
+  <info>
+    <name>reconcilereport</name>
+    <description/>
+    <extended_description/>
+    <trans_version/>
+    <trans_type>Normal</trans_type>
+    <trans_status>0</trans_status>
+    <directory>/</directory>
+    <parameters>
+    </parameters>
+    <log>
+      <trans-log-table>
+        <connection/>
+        <schema/>
+        <table/>
+        <size_limit_lines/>
+        <interval/>
+        <timeout_days/>
+        <field>
+          <id>ID_BATCH</id>
+          <enabled>Y</enabled>
+          <name>ID_BATCH</name>
+        </field>
+        <field>
+          <id>CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>CHANNEL_ID</name>
+        </field>
+        <field>
+          <id>TRANSNAME</id>
+          <enabled>Y</enabled>
+          <name>TRANSNAME</name>
+        </field>
+        <field>
+          <id>STATUS</id>
+          <enabled>Y</enabled>
+          <name>STATUS</name>
+        </field>
+        <field>
+          <id>LINES_READ</id>
+          <enabled>Y</enabled>
+          <name>LINES_READ</name>
+          <subject/>
+        </field>
+        <field>
+          <id>LINES_WRITTEN</id>
+          <enabled>Y</enabled>
+          <name>LINES_WRITTEN</name>
+          <subject/>
+        </field>
+        <field>
+          <id>LINES_UPDATED</id>
+          <enabled>Y</enabled>
+          <name>LINES_UPDATED</name>
+          <subject/>
+        </field>
+        <field>
+          <id>LINES_INPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_INPUT</name>
+          <subject/>
+        </field>
+        <field>
+          <id>LINES_OUTPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_OUTPUT</name>
+          <subject/>
+        </field>
+        <field>
+          <id>LINES_REJECTED</id>
+          <enabled>Y</enabled>
+          <name>LINES_REJECTED</name>
+          <subject/>
+        </field>
+        <field>
+          <id>ERRORS</id>
+          <enabled>Y</enabled>
+          <name>ERRORS</name>
+        </field>
+        <field>
+          <id>STARTDATE</id>
+          <enabled>Y</enabled>
+          <name>STARTDATE</name>
+        </field>
+        <field>
+          <id>ENDDATE</id>
+          <enabled>Y</enabled>
+          <name>ENDDATE</name>
+        </field>
+        <field>
+          <id>LOGDATE</id>
+          <enabled>Y</enabled>
+          <name>LOGDATE</name>
+        </field>
+        <field>
+          <id>DEPDATE</id>
+          <enabled>Y</enabled>
+          <name>DEPDATE</name>
+        </field>
+        <field>
+          <id>REPLAYDATE</id>
+          <enabled>Y</enabled>
+          <name>REPLAYDATE</name>
+        </field>
+        <field>
+          <id>LOG_FIELD</id>
+          <enabled>Y</enabled>
+          <name>LOG_FIELD</name>
+        </field>
+        <field>
+          <id>EXECUTING_SERVER</id>
+          <enabled>N</enabled>
+          <name>EXECUTING_SERVER</name>
+        </field>
+        <field>
+          <id>EXECUTING_USER</id>
+          <enabled>N</enabled>
+          <name>EXECUTING_USER</name>
+        </field>
+        <field>
+          <id>CLIENT</id>
+          <enabled>N</enabled>
+          <name>CLIENT</name>
+        </field>
+      </trans-log-table>
+      <perf-log-table>
+        <connection/>
+        <schema/>
+        <table/>
+        <interval/>
+        <timeout_days/>
+        <field>
+          <id>ID_BATCH</id>
+          <enabled>Y</enabled>
+          <name>ID_BATCH</name>
+        </field>
+        <field>
+          <id>SEQ_NR</id>
+          <enabled>Y</enabled>
+          <name>SEQ_NR</name>
+        </field>
+        <field>
+          <id>LOGDATE</id>
+          <enabled>Y</enabled>
+          <name>LOGDATE</name>
+        </field>
+        <field>
+          <id>TRANSNAME</id>
+          <enabled>Y</enabled>
+          <name>TRANSNAME</name>
+        </field>
+        <field>
+          <id>STEPNAME</id>
+          <enabled>Y</enabled>
+          <name>STEPNAME</name>
+        </field>
+        <field>
+          <id>STEP_COPY</id>
+          <enabled>Y</enabled>
+          <name>STEP_COPY</name>
+        </field>
+        <field>
+          <id>LINES_READ</id>
+          <enabled>Y</enabled>
+          <name>LINES_READ</name>
+        </field>
+        <field>
+          <id>LINES_WRITTEN</id>
+          <enabled>Y</enabled>
+          <name>LINES_WRITTEN</name>
+        </field>
+        <field>
+          <id>LINES_UPDATED</id>
+          <enabled>Y</enabled>
+          <name>LINES_UPDATED</name>
+        </field>
+        <field>
+          <id>LINES_INPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_INPUT</name>
+        </field>
+        <field>
+          <id>LINES_OUTPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_OUTPUT</name>
+        </field>
+        <field>
+          <id>LINES_REJECTED</id>
+          <enabled>Y</enabled>
+          <name>LINES_REJECTED</name>
+        </field>
+        <field>
+          <id>ERRORS</id>
+          <enabled>Y</enabled>
+          <name>ERRORS</name>
+        </field>
+        <field>
+          <id>INPUT_BUFFER_ROWS</id>
+          <enabled>Y</enabled>
+          <name>INPUT_BUFFER_ROWS</name>
+        </field>
+        <field>
+          <id>OUTPUT_BUFFER_ROWS</id>
+          <enabled>Y</enabled>
+          <name>OUTPUT_BUFFER_ROWS</name>
+        </field>
+      </perf-log-table>
+      <channel-log-table>
+        <connection/>
+        <schema/>
+        <table/>
+        <timeout_days/>
+        <field>
+          <id>ID_BATCH</id>
+          <enabled>Y</enabled>
+          <name>ID_BATCH</name>
+        </field>
+        <field>
+          <id>CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>CHANNEL_ID</name>
+        </field>
+        <field>
+          <id>LOG_DATE</id>
+          <enabled>Y</enabled>
+          <name>LOG_DATE</name>
+        </field>
+        <field>
+          <id>LOGGING_OBJECT_TYPE</id>
+          <enabled>Y</enabled>
+          <name>LOGGING_OBJECT_TYPE</name>
+        </field>
+        <field>
+          <id>OBJECT_NAME</id>
+          <enabled>Y</enabled>
+          <name>OBJECT_NAME</name>
+        </field>
+        <field>
+          <id>OBJECT_COPY</id>
+          <enabled>Y</enabled>
+          <name>OBJECT_COPY</name>
+        </field>
+        <field>
+          <id>REPOSITORY_DIRECTORY</id>
+          <enabled>Y</enabled>
+          <name>REPOSITORY_DIRECTORY</name>
+        </field>
+        <field>
+          <id>FILENAME</id>
+          <enabled>Y</enabled>
+          <name>FILENAME</name>
+        </field>
+        <field>
+          <id>OBJECT_ID</id>
+          <enabled>Y</enabled>
+          <name>OBJECT_ID</name>
+        </field>
+        <field>
+          <id>OBJECT_REVISION</id>
+          <enabled>Y</enabled>
+          <name>OBJECT_REVISION</name>
+        </field>
+        <field>
+          <id>PARENT_CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>PARENT_CHANNEL_ID</name>
+        </field>
+        <field>
+          <id>ROOT_CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>ROOT_CHANNEL_ID</name>
+        </field>
+      </channel-log-table>
+      <step-log-table>
+        <connection/>
+        <schema/>
+        <table/>
+        <timeout_days/>
+        <field>
+          <id>ID_BATCH</id>
+          <enabled>Y</enabled>
+          <name>ID_BATCH</name>
+        </field>
+        <field>
+          <id>CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>CHANNEL_ID</name>
+        </field>
+        <field>
+          <id>LOG_DATE</id>
+          <enabled>Y</enabled>
+          <name>LOG_DATE</name>
+        </field>
+        <field>
+          <id>TRANSNAME</id>
+          <enabled>Y</enabled>
+          <name>TRANSNAME</name>
+        </field>
+        <field>
+          <id>STEPNAME</id>
+          <enabled>Y</enabled>
+          <name>STEPNAME</name>
+        </field>
+        <field>
+          <id>STEP_COPY</id>
+          <enabled>Y</enabled>
+          <name>STEP_COPY</name>
+        </field>
+        <field>
+          <id>LINES_READ</id>
+          <enabled>Y</enabled>
+          <name>LINES_READ</name>
+        </field>
+        <field>
+          <id>LINES_WRITTEN</id>
+          <enabled>Y</enabled>
+          <name>LINES_WRITTEN</name>
+        </field>
+        <field>
+          <id>LINES_UPDATED</id>
+          <enabled>Y</enabled>
+          <name>LINES_UPDATED</name>
+        </field>
+        <field>
+          <id>LINES_INPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_INPUT</name>
+        </field>
+        <field>
+          <id>LINES_OUTPUT</id>
+          <enabled>Y</enabled>
+          <name>LINES_OUTPUT</name>
+        </field>
+        <field>
+          <id>LINES_REJECTED</id>
+          <enabled>Y</enabled>
+          <name>LINES_REJECTED</name>
+        </field>
+        <field>
+          <id>ERRORS</id>
+          <enabled>Y</enabled>
+          <name>ERRORS</name>
+        </field>
+        <field>
+          <id>LOG_FIELD</id>
+          <enabled>N</enabled>
+          <name>LOG_FIELD</name>
+        </field>
+      </step-log-table>
+      <metrics-log-table>
+        <connection/>
+        <schema/>
+        <table/>
+        <timeout_days/>
+        <field>
+          <id>ID_BATCH</id>
+          <enabled>Y</enabled>
+          <name>ID_BATCH</name>
+        </field>
+        <field>
+          <id>CHANNEL_ID</id>
+          <enabled>Y</enabled>
+          <name>CHANNEL_ID</name>
+        </field>
+        <field>
+          <id>LOG_DATE</id>
+          <enabled>Y</enabled>
+          <name>LOG_DATE</name>
+        </field>
+        <field>
+          <id>METRICS_DATE</id>
+          <enabled>Y</enabled>
+          <name>METRICS_DATE</name>
+        </field>
+        <field>
+          <id>METRICS_CODE</id>
+          <enabled>Y</enabled>
+          <name>METRICS_CODE</name>
+        </field>
+        <field>
+          <id>METRICS_DESCRIPTION</id>
+          <enabled>Y</enabled>
+          <name>METRICS_DESCRIPTION</name>
+        </field>
+        <field>
+          <id>METRICS_SUBJECT</id>
+          <enabled>Y</enabled>
+          <name>METRICS_SUBJECT</name>
+        </field>
+        <field>
+          <id>METRICS_TYPE</id>
+          <enabled>Y</enabled>
+          <name>METRICS_TYPE</name>
+        </field>
+        <field>
+          <id>METRICS_VALUE</id>
+          <enabled>Y</enabled>
+          <name>METRICS_VALUE</name>
+        </field>
+      </metrics-log-table>
+    </log>
+    <maxdate>
+      <connection/>
+      <table/>
+      <field/>
+      <offset>0.0</offset>
+      <maxdiff>0.0</maxdiff>
+    </maxdate>
+    <size_rowset>10000</size_rowset>
+    <sleep_time_empty>50</sleep_time_empty>
+    <sleep_time_full>50</sleep_time_full>
+    <unique_connections>N</unique_connections>
+    <feedback_shown>Y</feedback_shown>
+    <feedback_size>50000</feedback_size>
+    <using_thread_priorities>Y</using_thread_priorities>
+    <shared_objects_file/>
+    <capture_step_performance>N</capture_step_performance>
+    <step_performance_capturing_delay>1000</step_performance_capturing_delay>
+    <step_performance_capturing_size_limit>100</step_performance_capturing_size_limit>
+    <dependencies>
+    </dependencies>
+    <partitionschemas>
+    </partitionschemas>
+    <slaveservers>
+    </slaveservers>
+    <clusterschemas>
+    </clusterschemas>
+    <created_user>-</created_user>
+    <created_date>2020/05/15 11:09:25.417</created_date>
+    <modified_user>-</modified_user>
+    <modified_date>2020/05/15 11:09:25.417</modified_date>
+    <key_for_session_key>H4sIAAAAAAAAAAMAAAAAAAAAAAA=</key_for_session_key>
+    <is_key_private>N</is_key_private>
+  </info>
+  <notepads>
+  </notepads>
+  <connection>
+    <name>DBASE3</name>
+    <server>${DB_HOST}</server>
+    <type>ORACLE</type>
+    <access>Native</access>
+    <database>${DB_NAME}</database>
+    <port>${DB_PORT}</port>
+    <username>${DB_USER}</username>
+    <password>${DB_PASSWORD}</password>
+    <servername/>
+    <data_tablespace/>
+    <index_tablespace/>
+    <attributes>
+      <attribute>
+        <code>FORCE_IDENTIFIERS_TO_LOWERCASE</code>
+        <attribute>N</attribute>
+      </attribute>
+      <attribute>
+        <code>FORCE_IDENTIFIERS_TO_UPPERCASE</code>
+        <attribute>N</attribute>
+      </attribute>
+      <attribute>
+        <code>IS_CLUSTERED</code>
+        <attribute>N</attribute>
+      </attribute>
+      <attribute>
+        <code>PORT_NUMBER</code>
+        <attribute>${DB_PORT}</attribute>
+      </attribute>
+      <attribute>
+        <code>PRESERVE_RESERVED_WORD_CASE</code>
+        <attribute>Y</attribute>
+      </attribute>
+      <attribute>
+        <code>QUOTE_ALL_FIELDS</code>
+        <attribute>N</attribute>
+      </attribute>
+      <attribute>
+        <code>STRICT_NUMBER_38_INTERPRETATION</code>
+        <attribute>N</attribute>
+      </attribute>
+      <attribute>
+        <code>SUPPORTS_BOOLEAN_DATA_TYPE</code>
+        <attribute>Y</attribute>
+      </attribute>
+      <attribute>
+        <code>SUPPORTS_TIMESTAMP_DATA_TYPE</code>
+        <attribute>Y</attribute>
+      </attribute>
+      <attribute>
+        <code>USE_POOLING</code>
+        <attribute>N</attribute>
+      </attribute>
+    </attributes>
+  </connection>
+  <order>
+    <hop>
+      <from>RM_CLAIM_DATA</from>
+      <to>Microsoft Excel writer</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 2</from>
+      <to>Block this step until steps finish 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 2</from>
+      <to>LEGACY_POLICY_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer</from>
+      <to>Block this step until steps finish 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 1</from>
+      <to>OS_CLAIM_DATA</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 1 2</from>
+      <to>Microsoft Excel writer 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_CLAIM_DATA</from>
+      <to>Block this step until steps finish 1 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 2 2</from>
+      <to>Microsoft Excel writer 3</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_POLICY_COUNT</from>
+      <to>Block this step until steps finish 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_CLAIM_COUNT</from>
+      <to>Block this step until steps finish 4 2 3</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 4 2 3</from>
+      <to>Microsoft Excel writer 5</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 4</from>
+      <to>LEGACY_CLAIM_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_CLAIM_COUNT</from>
+      <to>Block this step until steps finish 5 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 5 1</from>
+      <to>Microsoft Excel writer 5 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_POLICY_COUNT </from>
+      <to>Block this step until steps finish 3 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 3 2</from>
+      <to>Microsoft Excel writer 4</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 3</from>
+      <to>Block this step until steps finish 3</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 3</from>
+      <to>OS_POLICY_COUNT </to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 4</from>
+      <to>Block this step until steps finish 4</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 5</from>
+      <to>Block this step until steps finish 5</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 5</from>
+      <to>OS_CLAIM_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_CLAIM_TRX_COUNT</from>
+      <to>Block this step until steps finish 5 2 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 6</from>
+      <to>Block this step until steps finish 6</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 5 2 1</from>
+      <to>Microsoft Excel writer 6</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 5 2</from>
+      <to>LEGACY_CLAIM_TRX_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_CLAIM_TRX_COUNT</from>
+      <to>Block this step until steps finish 6 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 6 1</from>
+      <to>Microsoft Excel writer 6 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 6</from>
+      <to>OS_CLAIM_TRX_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 5 2</from>
+      <to>Block this step until steps finish 5 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_SUBCLAIM_COUNT</from>
+      <to>Block this step until steps finish 6 2 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 7</from>
+      <to>Block this step until steps finish 7</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 6 2 1</from>
+      <to>Microsoft Excel writer 7</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 6 2</from>
+      <to>LEGACY_SUBCLAIM_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_SUBCLAIM_COUNT</from>
+      <to>Block this step until steps finish 7 1</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 7 1</from>
+      <to>Microsoft Excel writer 7 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 7</from>
+      <to>OS_SUBCLAIM_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 6 2</from>
+      <to>Block this step until steps finish 6 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_SUBCLAIM_TRX_COUNT</from>
+      <to>Step Blocker finish 7 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Step Blocker finish 7 2</from>
+      <to>Microsoft Excel writer 8</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 7 2</from>
+      <to>LEGACY_SUBCLAIM_TRX_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_SUBCLAIM_TRX_COUNT</from>
+      <to>Block this step until steps finish 8</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 8</from>
+      <to>Microsoft Excel writer 8 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 8</from>
+      <to>OS_SUBCLAIM_TRX_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_CATASTROPHE_COUNT</from>
+      <to>Step Blocker finish 8 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 9</from>
+      <to>OS_CATASTROPHE_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_CATASTROPHE_COUNT</from>
+      <to>Block this step until steps finish 9</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 9</from>
+      <to>Microsoft Excel writer 9 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Step Blocker finish 8 2</from>
+      <to>Microsoft Excel writer 9</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 8 2</from>
+      <to>LEGACY_CATASTROPHE_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 9 2</from>
+      <to>Microsoft Excel writer 10 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_INCIDENT_COUNT</from>
+      <to>Step Blocker finish 8 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 10</from>
+      <to>OS_INCIDENT_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_INCIDENT_COUNT</from>
+      <to>Block this step until steps finish 9 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Step Blocker finish 8 2 2</from>
+      <to>Microsoft Excel writer 10</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 9 2</from>
+      <to>LEGACY_INCIDENT_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 9 2 2</from>
+      <to>Microsoft Excel writer 11 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_INCIDENTLOSS_COUNT</from>
+      <to>Step Blocker finish 8 2 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 11</from>
+      <to>OS_INCIDENTLOSS_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_INCIDENTLOSS_COUNT</from>
+      <to>Block this step until steps finish 9 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Step Blocker finish 8 2 2 2</from>
+      <to>Microsoft Excel writer 11</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 10 2</from>
+      <to>LEGACY_INCIDENTLOSS_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Block this step until steps finish 9 2 2 2</from>
+      <to>Microsoft Excel writer 12 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>LEGACY_INCIDENT_ENTITY_COUNT </from>
+      <to>Step Blocker finish 8 2 2 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 12</from>
+      <to>OS_INCIDENT_ENTITY_COUNT</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>OS_INCIDENT_ENTITY_COUNT</from>
+      <to>Block this step until steps finish 9 2 2 2</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Step Blocker finish 8 2 2 2 2</from>
+      <to>Microsoft Excel writer 12</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Microsoft Excel writer 11 2</from>
+      <to>LEGACY_INCIDENT_ENTITY_COUNT </to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+  <step>
+    <name>Block this step until steps finish 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>RM_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>OS_CLAIM_COUNT</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 3</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>304</xloc>
+      <yloc>128</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 1 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>RM_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>352</xloc>
+      <yloc>192</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>OS_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>RM_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>352</xloc>
+      <yloc>256</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>OS_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>RM_CLAIM_DATA</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>336</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 3</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>LEGACY_POLICY_COUNT</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 3</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>656</xloc>
+      <yloc>224</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 3 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>LEGACY_POLICY_COUNT</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 3</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>816</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 4</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 4</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>256</xloc>
+      <yloc>448</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 4 2 3</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 4</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>336</xloc>
+      <yloc>544</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 5</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>LEGACY_CLAIM_COUNT</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 5</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>448</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 5 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 5</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>816</xloc>
+      <yloc>544</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 5 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 5 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>224</xloc>
+      <yloc>672</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 5 2 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Block this step until steps finish 5 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 3</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>304</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 6</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>LEGACY_CLAIM_TRX_COUNT</name>
+        <CopyNr>0</CopyNr>
+      </step>
+      <step>
+        <name>Microsoft Excel writer 6</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>576</xloc>
+      <yloc>672</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 6 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 6</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>784</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 6 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 6 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>224</xloc>
+      <yloc>912</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 6 2 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 6 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>304</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 7</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 7</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>576</xloc>
+      <yloc>912</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 7 1</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 7</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>784</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 8</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 8</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>768</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 9</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 9</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>768</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 9 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 10</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>768</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 9 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 11</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>768</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Block this step until steps finish 9 2 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 12</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>768</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_CATASTROPHE_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select COUNT(*)
+  from li_stg_catastrophe
+ where cat_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>80</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_CLAIM_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(1) as Total  from li_stg_claim where (clm_stg_trx_set_id,CLM_LEGACY_ID) in 
+( select ts_stg_trx_set_id , TS_LEGACY_ID from li_stg_trx_set 
+   where trunc(ts_date_created) = trunc(sysdate) and ts_source= 'RISKMASTER' and xform_status ='OK')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>176</xloc>
+      <yloc>544</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_CLAIM_TRX_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)  from li_stg_claim_trx where clx_stg_trx_set_id in 
+(select ts_stg_trx_set_id from li_stg_trx_set
+ where trunc(ts_date_created) = trunc(sysdate)
+ and ts_source= 'RISKMASTER' and 
+ xform_status ='OK') 
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>96</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_INCIDENTLOSS_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from li_stg_incident_loss
+ where ils_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>80</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_INCIDENT_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from li_stg_incident
+ where inc_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>80</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_INCIDENT_ENTITY_COUNT </name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from li_stg_incident_entity
+ where iet_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>80</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_POLICY_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count( distinct CLM_POLICY_MOD_NO) as Total  from li_stg_claim
+where CLM_source = 'RISKMASTER' and (clm_stg_trx_set_id,CLM_LEGACY_ID) in 
+( select ts_stg_trx_set_id , TS_LEGACY_ID from li_stg_trx_set 
+   where trunc(ts_date_created) = trunc(sysdate) and xform_status='OK')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>176</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_SUBCLAIM_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(1) from LI_STG_CLAIM_COV_MAP where ccov_stg_trx_set_id in 
+(select ts_stg_trx_set_id from li_stg_trx_set
+ where trunc(ts_date_created) = trunc(sysdate)
+ and ts_source= 'RISKMASTER' and 
+ xform_status ='OK')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>96</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>LEGACY_SUBCLAIM_TRX_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)  from li_stg_claim_trx where clx_stg_trx_set_id in 
+(select ts_stg_trx_set_id from li_stg_trx_set
+ where trunc(ts_date_created) = trunc(sysdate)
+ and ts_source= 'RISKMASTER' and 
+ xform_status ='OK') </sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>80</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>B3</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Amounts by Claim per date</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>new</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>CLAIM_AMOUNT_PERDAY</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>416</xloc>
+      <yloc>64</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 10</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J9</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>448</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 10 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N9</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>944</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 11</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J10</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>448</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 11 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N10</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>944</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 12</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J11</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>448</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 12 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N11</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>960</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>H3</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Amounts by Claim per date</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>N</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>CLAIM_AMOUNT_PERDAY</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>512</xloc>
+      <yloc>192</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 3</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>N</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J3</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>496</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 4</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N3</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>976</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 5</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J4</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>496</xloc>
+      <yloc>544</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 5 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N4</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>976</xloc>
+      <yloc>544</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 6</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J5</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>464</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 6 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N5</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>960</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 7</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J6</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>464</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 7 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N6</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>960</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 8</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J7</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>448</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 8 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N7</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>944</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 9</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>J8</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>448</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Microsoft Excel writer 9 2</name>
+    <type>TypeExitExcelWriterStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <header>N</header>
+    <footer>N</footer>
+    <makeSheetActive>Y</makeSheetActive>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <startingCell>N8</startingCell>
+    <appendOmitHeader>N</appendOmitHeader>
+    <appendOffset>0</appendOffset>
+    <appendEmpty>0</appendEmpty>
+    <rowWritingMethod>overwrite</rowWritingMethod>
+    <forceFormulaRecalculation>N</forceFormulaRecalculation>
+    <leaveExistingStylesUnchanged>Y</leaveExistingStylesUnchanged>
+    <appendLines>N</appendLines>
+    <add_to_result_filenames>N</add_to_result_filenames>
+    <file>
+      <name>${Internal.Entry.Current.Directory}\reports\ReconciliationReport-Claim</name>
+      <extention>xlsx</extention>
+      <do_not_open_newfile_init>Y</do_not_open_newfile_init>
+      <split>N</split>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>Y</SpecifyFormat>
+      <date_time_format>_ddMMyyyy</date_time_format>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <autosizecolums>N</autosizecolums>
+      <stream_data>N</stream_data>
+      <protect_sheet>N</protect_sheet>
+      <password>Encrypted </password>
+      <protected_by/>
+      <splitevery>0</splitevery>
+      <if_file_exists>reuse</if_file_exists>
+      <if_sheet_exists>reuse</if_sheet_exists>
+    </file>
+    <template>
+      <enabled>Y</enabled>
+      <sheet_enabled>Y</sheet_enabled>
+      <filename>${Internal.Entry.Current.Directory}\reports\template\ReconciliationReport-Claim.xlsx</filename>
+      <sheetname>Legacy_Staging_Datamart_Counts</sheetname>
+      <hidden>Y</hidden>
+    </template>
+    <fields>
+    </fields>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>944</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_CATASTROPHE_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select COUNT(*)
+  from dragon_catastrophe
+ where catastrophe_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_CLAIM_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>SELECT COUNT(*)
+  FROM DRAGON_CLAIM
+ WHERE (CLAIM_NUMBER) IN
+       (select CLM_CLAIM_NUMBER
+          from li_stg_claim
+         where (CLM_STG_TRX_SET_ID, CLM_LEGACY_ID) =
+               (select ts_stg_trx_set_id, TS_LEGACY_ID
+                  from li_stg_trx_set
+                 where trunc(ts_date_created) = trunc(sysdate)
+                   and xform_status = 'OK'
+           and ts_source= 'RISKMASTER'))
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>656</xloc>
+      <yloc>528</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_CLAIM_DATA</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select claim_trx_claim_number claim_number,
+       	nvl(sum(transaction_amount), 0) Payment,
+		nvl(sum(recoveries), 0) Recovery,       
+		((nvl(sum(claim_trx_change_amount), 0) -
+       nvl(sum(transaction_amount), 0) -
+       (nvl(sum(transaction_expected_recovery), 0) -
+       nvl(sum(recoveries), 0)))) Total_reserve,
+       ((nvl(sum(claim_trx_change_amount), 0) -
+       nvl(sum(transaction_amount), 0) -
+       (nvl(sum(transaction_expected_recovery), 0) -
+       nvl(sum(recoveries), 0))) + nvl(sum(transaction_amount), 0) -
+       nvl(sum(recoveries), 0)) Incurred
+  from dragon_claim_trx
+ where claim_trx_claim_number in
+       (select clm_claim_number
+          from li_stg_claim
+         where clm_legacy_id =
+               (select ts_legacy_id
+                  from li_stg_trx_set
+                 where trunc(ts_date_created) = trunc(sysdate)))
+ group by claim_trx_claim_number
+ order by claim_trx_claim_number</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>192</xloc>
+      <yloc>176</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_CLAIM_TRX_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>SELECT count(*)  FROM DRAGON_CLAIM_TRX 
+WHERE CLAIM_TRX_LEGACY_ID in ( select  TS_LEGACY_ID from li_stg_trx_set 
+   where trunc(ts_date_created) = trunc(sysdate)
+    and xform_status='OK'
+    and ts_source='RISKMASTER') and claim_trx_claim_number is not null
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>624</xloc>
+      <yloc>768</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_INCIDENTLOSS_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from dragon_incidentloss
+ where incidentloss_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_INCIDENT_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from dragon_incident
+ where incident_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_INCIDENT_ENTITY_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count(*)
+  from dragon_incident_entity
+ where ie_legacy_id in (select  TS_LEGACY_ID
+                           from li_stg_trx_set
+                          where trunc(ts_date_created) = trunc(sysdate)
+                            and xform_status = 'OK'
+                            and ts_source='RISKMASTER')</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_POLICY_COUNT </name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select count( distinct policy_number) as POLICY_COUNT from dragon_policy where 
+policy_number in(
+select clm_policy_mod_no  from li_stg_claim 
+where clm_source = 'RISKMASTER' and (clm_stg_trx_set_id,CLM_LEGACY_ID) in 
+( select ts_stg_trx_set_id , TS_LEGACY_ID from li_stg_trx_set 
+   where trunc(ts_date_created) = trunc(sysdate)
+    and xform_status='OK'))
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>656</xloc>
+      <yloc>320</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_SUBCLAIM_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select COUNT(1)
+  from dragon_subclaim
+ where sc_legacy_id in (select TS_LEGACY_ID
+                          from li_stg_trx_set
+                         where trunc(ts_date_created) = trunc(sysdate)
+                           and xform_status = 'OK'
+                           and ts_source = 'RISKMASTER')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>624</xloc>
+      <yloc>1008</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>OS_SUBCLAIM_TRX_COUNT</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select COUNT(1)
+  from dragon_subclaim_trx
+ where subclaim_trx_legacy_id in (select TS_LEGACY_ID
+                          from li_stg_trx_set
+                         where trunc(ts_date_created) = trunc(sysdate)
+                           and xform_status = 'OK'
+                           and ts_source = 'RISKMASTER')
+</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>N</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>RM_CLAIM_DATA</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>DBASE3</connection>
+    <sql>select tt.clm_claim_number claim_number,
+ (select nvl(sum(ct.clm_total_payment), 0)
+          from tp_claim_feed_history ct
+         where ct.clm_claim_number = tt.clm_claim_number
+           and ct.clm_reserve_type not in
+               ('PAYMENT RECOVERY',
+                'EXPENSE RECOVERY',
+                'SALVAGE',
+                'SUBROGATION',
+                'DED RECOVERY',
+                'VOC REHAB RECOVERY',
+                'MED PAY RECOVERY',
+                'PRODUCT LIAB SUBRO',
+                'AUTO LIABILITY SUBRO',
+                'RECOVERY-ULAE')) payment,               
+ (select nvl(sum(ct.clm_total_payment), 0)
+          from tp_claim_feed_history ct
+         where ct.clm_claim_number = tt.clm_claim_number
+           and ct.clm_reserve_type in
+               ('PAYMENT RECOVERY',
+                'EXPENSE RECOVERY',
+                'SALVAGE',
+                'SUBROGATION',
+                'DED RECOVERY',
+                'VOC REHAB RECOVERY',
+                'MED PAY RECOVERY',
+                'PRODUCT LIAB SUBRO',
+                'AUTO LIABILITY SUBRO',
+                'RECOVERY-ULAE')) Recovery,                
+       ((select nvl(sum(ct.clm_change_in_reserve) -
+                    sum(ct.clm_total_payment),
+                    0)
+           from tp_claim_feed_history ct
+          where ct.clm_claim_number = tt.clm_claim_number
+            and ct.clm_reserve_type not in
+                ('PAYMENT RECOVERY',
+                 'EXPENSE RECOVERY',
+                 'SALVAGE',
+                 'SUBROGATION',
+                 'DED RECOVERY',
+                 'VOC REHAB RECOVERY',
+                 'MED PAY RECOVERY',
+                 'PRODUCT LIAB SUBRO',
+                 'AUTO LIABILITY SUBRO',
+                 'RECOVERY-ULAE')) -
+       (select nvl(sum(pt.clm_change_in_reserve) -
+                    sum(pt.clm_total_payment),
+                    0)
+           from tp_claim_feed_history pt
+          where pt.clm_claim_number = tt.clm_claim_number
+            and pt.clm_reserve_type in
+                ('PAYMENT RECOVERY',
+                 'EXPENSE RECOVERY',
+                 'SALVAGE',
+                 'SUBROGATION',
+                 'DED RECOVERY',
+                 'VOC REHAB RECOVERY',
+                 'MED PAY RECOVERY',
+                 'PRODUCT LIAB SUBRO',
+                 'AUTO LIABILITY SUBRO',
+                 'RECOVERY-ULAE'))) reserve,
+       (((select nvl(sum(ct.clm_change_in_reserve) -
+                     sum(ct.clm_total_payment),
+                     0)
+            from tp_claim_feed_history ct
+           where ct.clm_claim_number = tt.clm_claim_number
+             and ct.clm_reserve_type not in
+                 ('PAYMENT RECOVERY',
+                  'EXPENSE RECOVERY',
+                  'SALVAGE',
+                  'SUBROGATION',
+                  'DED RECOVERY',
+                  'VOC REHAB RECOVERY',
+                  'MED PAY RECOVERY',
+                  'PRODUCT LIAB SUBRO',
+                  'AUTO LIABILITY SUBRO',
+                  'RECOVERY-ULAE')) -
+       (select nvl(sum(pt.clm_change_in_reserve) -
+                     sum(pt.clm_total_payment),
+                     0)
+            from tp_claim_feed_history pt
+           where pt.clm_claim_number = tt.clm_claim_number
+             and pt.clm_reserve_type in
+                 ('PAYMENT RECOVERY',
+                  'EXPENSE RECOVERY',
+                  'SALVAGE',
+                  'SUBROGATION',
+                  'DED RECOVERY',
+                  'VOC REHAB RECOVERY',
+                  'MED PAY RECOVERY',
+                  'PRODUCT LIAB SUBRO',
+                  'AUTO LIABILITY SUBRO',
+                  'RECOVERY-ULAE'))) +
+       (select nvl(sum(ct.clm_total_payment), 0)
+           from tp_claim_feed_history ct
+          where ct.clm_claim_number = tt.clm_claim_number
+            and ct.clm_reserve_type not in
+                ('PAYMENT RECOVERY',
+                 'EXPENSE RECOVERY',
+                 'SALVAGE',
+                 'SUBROGATION',
+                 'DED RECOVERY',
+                 'VOC REHAB RECOVERY',
+                 'MED PAY RECOVERY',
+                 'PRODUCT LIAB SUBRO',
+                 'AUTO LIABILITY SUBRO',
+                 'RECOVERY-ULAE')) -
+       (select nvl(sum(ct.clm_total_payment), 0)
+           from tp_claim_feed_history ct
+          where ct.clm_claim_number = tt.clm_claim_number
+            and ct.clm_reserve_type in
+                ('PAYMENT RECOVERY',
+                 'EXPENSE RECOVERY',
+                 'SALVAGE',
+                 'SUBROGATION',
+                 'DED RECOVERY',
+                 'VOC REHAB RECOVERY',
+                 'MED PAY RECOVERY',
+                 'PRODUCT LIAB SUBRO',
+                 'AUTO LIABILITY SUBRO',
+                 'RECOVERY-ULAE'))) Incurred
+  from tp_claim_feed_history tt
+ where tt.clm_claim_number in
+       (select clm_claim_number
+          from li_stg_claim
+         where clm_legacy_id =
+               (select ts_legacy_id
+                  from li_stg_trx_set
+                 where trunc(ts_date_created) = trunc(sysdate)))
+ group by tt.clm_claim_number
+ order by tt.clm_claim_number</sql>
+    <limit>0</limit>
+    <lookup/>
+    <execute_each_row>N</execute_each_row>
+    <variables_active>Y</variables_active>
+    <lazy_conversion_active>N</lazy_conversion_active>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>192</xloc>
+      <yloc>64</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Step Blocker finish 7 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 7 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>240</xloc>
+      <yloc>1120</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Step Blocker finish 8 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 8 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>240</xloc>
+      <yloc>1248</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Step Blocker finish 8 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 9 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>240</xloc>
+      <yloc>1344</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Step Blocker finish 8 2 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 10 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>256</xloc>
+      <yloc>1456</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Step Blocker finish 8 2 2 2 2</name>
+    <type>BlockUntilStepsFinish</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <steps>
+      <step>
+        <name>Microsoft Excel writer 11 2</name>
+        <CopyNr>0</CopyNr>
+      </step>
+    </steps>
+    <attributes/>
+    <cluster_schema/>
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>256</xloc>
+      <yloc>1584</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step_error_handling>
+  </step_error_handling>
+  <slave-step-copy-partition-distribution>
+  </slave-step-copy-partition-distribution>
+  <slave_transformation>N</slave_transformation>
+  <attributes/>
+</transformation>

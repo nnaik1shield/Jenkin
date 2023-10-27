@@ -1,0 +1,264 @@
+create or replace package body PKG_DB_BUSINESS_RELATIONSHIP is
+
+----------------------------------------------------------
+-- $Workfile: PKG_DB_BUSINESS_RELATIONSHIP.PBK  $
+-- $Revision: $
+-- $Author: KIRANCHAND
+-- $Date: 04-09-2023 15:50:40
+----------------------------------------------------------
+
+-- Private constant declarations
+pkg_name     constant     system_log.program_name%type  := 'PKG_DB_BUSINESS_RELATIONSHIP.';
+ 
+-- Function and procedure implementations
+-------------------------------------------------------------------------------
+
+--Kiran start OSPRODUCT-34429 Start
+--   %NAME
+--        fn_get_business_relationship_list
+--
+--   %USAGE
+--        Function to return the list of Business relationships based on the input trx type.
+--
+--   %ALGORITHM
+--   
+--   1.Create a cursor by joining the tables DB_BUSINESS_REL_TRX_MAP,DB_BILLING_TRX_SET_VALUES based on the input parameter in_transaction_set_type
+--   2.For each record of cursor
+--       a.Add the Business relationship to the list with relationship id as both key and value
+--   3.End Loop
+--   4.Return the list
+--
+--   %PARAM    in_session_id                       Session Id
+--   %PARAM    in_transaction_id                   Transaction Id
+--   %PARAM    in_transaction_set_type             Transaction set type
+-----------------------------------------------------------------------------------------------
+function fn_get_business_relationship_list
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_transaction_set_type       in   number
+)
+return pkg_os_object.t_object_list 
+is
+     v_procedure_name                         constant               system_log.program_name%type := pkg_name||'fn_get_business_relationship_list';
+     v_session_control                        pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+          
+     v_business_relation_list                 pkg_os_object.t_object_list := pkg_os_object.gnull_object_list;
+     v_business_relation_index                number;
+     v_record_exists                          boolean default false;
+     
+     -- Cursor to identify the records from DB_BUSINESS_REL_TRX_MAP table for a given product     
+     cursor c_business_rel_trx_map
+     is
+        select
+            dbrtm.db_business_relationship_id
+        from
+            db_business_rel_trx_map   dbrtm,
+            db_billing_trx_set_values dbtsv
+        where
+                dbrtm.db_trx_set = dbtsv.db_billing_trx_set_id
+            and dbrtm.active_t_f = 'T'
+            and dbtsv.db_billing_trx_set_type_id = in_transaction_set_type
+        order by
+            dbrtm.db_trx_set;
+                 
+begin
+     if v_session_control.gLogging_Full then
+          
+        pkg_os_logging.sp_log
+        (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '...... Entering inside fn_get_business_relationship_list with in_transaction_set_type:' ||in_transaction_set_type               
+        );
+        
+     end if;
+          
+     --Adding the Business relationship to the list with relationship id as both key and value
+     for v_business_rel_trx_map in c_business_rel_trx_map
+     loop
+           -- Setting the Business relation to both Key and value of the list
+          v_business_relation_index                            := v_business_rel_trx_map.db_business_relationship_id;     
+          v_business_relation_list(v_business_relation_index) := v_business_rel_trx_map.db_business_relationship_id;
+             
+          v_record_exists           := true;
+
+     end loop;
+     
+     if v_record_exists then
+       
+        if v_session_control.gLogging_Full then
+          
+           pkg_os_logging.sp_log
+           (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              'Relationship exists for the given transaction type :' ||in_transaction_set_type
+           );
+                    
+        end if;        
+                                                      
+        return v_business_relation_list;
+     else
+       
+        if v_session_control.gLogging_Full then
+          
+           pkg_os_logging.sp_log
+           (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              'Relationship doesnt exists for the given transaction type :' ||in_transaction_set_type
+              ||'List is empty'
+           );
+                                                    
+        end if;
+             
+        null;
+     end if;
+
+end fn_get_business_relationship_list;
+--Kiran end OSPRODUCT-34429 End
+-------------------------------------------------------------------------------
+
+--Kiran start OSPRODUCT-35200 Start
+--   %NAME
+--        fn_billplan_relationship_tf
+--
+--   %USAGE
+--        Function to return 'T' based on the DB_BUSINESS_RELATIONSHIP Configuration to set the BillPlan Flag 
+--
+--   %ALGORITHM
+--   
+--   1. Create a join query with DB_BUSINESS_RELATIONSHIP and DB_BILLING_ELEMENT relationship 
+--      to retrive the billplan applicable relationships with the below conditions
+--          a. Relationships with Applicable Billplan
+--          b. Active Billing Elements
+--          c. Product which is same as that of input parameter in_product_id
+--          d. Billing elements which are configured with Apply Rule returns 'T' or without Apply Rule
+--   2. Return 'T' if there are any records with the above conditions.
+--
+--
+--   %PARAM    in_session_id                       Session Id
+--   %PARAM    in_transaction_id                   Transaction Id
+--   %PARAM    in_product_id                       Product Id
+--   %PARAM    in_ptp_id                           Policy Transaction Policy Id
+
+-----------------------------------------------------------------------------------------------
+function fn_billplan_relationship_tf
+(
+     in_session_id                 in  object.object_id%type,
+     in_transaction_id             in  object.object_id%type,
+     in_product_id                 in  pd_product.pd_product_id%type,
+     in_ptp_id                     in  object.object_id%type
+     
+)
+return char
+is
+
+     v_procedure_name                         constant               system_log.program_name%type := pkg_name||'fn_billplan_relationship_tf';
+     v_session_control                        pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     
+     v_business_relation_list                 pkg_os_object.t_object_list := pkg_os_object.gnull_object_list;
+     v_business_relation_index                number;
+     
+     v_policy_billing_method                  object_bv_value.business_variable_value%type;
+     
+     v_count                                  number default 0;
+     v_return_value                           char(1) := 'F';
+            
+begin
+     if v_session_control.gLogging_Full then
+          
+        pkg_os_logging.sp_log
+        (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '... Inside the function fn_billplan_relationship_tf'||
+               ' product (in_product_id):'||in_product_id||
+               ' and policy image (in_ptp_id):'||in_ptp_id
+        );
+        
+     end if;
+        
+begin 
+    
+     select
+         count(*)
+     into v_count
+     from
+         db_business_relationship dbr,
+         db_billing_element       dbe
+     where
+             dbe.business_relation_id = dbr.db_business_relationship_id
+         and dbr.billingplan_tf = 'T' 
+         and dbe.active_tf = 'T'
+         and dbe.pd_product_id = in_product_id
+         and ( dbe.apply_rule is null
+               or pkg_os_exp.fn_evaluate_expression
+                  (
+                     in_session_id, 
+                     in_transaction_id, 
+                     in_ptp_id, 
+                     dbe.apply_rule
+                  ) = 'T' 
+             )
+     order by
+         dbe.db_billing_element_id;
+              
+     exception when no_data_found
+          then
+               null; 
+     end;           
+                                                 
+     v_policy_billing_method := pkg_os_object_io.fn_object_bv_get
+                                (
+                                     in_session_id,
+                                     in_transaction_id,
+                                     in_ptp_id,
+                                     PKG_DB_CONSTANT.gbv_PTP_BillingMethod
+                                );
+          
+     if v_session_control.gLogging_Full then
+          
+        pkg_os_logging.sp_log
+        (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '... No of billing elements with active billplan business relationships: '||v_count||
+               ' and Billing method (v_policy_billing_method) is: '||v_policy_billing_method
+        );
+        
+     end if;
+     -- Or condition for Direct bill is to handle other products [Non BOP] until the Business relationship configurtaion is completed.
+     if v_count >= 1 or v_policy_billing_method = pkg_db_billing.gBillingMethod_Direct then
+                
+        v_return_value := 'T';
+        
+        if v_session_control.gLogging_Full then
+              
+           pkg_os_logging.sp_log
+           (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  '... return value of the function (v_return_value): '||v_return_value
+           );
+            
+        end if;
+        
+     end if;
+     
+     return v_return_value;
+
+end fn_billplan_relationship_tf;
+--Kiran start OSPRODUCT-35200 End
+-------------------------------------------------------------------------------
+
+
+end PKG_DB_BUSINESS_RELATIONSHIP;
+/

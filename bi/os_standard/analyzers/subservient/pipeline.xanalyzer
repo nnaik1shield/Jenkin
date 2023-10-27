@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="joe" updatedBy="admin" created="2015-12-01T01:58:49" update="2017-02-09T12:16:41.723+05:30">
+        <path name="Pipeline" folder="/home/Oneshield/Cubes/Pipeline.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Life Cubes" cube="PipeLine" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyCells="false" emptyCellDisplay="-" showDrillLinks="false" version="9" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Face Value]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[Assets]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Net Annualized Revenue]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:3]"/>
+            <measure formula="[Measures].[Net Fee]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]"/>
+            <measure formula="[Measures].[AIH Retention]" showSum="false" showAggregate="true" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:4]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Issuing Company].[Issuing Company]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Policy Owner].[Policy Owner]" showSubtotal="false" sortOrderEnum="DESC"/>
+            <attribute formula="[Policy Owner].[File #]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Policy Owner].[KYC Rating]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Sponsor].[AIH Ops Sponsor]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[CIF Details].[CIF Name]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[Status].[CIF Status]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[CIF Details].[Product]" showSubtotal="false" sortOrderEnum="ASC"/>
+            <attribute formula="[CIF Details].[Sub Product]" showSubtotal="false" sortOrderEnum="ASC"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Status].[CIF Status]" viewFilterEnum="MULTIPLE">
+                <predicates>
+                    <predicate ordinal="1" operatorEnum="NOT_EQUAL">
+                        <member formula="[Status].[In Force]" caption="In Force" pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="CUSTOM" customChartType="ccc_bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="false" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="113,109,60,78,80,130,83,64,64">
+            <labelWidth index="0">
+                <width>97</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>101</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>20</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>12</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>17</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>80</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>7</width>
+            </labelWidth>
+            <labelWidth index="7">
+                <width>16</width>
+            </labelWidth>
+            <labelWidth index="8">
+                <width>16</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120,120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

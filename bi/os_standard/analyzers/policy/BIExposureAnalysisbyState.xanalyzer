@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-03-14T17:15:27.716+05:30" update="2023-04-04T16:43:40.800+05:30">
+        <path name="BIExposureAnalysisbyState" folder="/home/OneShieldBI/analyzers/policy/BIExposureAnalysisbyState.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="EXPOSURE_ANALYSIS_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Exposure_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="DESC" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[State].[State]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Broker].[Broker Status]</drillColumn>
+            <drillColumn>[Broker].[Broker]</drillColumn>
+            <drillColumn>[Coverage].[Coverage_Name]</drillColumn>
+            <drillColumn>[Coverage_Type].[Type]</drillColumn>
+            <drillColumn>[Measures].[Total_Building_Count]</drillColumn>
+            <drillColumn>[Measures].[Total_Entity_Count]</drillColumn>
+            <drillColumn>[Measures].[Exposure_Amount]</drillColumn>
+            <drillColumn>[Measures].[Total_House_Count]</drillColumn>
+            <drillColumn>[Measures].[Total_Vehicle_Count]</drillColumn>
+            <drillColumn>[Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Policy].[Policy Term]</drillColumn>
+            <drillColumn>[State].[State]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="125"/>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"inside"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

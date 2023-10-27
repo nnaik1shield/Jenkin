@@ -1,0 +1,1854 @@
+<Schema name="OneShield BI - Claims">
+
+<!--
+	$Modified By By: Ssingh
+	$Date:   01 December 2022  $
+-->
+
+  <Dimension visible="true" highCardinality="false" name="Dim_Incident">
+ 
+     <Hierarchy visible="true" hasAll="true" allMemberName="All Incidents" primaryKey="ID_INCIDENT_ID">
+         <Table name="BI_DIM_OC_INCIDENT_DETAIL" alias="Incident_Dim">
+         </Table>
+         <Level name="Incident_Age" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Incident Age" description="Incident Age">
+             <KeyExpression>
+                <SQL dialect="oracle">
+                    <![CDATA[(case when round(sysdate - id_incident_creation_dt, 0) >= 0 and round(sysdate - id_incident_creation_dt, 0) <= 2
+						 then
+							 '0-2 Days'
+						 when round(sysdate - id_incident_creation_dt, 0) >=3 and round(sysdate - id_incident_creation_dt, 0) <= 7
+						 then '3-7 Days'
+						 when round(sysdate - id_incident_creation_dt, 0) > 7
+						 then '7+ Days'
+						 end
+						)
+			 ]]>
+                </SQL>
+             </KeyExpression>
+         </Level>
+     </Hierarchy>
+
+    </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Dim_Address" caption="Address">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Countries" primaryKey="AD_ADDRESS_ID">
+      <Table name="BI_DIM_ADDRESS_DETAIL">
+      </Table>
+      <Level name="Country" visible="true" column="CL_COUNTRY_ID" nameColumn="AD_COUNTRY_NAME" ordinalColumn="AD_COUNTRY_NAME" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Country" description="Name of the Country">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">country</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="Jurisdiction" visible="true" column="AD_JURISDICTION_NAME" nameColumn="AD_JURISDICTION_NAME" ordinalColumn="AD_JURISDICTION_NAME" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Jurisdiction" description="Jurisdiction Name">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="City" visible="true" column="AD_ADDRESS_CITY" nameColumn="AD_ADDRESS_CITY" ordinalColumn="AD_ADDRESS_CITY" 
+	        type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="City" description="Name of the City">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">city</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="ZipCode" visible="true" column="AD_ADDRESS_ZIP_CODE" ordinalColumn="AD_ADDRESS_ZIP_CODE" type="String" 
+	        uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Zip Code" description="Zip Code">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">zip</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Dim_Cause_of_Loss">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Cause Of Loss Types" primaryKeyTable="BI_DIM_OC_INCIDENT_DETAIL" primaryKey="ID_INCIDENT_ID">
+
+      <Join leftKey="ID_CAUSE_OF_LOSS_ID" rightKey="CLD_CAUSE_OF_LOSS_ID">
+        <Table name="BI_DIM_OC_INCIDENT_DETAIL" alias="CauseOfLoss_Incident_Dim">
+        </Table>
+        <Table name="BI_DIM_OC_CAUSE_OF_LOSS_TYPE" alias="CauseOfLoss_Dim">
+        </Table>
+      </Join>
+		 <Level name="Peril Type" visible="true" table="CauseOfLoss_Dim" column="CLD_PERIL_TYPE_ID" nameColumn="CLD_PERIL_TYPE_NAME" 
+		        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Peril Type">
+		 </Level>
+		 <Level name="Cause Of Loss" visible="true" table="CauseOfLoss_Dim" column="CLD_CAUSE_OF_LOSS_ID" nameColumn="CLD_CAUSE_OF_LOSS_NAME" 
+		        type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Cause of Loss">
+			   <Property name="Cause Of Loss ID" column="CLD_CAUSE_OF_LOSS_ID" type="Numeric" formatString="##############">
+			   </Property>
+		 </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Dim_Notifier">
+	<Hierarchy visible="true" hasAll="true" allMemberName="All Notifiers" primaryKeyTable="BI_DIM_OC_INCIDENT_DETAIL" primaryKey="ID_INCIDENT_ID">
+	  <Join leftKey="ID_NOTIFIER_ID" rightKey="ETD_ENTITY_ID">
+	    <Table name="BI_DIM_OC_INCIDENT_DETAIL" alias="Notifier_Incident_Dim">
+	    </Table>
+	    <Table name="BI_DIM_OC_ENTITY_DETAIL" alias="Notifier_Dim">
+	    </Table>
+	  </Join>
+
+       <Level name="Notifier Type" visible="true" table="Notifier_Dim" column="ETD_NOTIFIER_TYPE_ID" nameColumn="ETD_NOTIFIER_TYPE_NAME" ordinalColumn="ETD_NOTIFIER_TYPE_NAME" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Notifier Type">
+       </Level>
+       <Level name="Party Type" visible="true" table="Notifier_Dim" column="ETD_PARTY_TYPE_ID" nameColumn="ETD_PARTY_TYPE_NAME" ordinalColumn="ETD_PARTY_TYPE_NAME" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Notifier Type">
+       </Level>
+       <Level name="Notifier Name" visible="true" table="Notifier_Dim" column="ETD_ENTITY_ID" nameColumn="ETD_ENTITY_NAME" ordinalColumn="ETD_ENTITY_NAME" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Notifier">
+			<Property name="Notifier ID" column="ETD_ENTITY_ID" type="Numeric" formatString="##############">
+               </Property>			
+       </Level>
+     </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Dim_Catastrophe">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Catatrophes" primaryKeyTable="BI_FACT_OC_CLAIM_DETAIL" primaryKey="CD_CLAIM_ID">
+      <Join leftKey="CD_RELATED_CATASTROPHE_ID" rightKey="CAT_CATASTROPHE_ID">
+        <Table name="BI_FACT_OC_CLAIM_DETAIL" alias="Catastrophe_Claim_Fact">
+        </Table>
+        <Table name="BI_DIM_OC_CATASTROPHE" alias="Catastrophe_Dim">
+        </Table>
+      </Join>
+
+      <Level name="Cat_Number" visible="true" table="Catastrophe_Dim" column="CAT_NUMBER" nameColumn="CAT_NUMBER"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Number" description="Catastrophe Number">
+      </Level>
+      <Level name="Cat_Name" visible="true" table="Catastrophe_Dim" column="CAT_CATASTROPHE_ID" nameColumn="CAT_CATASTROPHE_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Name" description="Catastrophe Name">
+      </Level>
+      <Level name="Event" visible="true" table="Catastrophe_Dim" column="CAT_EVENT_ID" nameColumn="CAT_EVENT_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Event" description="Catastrophe Event">
+      </Level>
+      <Level name="Status" visible="true" table="Catastrophe_Dim" column="CAT_STATUS_ID" nameColumn="CAT_STATUS_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Status" description="Catastrophe Status">
+      </Level>
+      <Level name="Family" visible="true" table="Catastrophe_Dim" column="CAT_FAMILY_ID" nameColumn="CAT_FAMILY_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Family" description="Catastrophe Family">
+      </Level>
+      <Level name="Type" visible="true" table="Catastrophe_Dim" column="CAT_TYPE_ID" nameColumn="CAT_TYPE_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Catastrophe Type" description="Catastrophe Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Dim_Incident_Number">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Incident Numbers" primaryKey="ID_INCIDENT_ID">
+      <Table name="BI_DIM_OC_INCIDENT_DETAIL" alias="Incident_Dim">
+      </Table>
+      <Level name="Incident Number" visible="true" column="ID_INCIDENT_ID" nameColumn="ID_INCIDENT_NUMBER" ordinalColumn="ID_INCIDENT_NUMBER" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Incident Number" description="Incident Number">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Dim_Customer">
+    <Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE" nameColumn="CD_INSURED_TYPE" ordinalColumn="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Dim_Current_Owner" caption="Current Owner">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Creators" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="CurrentOwner">
+      </Table>
+      <Level name="Current Owner Role" visible="true" column="UD_USER_ROLE" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Currrent Owner Role" description="Owner role name">
+      </Level>
+      <Level name="Current Owner Name" visible="true" column="UD_USER_NAME" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Current Owner Name" description="Name of the Owner">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension highCardinality="false" name="Dim_Agency" caption="Agency">
+    <Hierarchy hasAll="true" allMemberName="All Agencies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Agency_Dim">
+      </Table>
+      <Level name="Agency" caption="Agency" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" 
+	        type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never"  description="Name of the Agency">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+    <Dimension visible="true" highCardinality="false" name="Dim_Policy" caption="Policy">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Policies" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL" alias="Dim_Policy">
+      </Table>
+	 <Level name="Policy Status" column="POD_POLICY_STATUS"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Status">
+      </Level>
+      <Level name="Policy Number" visible="true" column="POD_POLICY_NUMBER" nameColumn="POD_POLICY_NUMBER" ordinalColumn="POD_POLICY_NUMBER" 
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+	   <Property name="Policy Risk State" column="POD_PRIMARY_RISK_STATE" type="String">
+        </Property>
+		 <Property name="Policy Effective Date" column="POD_POLICY_EFF_DATE" type="String">
+        </Property>
+		 <Property name="Policy Expiration Date" column="POD_POLICY_EXP_DATE" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Dim_Line_of_Business" caption="Line Of Business">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Lines" primaryKeyTable="BI_DIM_OC_INCIDENT_DETAIL" primaryKey="ID_INCIDENT_ID">
+
+      <Join leftKey="ID_LOB_ID" rightKey="LD_LOB_ID">
+        <Table name="BI_DIM_OC_INCIDENT_DETAIL" alias="Lob_Incident_Dim">
+        </Table>
+        <Table name="BI_DIM_OC_LOB_DETAIL" alias="Lob_Dim">
+        </Table>
+      </Join>
+	 
+      <Level name="Line of Business" visible="true" table="Lob_Dim" column="LD_LOB_ID" nameColumn="LD_LOB_NAME"  
+	        type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Line of Business" description="Line of Business">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="OPEN_CLAIMS" caption="Open Claims" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_OC_CLAIM_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[(     (BI_FACT_OC_CLAIM_DETAIL.CD_CLAIM_STATUS_ID = 57046) 
+		           AND  (CD_CLAIM_CREATION_DT >= add_months(trunc(sysdate), -12))
+		 )]]>            
+      </SQL>
+    </Table>
+
+	<DimensionUsage source="Dim_Current_Owner" name="Current Owner" visible="true" foreignKey="CD_CURRENT_OWNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Policy" name="Policy" caption="Policy" visible="true" foreignKey="CD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Cause_of_Loss" name="Cause of Loss" caption="Cause of Loss" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Incident" name="Incident" caption="Incident" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    
+	<Dimension type="StandardDimension" highCardinality="false" name="Open Claims Amout Group" caption="Open Claims Amout Group">
+      <Hierarchy hasAll="true">
+	   <Level name="Incurred Amout Group" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  caption="Incurred Amout Group" description="Incurred Amout Group">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[(case 
+					 when cd_total_incurred_amt <= 10000
+					 then
+						 '0-10K'
+					 when cd_total_incurred_amt > 10000 and cd_total_incurred_amt <= 50000
+					 then
+						 '10-50K'
+					 when cd_total_incurred_amt > 50000 and cd_total_incurred_amt <= 250000
+					 then
+						 '50-250K'
+					 when cd_total_incurred_amt > 250000
+					 then
+						 '250K+'
+					 end
+					)
+				  ]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+	<Dimension type="StandardDimension" highCardinality="false" name="Open Claims Age" caption="Open Claims Age">
+      <Hierarchy hasAll="true">
+	   <Level name="Claim Age" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  caption="Claim Age" description="Claim Age">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[(case when round(sysdate - cd_claim_creation_dt, 0) <= 30
+					 then '0-30 Days'
+					 when round(sysdate - cd_claim_creation_dt, 0) > 30 and round(sysdate - cd_claim_creation_dt, 0) <= 60
+					 then
+						 '31-60 Days'
+					 when round(sysdate - cd_claim_creation_dt, 0) > 60 and round(sysdate - cd_claim_creation_dt, 0) <= 90
+					 then '61-90 Days'
+					 when round(sysdate - cd_claim_creation_dt, 0) > 90
+					 then '90+ Days'
+					 end
+				  )
+				  ]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+		
+	<Dimension type="StandardDimension" highCardinality="false" name="Claim Number" caption="Claim Number">
+      <Hierarchy hasAll="true">
+        <Level name="Claim Number" column="CD_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Total_Open_Claims" column="CD_CLAIM_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Open Claims Count" description="Total Open Claims">
+    </Measure>
+    <Measure name="Total_Open_Incidents" column="CD_INCIDENT_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Open Incidents Count" description="Total Open Incidents">
+    </Measure>
+    <Measure name="Total_Incurred_Amount" column="CD_TOTAL_INCURRED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Incurred Amount" description="Total Incurred Amount">
+    </Measure>
+    <Measure name="Total_Actual_Paid_Amount" column="CD_ACTUAL_PAID_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Paid Amount" description="Total Paid Amount">
+    </Measure>
+    <Measure name="Total_Reserve_Amount" column="CD_TOTAL_RESERVE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Reserve Amount" description="Total Reserve Amount">
+    </Measure>
+    <Measure name="Total_Recovery_Amount" column="CD_TOTAL_RECOVERY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Recovery Amount" description="Total Recovery Amount">
+    </Measure>
+    <Measure name="Open_Claims_with_SIU" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Claims with SIU">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when 1 = 1 then 0 else 1 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Open_Incidents_with_No_Claims" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Incidents with No Claims">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when CD_INCIDENT_ID is not null then 1 else 0 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Open_Claims_with_Litigation" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Claims with Litigation">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when nvl(CD_CLAIM_LITIGATION_IND, 0) = 1 then 1 else 0 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Open_Claims_with_Catastrophe" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Claims with Catastrophe">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when CD_CLAIM_CATASTROPHE is not null then 1 else 0 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+  </Cube>
+
+  <Cube name="OPEN_INCIDENT_NO_CLAIM" caption="Open Incidents (No Claims)" visible="true" cache="true" enabled="true">
+    <View alias="vw_no_claim_incident">
+          <SQL dialect="generic">    
+		Select
+			id.id_incident_id,
+			id.id_incident_number					
+		from
+			bi_dim_oc_incident_detail id
+		where not exists 
+			(select
+				 1
+			 from
+				bi_fact_oc_claim_detail cd
+			 where
+				cd_incident_id = id.id_incident_id
+			 and
+				(cd.cd_claim_creation_dt >= add_months(trunc(sysdate), -12) or cd.cd_claim_status_id != 57546))
+				
+		</SQL>
+     </View>
+	 
+	<Dimension type="StandardDimension" highCardinality="false" name="Incident" caption="Incident">
+      <Hierarchy hasAll="true">
+        <Level name="Incident Number" column="ID_INCIDENT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Incident Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>	 
+    
+    <Measure name="Open_Incidents_with_No_Claims" column="ID_INCIDENT_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Open Incidents With No Claims" description="Total Open Incidents with no claims associated">
+    </Measure>
+  </Cube>
+
+  <Cube name="CLAIM_SUMMARY" caption="Claim Summary" visible="true" cache="true" enabled="true">
+    <View alias="vw_bi_fact_oc_claim_detail">
+          <SQL dialect="generic">    
+			select
+				cd.cd_claim_id,
+				cd.cd_covered_customer_id,
+				cd.cd_total_reserve_amt,
+				cd.cd_actual_paid_amt,
+				cd.cd_total_recovery_amt,
+				cd.cd_total_incurred_amt,
+				cd.cd_reserve_hist_amt,
+				cd.cd_claim_status_id,
+				cd.cd_claim_creation_dt,
+				cd.cd_claim_close_dt,
+				cd.cd_policy_id,
+				cd.cd_policy_agency_id,
+				cd.cd_current_owner_id,
+				cd.cd_primary_risk_address_id,
+				cd.cd_incident_id,
+				cd.cd_last_updated_dt,
+				cd.cd_claim_number,
+				cd.cd_claim_status_change_reason,
+				cd.cd_claim_state,
+				cd.cd_claim_litigation_ind,
+				cd.cd_claim_recovery_ind,
+				id.id_incident_reported_dt cd_incident_reported_dt,
+				id.id_incident_creation_dt cd_incident_creation_dt,
+				id.id_incident_dt cd_incident_dt,
+				(select count(distinct t.claim_id) from bi_fact_oc_claim_trx_detail t where t.ct_type_id = 7946 and t.ct_state != 'Completed'
+				and cd.cd_claim_id = t.claim_id) as PENDING_RECOVERY_IND
+			from
+				bi_fact_oc_claim_detail cd,
+				bi_dim_oc_incident_detail id
+			where
+				cd.cd_incident_id = id.id_incident_id
+			and
+				(cd.cd_claim_creation_dt >= add_months(trunc(sysdate), -12) or cd.cd_claim_status_id != 57546)
+			and 
+			    (%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR cd.cd_policy_agency_id = %OS_PARTNER_ID%)
+		</SQL>
+     </View>
+    
+    <DimensionUsage source="Dim_Customer" name="Customer" caption="Covered Customer" visible="true" foreignKey="CD_COVERED_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    
+    <DimensionUsage source="Dim_Policy" name="Policy" caption="Policy" visible="true" foreignKey="CD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <DimensionUsage source="Dim_Agency" name="Agency" caption="Policy Agency" visible="true" foreignKey="CD_POLICY_AGENCY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Current_Owner" name="Current Owner" visible="true" foreignKey="CD_CURRENT_OWNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Address" name="Primary Risk Address" caption="Primary Risk Address" visible="true" foreignKey="CD_PRIMARY_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Incident" name="Incident" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Line_of_Business" name="Line of Business" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Cause_of_Loss" name="Cause of Loss" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Notifier" name="Notifier" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Catastrophe" name="Catastrophe" visible="true" foreignKey="CD_CLAIM_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Incident_Number" name="Incident Number" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    
+	<Dimension visible="true" highCardinality="false" name="Last Updated Date" caption="Last Updated Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Last Updated Dates">
+        <Level name="Last Updated Date" visible="true" column="CD_LAST_UPDATED_DT" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Last Updated Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Creation Date" caption="Creation Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_creation_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_creation_dt)       td_year,
+			 to_number(to_char(cd_claim_creation_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_creation_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_creation_dt)      td_month,
+			 to_char(cd_claim_creation_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_creation_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_creation_dt)        td_day,
+			 cd_claim_creation_dt					  td_date
+		  FROM
+			 bi_fact_oc_claim_detail
+	 </SQL>
+        </View>
+        <Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Creation Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Creation Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Creation Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Submission Date" caption="Claim Submission Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_submission_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			   cd_claim_id,
+			   EXTRACT(YEAR FROM cd_claim_submission_dt)       td_year,
+			   to_number(to_char(cd_claim_submission_dt, 'Q')) td_quarter,
+			   'Q' || to_char(cd_claim_submission_dt, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM cd_claim_submission_dt)      td_month,
+			   to_char(cd_claim_submission_dt, 'Mon')          td_month_name,
+			   to_char(cd_claim_submission_dt,'WW')            td_week,
+			   EXTRACT(DAY FROM cd_claim_submission_dt)        td_day,
+			   cd_claim_submission_dt					 td_date
+		  FROM
+			bi_fact_oc_claim_detail
+		</SQL>
+        </View>
+        <Level name="Claim Submission Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Claim Submission Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Claim Submission Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Claim Submission Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Claim Submission Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Claim Submission Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Day" visible="true" column="TD_DAY" ordinalColumn="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Submission Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Submission Date" description="Claim Submission Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Close Date" caption="Claim Close Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_close_dt">
+          <SQL dialect="generic">    
+		 SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_close_dt)       td_year,
+			 to_number(to_char(cd_claim_close_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_close_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_close_dt)      td_month,
+			 to_char(cd_claim_close_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_close_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_close_dt)        td_day,
+			 cd_claim_close_dt				         td_date
+		FROM
+		bi_fact_oc_claim_detail
+		</SQL>
+        </View>
+        <Level name="Claim Close Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Claim Close Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Claim Close Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Claim Close Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Claim Close Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Claim Close Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Close Day" description="Claim Close Date Day">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Close Date" description="Claim Close Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>   
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Incident Date">
+     <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_incident_dt">
+          <SQL dialect="generic">    
+			   SELECT
+				 CD.CD_CLAIM_ID,
+				 EXTRACT(YEAR FROM ID_INCIDENT_DT)       td_year,
+				 to_number(to_char(ID_INCIDENT_DT, 'Q')) td_quarter,
+				 'Q' || to_char(ID_INCIDENT_DT, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM ID_INCIDENT_DT)      td_month,
+				 to_char(ID_INCIDENT_DT, 'Mon')          td_month_name,
+				 to_char(ID_INCIDENT_DT,'WW')            td_week,
+				 EXTRACT(DAY FROM ID_INCIDENT_DT)        td_day,
+				 ID_INCIDENT_DT							 td_date
+			  FROM
+			  BI_DIM_OC_INCIDENT_DETAIL I, BI_FACT_OC_CLAIM_DETAIL CD
+			  WHERE I.ID_INCIDENT_ID = CD.CD_INCIDENT_ID
+	     </SQL>
+       </View>
+      <Level name="Incident Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+		<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Month" visible="true"  column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+				<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+	  		<Level name="Incident Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" 
+			type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Incident Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+      <Level name="Incident Day" visible="true"  column="TD_DAY" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Effective Day">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+			</Annotations>
+      </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Incident Date" description="Incident Date">
+      </Level>
+	  </Hierarchy>
+    </Dimension>	  
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Incident Reported Date" caption="Incident Reported Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_incident_reported_dt">
+          <SQL dialect="generic">    
+			   SELECT
+				 CD.CD_CLAIM_ID,
+				 EXTRACT(YEAR FROM ID_INCIDENT_REPORTED_DT)       td_year,
+				 to_number(to_char(ID_INCIDENT_REPORTED_DT, 'Q')) td_quarter,
+				 'Q' || to_char(ID_INCIDENT_REPORTED_DT, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM ID_INCIDENT_REPORTED_DT)      td_month,
+				 to_char(ID_INCIDENT_REPORTED_DT, 'Mon')          td_month_name,
+				 to_char(ID_INCIDENT_REPORTED_DT,'WW')            td_week,
+				 EXTRACT(DAY FROM ID_INCIDENT_REPORTED_DT)        td_day,
+				 ID_INCIDENT_REPORTED_DT						  td_date
+			  FROM
+			  BI_DIM_OC_INCIDENT_DETAIL I, BI_FACT_OC_CLAIM_DETAIL CD
+			  WHERE I.ID_INCIDENT_ID = CD.CD_INCIDENT_ID
+	     </SQL>
+       </View>
+      <Level name="Incident Reported Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Reported Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Reported Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+	  		<Level name="Incident Reported Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" 
+			levelType="TimeWeeks" hideMemberIf="Never" caption="Incident Reported Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+      <Level name="Incident Reported Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Effective Day" >
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+			</Annotations>
+      </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Incident Reported Date" description="Incident Reported Date">
+      </Level>
+    </Hierarchy>
+    </Dimension> 
+    <Dimension type="StandardDimension" visible="true" foreignKey="CD_CLAIM_STATUS_ID" highCardinality="false" name="Claim Status">
+      <Hierarchy visible="true" hasAll="true" primaryKey="OS_OBJECT_STATE_ID">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Claim Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of incident">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Number">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Number" visible="true" column="CD_CLAIM_NUMBER" nameColumn="CD_CLAIM_NUMBER" ordinalColumn="CD_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Status Reason">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Status Reason" visible="true" column="CD_CLAIM_STATUS_CHANGE_REASON" nameColumn="CD_CLAIM_STATUS_CHANGE_REASON" ordinalColumn="CD_CLAIM_STATUS_CHANGE_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Status Reason">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="Claim_Jurisdiction" caption="Claim Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="State" column="CD_CLAIM_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="State">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" highCardinality="false" name="Claim_Litigation_Ind" caption="Claim Litigation Indicator">
+      <Hierarchy hasAll="true">
+        <Level name="Claim Litigation Indicator" column="CD_CLAIM_LITIGATION_IND" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Litigation Indicator">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Claim_Count" column="CD_CLAIM_ID" visible="true" datatype="Numeric" formatString="#,###" aggregator="count" 
+             caption="Total Claim Count" description="Total number of claims">
+    </Measure>
+    
+    <Measure name="Reserve_Amount" column="CD_TOTAL_RESERVE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Outstanding Reserve Amount" description="Total reserver amount" visible="true">
+    </Measure>
+    
+    <Measure name="Actual_Paid_Amount" column="CD_ACTUAL_PAID_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Actual Paid Amount" description="Actual Paid amount" visible="true">
+    </Measure>
+    
+    <Measure name="Recovery_Amount" column="CD_TOTAL_RECOVERY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Total Recovered Amount" description="Recovery amount" visible="true">
+    </Measure>
+    
+    <Measure name="Incurred_Amount" column="CD_TOTAL_INCURRED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Incurred Amount" description="Incurred amount" visible="true">
+    </Measure>
+    
+    <Measure name="Reserve_Historical_Amount" column="CD_RESERVE_HIST_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Reserve Historical Amount" description="Reserve Historical Amount" visible="true">
+    </Measure>
+    
+    <Measure name="Open_Claim_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Claim Count" description="Open Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID != 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Closed_Claim_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Closed Claim Count" description="Closed Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID = 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Open_Claim_Incurred_Amt" datatype="Numeric" formatString="$#,###.00" aggregator="sum" caption="Open Claims Total Incurred Amount" description="Open Claims Total Incurred Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID != 57546 then CD_TOTAL_INCURRED_AMT else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Closed_Claim_Incurred_Amt" datatype="Numeric" formatString="$#,###.00" aggregator="sum" caption="Closed Claims Total Incurred Amount" description="Closed Claims Total Incurred Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID = 57546 then CD_TOTAL_INCURRED_AMT else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+    
+    <Measure name="Total_Completion_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Completion Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CLOSE_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Total_Claim_Creation_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Claim Creation Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CREATION_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Total_Incident_Completion_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Incident Completion Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CLOSE_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_with_Litigation_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Claim Count with Litigation" description="Claim Count with Litigation">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_with_Recovery_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Claim Count with Recovery" description="Claim Count with Recovery">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_RECOVERY_IND = 1 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_Pending_Recovery_Count" column="PENDING_RECOVERY_IND" datatype="Numeric" formatString="#,###" aggregator="sum" 
+		   caption="Total Claims with Pending Recoveries" description="Total Claims with Pending Recoveries" visible="true">
+    </Measure>
+	
+	<Measure name="Open_Claim_with_Litigation_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Open Claim Count with Litigation" description="Claim Count with Litigation">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 and CD_CLAIM_STATUS_ID != 57546 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Litigation_Incurred_Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Litigation Claims Total Incurred Amount" description="Total Incurred Amount for Claims with Litigation" visible="true">
+		<MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 then CD_TOTAL_INCURRED_AMT else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Avg_TAT_Time_Litigation" datatype="Numeric" formatString="#,###.##" aggregator="avg" caption="Average Claim with Litigation TAT" description="Average Claim with Litigation Turn Around Time">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[ (case when NVL(CD_CLAIM_LITIGATION_IND,2) = 1 and CD_CLAIM_STATUS_ID = 57546
+		  THEN (CD_CLAIM_CLOSE_DT - CD_CLAIM_CREATION_DT) ELSE null END)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Avg_TAT_Time_NonLitigation" datatype="Numeric" formatString="#,###.##" aggregator="avg" caption="Average Claim Non-Litigation TAT" description="Average Claim Non-Litigation Turn Around Time">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[ (case when NVL(CD_CLAIM_LITIGATION_IND,2) != 1 and CD_CLAIM_STATUS_ID = 57546
+		  THEN (CD_CLAIM_CLOSE_DT - CD_CLAIM_CREATION_DT) ELSE null END)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+    
+    <CalculatedMember name="Avg_Completion_Time" formatString="###.000" caption="Average Time for Claim Completion" description="%{cube.task.measure.Avg_Completion_Time.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Completion_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    
+    <CalculatedMember name="Avg_Claim_Creation_Time" formatString="###.000" caption="Average Time from Incident to Claim Creation" description="Average Time from Incident Reporting to Claim Creation" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Claim_Creation_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    
+    <CalculatedMember name="Avg_Incident_Completion_Time" formatString="###.000" caption="Average Time from Incident to Claim Completion" description="Average Time from Incident Reporting to Claim Completion" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Incident_Completion_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Ratio_Count_Claims_LitigationvsTotal" formatString="###.00%" caption="Ratio of Count for Claims with Litigation vs Total Claims" description="Ratio of Count for Claims with Litigation vs Total Claims" dimension="Measures">
+      <Formula>
+		<![CDATA[IIf( [Measures].[Claim_Count] = 0, null, ([Measures].[Claim_with_Litigation_Count]/[Measures].[Claim_Count]))]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Ratio_Claims_IncurredAmt_LitigationvsTotal" formatString="###.00%" caption="Ratio of Total Incurred for Claims with Litigation vs Total Claims" description="Ratio of Total Incurred for Claims with Litigation vs Total Claims" dimension="Measures">
+      <Formula>
+		<![CDATA[IIf( [Measures].[Claim_Count] = 0, null, ([Measures].[Litigation_Incurred_Amount]/[Measures].[Incurred_Amount]) )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Avg_Claims_TAT_LitigationvsNon" formatString="###.000" caption="Average TAT for Litigation Claims vs non-Litigation Claim" description="Average TAT for Litigation Claims vs non-Litigation Claim" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Avg_TAT_Time_Litigation]/[Measures].[Avg_TAT_Time_NonLitigation] )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+  </Cube>
+  
+  <Cube name="VENDOR_CLAIM_SUMMARY" caption="Vendor Claim Summary" visible="true" cache="true" enabled="true">
+    <View alias="vw_vendor_claim_summary">
+      <SQL dialect="generic">    
+		select ce.cd_claim_id,
+			   ce.cd_covered_customer_id,
+			   ce.cd_total_reserve_amt,
+			   ce.cd_actual_paid_amt,
+			   ce.cd_total_recovery_amt,
+			   ce.cd_total_incurred_amt,
+			   ce.cd_reserve_hist_amt,
+			   ce.cd_claim_status_id,
+			   ce.cd_claim_creation_dt,
+			   ce.cd_claim_close_dt,
+			   ce.cd_policy_id,
+			   ce.cd_policy_agency_id,
+			   ce.cd_current_owner_id,
+			   ce.cd_primary_risk_address_id,
+			   ce.cd_incident_id,
+			   ce.cd_last_updated_dt,
+			   ce.cd_claim_number,
+			   ce.cd_claim_status_change_reason,
+			   ce.cd_claim_state,
+			   ce.ct_assigned_to_vendor_id,
+			   pe.PE_PARTNER_ID,
+			   pe.pe_partner_name,
+			   pe.pe_partner_type,
+			   pe.pe_partner_primary_add_id,
+			   PE.PE_W9_DETAILS_FLAG,
+			 (case when NVL(PE.PE_W9_DETAILS_FLAG,2) != 1 then pe.pe_partner_id else null end) Missing_W9_Vendor,
+			 (case when NVL(PE.PE_W9_DETAILS_FLAG,2) = 1 then pe.pe_partner_id else null end) W9_Vendor_Present,
+			 (select vp.pe_partner_name from bi_dim_partner_entity vp where vp.pe_partner_id = pe.pe_partner_id
+			  and NVL(VP.PE_W9_DETAILS_FLAG,2) != 1 ) Missing_W9_Vendor_Name
+		 from bi_dim_partner_entity pe
+		  left outer join (select cd.cd_claim_id,
+								  cd.cd_covered_customer_id,
+								  cd.cd_total_reserve_amt,
+								  cd.cd_actual_paid_amt,
+								  cd.cd_total_recovery_amt,
+								  cd.cd_total_incurred_amt,
+								  cd.cd_reserve_hist_amt,
+								  cd.cd_claim_status_id,
+								  cd.cd_claim_creation_dt,
+								  cd.cd_claim_close_dt,
+								  cd.cd_policy_id,
+								  cd.cd_policy_agency_id,
+								  cd.cd_current_owner_id,
+								  cd.cd_primary_risk_address_id,
+								  cd.cd_incident_id,
+								  cd.cd_last_updated_dt,
+								  cd.cd_claim_number,
+								  cd.cd_claim_status_change_reason,
+								  cd.cd_claim_state,
+								  ct.ct_assigned_to_vendor_id
+							 from bi_fact_oc_claim_detail cd
+							inner join bi_fact_oc_claim_trx_detail ct
+							   ON (ct.claim_id = cd.cd_claim_id)
+							where (cd.cd_claim_creation_dt >=
+								  add_months(trunc(sysdate), -12) or
+								  cd.cd_claim_status_id != 57546)) ce
+			ON (ce.ct_assigned_to_vendor_id = pe.pe_partner_id)
+		 where (%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR pe.pe_partner_id = %OS_PARTNER_ID%)
+		</SQL>
+     </View>
+    
+
+	<DimensionUsage source="Dim_Address" name="Vendor Address" caption="Vendor Address" visible="true" foreignKey="PE_PARTNER_PRIMARY_ADD_ID" highCardinality="false">
+    </DimensionUsage>
+
+
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Creation Date" caption="Creation Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_creation_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_creation_dt)       td_year,
+			 to_number(to_char(cd_claim_creation_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_creation_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_creation_dt)      td_month,
+			 to_char(cd_claim_creation_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_creation_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_creation_dt)        td_day,
+			 cd_claim_creation_dt					  td_date
+		  FROM
+			 bi_fact_oc_claim_detail
+	 </SQL>
+        </View>
+        <Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Creation Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Creation Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Creation Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+ 
+    <Dimension type="StandardDimension" visible="true" foreignKey="CD_CLAIM_STATUS_ID" highCardinality="false" name="Claim Status">
+      <Hierarchy visible="true" hasAll="true" primaryKey="OS_OBJECT_STATE_ID">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Claim Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of incident">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Number">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Number" visible="true" column="CD_CLAIM_NUMBER" nameColumn="CD_CLAIM_NUMBER" ordinalColumn="CD_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+     <Dimension type="StandardDimension" highCardinality="false" name="Vendor Name" caption="Vendor Name">
+      <Hierarchy hasAll="true">
+        <Level name="Vendor Name" column="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Vendor Name">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+    <Dimension type="StandardDimension" highCardinality="false" name="Vendor Type" caption="Vendor Type">
+      <Hierarchy hasAll="true">
+		<Level name="Vendor Type" column="PE_PARTNER_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Vendor Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Status Reason">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Status Reason" visible="true" column="CD_CLAIM_STATUS_CHANGE_REASON" nameColumn="CD_CLAIM_STATUS_CHANGE_REASON" ordinalColumn="CD_CLAIM_STATUS_CHANGE_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Status Reason">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+     <Dimension type="StandardDimension" highCardinality="false" name="W9 Details" caption="Entity W9 Details">
+      <Hierarchy hasAll="true">
+        <Level name="W9 Details Flag" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Entity W9 Details Flag">
+		   <KeyExpression>
+            <SQL dialect="oracle">
+			  <![CDATA[ (case when NVL(PE_W9_DETAILS_FLAG,2) = 1 then 'Yes' else 'No' end)]]>
+			</SQL>
+		  </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension> 
+	
+	<Dimension visible="true" highCardinality="false" name="Vendor with Missing W9 Details" caption="Vendor with Missing W9 Details">
+      <Hierarchy hasAll="true">
+        <Level name="Vendor with Missing W9 Details" visible="true" column="MISSING_W9_VENDOR_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="IfBlankName" description="Vendor with Missing W9 Details">
+        </Level>
+      </Hierarchy>
+    </Dimension>	
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="Claim_Jurisdiction" caption="Claim Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="State" column="CD_CLAIM_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="State">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Claim_Count" column="CD_CLAIM_ID" visible="true" datatype="Integer" aggregator="count" 
+             caption="Total Claim Count" description="Total number of claims">
+    </Measure>
+    
+    <Measure name="Reserve_Amount" column="CD_TOTAL_RESERVE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Outstanding Reserve Amount" description="Total reserver amount" visible="true">
+    </Measure>
+    
+    <Measure name="Actual_Paid_Amount" column="CD_ACTUAL_PAID_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Actual Paid Amount" description="Actual Paid amount" visible="true">
+    </Measure>
+    
+    <Measure name="Recovery_Amount" column="CD_TOTAL_RECOVERY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Total Recovered Amount" description="Recovery amount" visible="true">
+    </Measure>
+    
+    <Measure name="Incurred_Amount" column="CD_TOTAL_INCURRED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Incurred Amount" description="Incurred amount" visible="true">
+    </Measure>
+    
+    <Measure name="Reserve_Historical_Amount" column="CD_RESERVE_HIST_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Reserve Historical Amount" description="Reserve Historical Amount" visible="true">
+    </Measure>
+	
+	<Measure name="Vendor_Count" column="PE_PARTNER_ID" datatype="Numeric" aggregator="distinct-count" 
+		   caption="Vendor Count" description="Vendor Count" visible="true">
+    </Measure>
+    
+	<Measure name="Missing_W9_Vendor" column="MISSING_W9_VENDOR" datatype="Numeric" aggregator="distinct-count" 
+		   caption="Vendors with Missing W9 Count" description="Vendors with Missing W9 Count" visible="true">
+    </Measure>
+    
+	<Measure name="W9_Vendor_Present" column="W9_VENDOR_PRESENT" datatype="Numeric" aggregator="distinct-count" 
+		   caption="Vendors with W9 Present" description="Vendors with W9 Present" visible="true">
+    </Measure>
+    
+    <Measure name="Open_Claim_Count" datatype="Numeric" aggregator="sum" caption="Open Claim Count" description="Open Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID != 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Open_Claim_Incurred_Amt" datatype="Numeric" formatString="$#,###.00" aggregator="sum" caption="Open Claims Total Incurred Amount" description="Open Claims Total Incurred Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID != 57546 then CD_TOTAL_INCURRED_AMT else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Closed_Claim_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Closed Claim Count" description="Closed Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID = 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+
+  </Cube>
+  
+   <Cube name="CLAIM_RECOVERY_SUMMARY" caption="Claim Recovery Summary" visible="true" cache="true" enabled="true">
+    <View alias="vw__claim_recovery_summary">
+      <SQL dialect="generic">    
+      select cd.cd_claim_id,
+             cd.cd_claim_recovery_type_name,
+             cd.cd_claim_creation_dt,
+             cd.cd_claim_status_id,
+             cd.cd_claim_number,
+             cd.cd_current_owner_id,
+             cd.cd_claim_state,
+             cd.cd_total_recovery_amt,
+             cd.cd_total_recovery_waived_off,
+             ct.ct_id,
+			 ct.ct_type_id, 
+			 ct.ct_state,
+			 ct.ct_recovery_type,
+             ct.ct_outstanding_recoveries,
+             ct.ct_total_expected_recovery,
+             ct.ct_recovery_waived_off_reason,
+             ct.ct_recoveries,
+			 round((cd.cd_total_recovery_waived_off/(select count(c.ct_id)
+				  from bi_fact_oc_claim_trx_detail c
+							WHERE
+						 ((c.ct_type_id = 7946 and c.ct_state IN ('Processed','Partially Recovered','Completed','Submitted','Created'))
+						OR 
+						 (c.ct_type_id = 8046 and c.ct_state IN ('Processed','Partially Recovered')))
+				   AND c.CT_CREATION_DATE >= add_months(trunc(sysdate), -12)
+				   and c.claim_id = ct.claim_id)),5) broken_waived_off			 
+          FROM bi_fact_oc_claim_detail cd inner join bi_fact_oc_claim_trx_detail ct ON  cd.cd_claim_id = ct.claim_id
+            WHERE
+         ((ct.ct_type_id = 7946 and ct.ct_state IN ('Processed','Partially Recovered','Completed','Submitted','Created'))
+        OR 
+         (ct.ct_type_id = 8046 and ct.ct_state IN ('Processed','Partially Recovered')))
+        AND  
+           ct.CT_CREATION_DATE >= add_months(trunc(sysdate), -12) 
+        AND
+           (%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR cd.cd_policy_agency_id = %OS_PARTNER_ID%)
+		</SQL>
+     </View>
+    
+	<DimensionUsage source="Dim_Current_Owner" name="Current Owner" visible="true" foreignKey="CD_CURRENT_OWNER_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Creation Date" caption="Creation Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_creation_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_creation_dt)       td_year,
+			 to_number(to_char(cd_claim_creation_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_creation_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_creation_dt)      td_month,
+			 to_char(cd_claim_creation_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_creation_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_creation_dt)        td_day,
+			 cd_claim_creation_dt					  td_date
+		  FROM
+			 bi_fact_oc_claim_detail
+	 </SQL>
+        </View>
+        <Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Creation Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Creation Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Creation Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+ 
+    <Dimension type="StandardDimension" visible="true" foreignKey="CD_CLAIM_STATUS_ID" highCardinality="false" name="Claim Status">
+      <Hierarchy visible="true" hasAll="true" primaryKey="OS_OBJECT_STATE_ID">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Claim Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of incident">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	 <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Transaction Status">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Status" visible="true" column="CT_STATE"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Transaction Status">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Number">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Number" visible="true" column="CD_CLAIM_NUMBER" nameColumn="CD_CLAIM_NUMBER" ordinalColumn="CD_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="Claim_Jurisdiction" caption="Claim Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="State" column="CD_CLAIM_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="State">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Waived Off Reason">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Waived Off Reason" visible="true" column="CT_RECOVERY_WAIVED_OFF_REASON" nameColumn="CT_RECOVERY_WAIVED_OFF_REASON" ordinalColumn="CT_RECOVERY_WAIVED_OFF_REASON" type="String" 
+		uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Waived Off Reason">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Recovery">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Recovery Type" visible="true" column="CT_RECOVERY_TYPE" nameColumn="CT_RECOVERY_TYPE"
+	   ordinalColumn="CT_RECOVERY_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="IfBlankName" description="Claim Recovery Type Name">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Claim_Count" column="CD_CLAIM_ID" visible="true" datatype="Integer" aggregator="distinct-count" 
+             caption="Total Claim Count" description="Total number of claims">
+    </Measure>
+	
+	<Measure name="Claim_Trx_Count" column="CT_ID" visible="true" datatype="Integer" aggregator="distinct-count" 
+             caption="Claim Transaction Count" description="Total Number of Claims Transactions">
+    </Measure>
+    
+    <Measure name="Expected_Recovery_Amount" column="CT_TOTAL_EXPECTED_RECOVERY" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Total Expected Recovery Amount" description="Expected Recovery Amount" visible="true">
+    </Measure>
+	
+	<Measure name="Pending_Recovery_Amount" column="CT_OUTSTANDING_RECOVERIES" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Pending Recovery Amount" description="Pending Recovery Amount" visible="true">
+    </Measure>
+    
+    <Measure name="Recovery_Amount" column="CD_TOTAL_RECOVERY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Total Recovered Amount" description="Recovery amount" visible="true">
+    </Measure>
+	
+	 <Measure name="Recovery_Amount_Waived_Off" column="BROKEN_WAIVED_OFF" datatype="Numeric" formatString="$#,###.00" aggregator="sum" 
+             caption="Total Recovery Amount Waived Off" description="Recovery Amount Waived Off" visible="true">
+    </Measure>  
+	
+	<Measure name="Total_Recoveries_Count" visible="true" formatString="#,###" datatype="Integer" aggregator="distinct-count" 
+             caption="Total Recoveries Count" description="Total number of Recoveries Transactions">
+	  <MeasureExpression>
+        <SQL dialect="oracle">
+			  <![CDATA[(case when CT_TYPE_ID = 7946 then CT_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>		 
+    </Measure>
+
+	
+  </Cube>
+  
+    <Cube name="CLAIM_SUMMARY_USER_SPECIFIC" caption="Claim Summary User Specific" visible="true" cache="true" enabled="true">
+    <View alias="vw_bi_fact_oc_claim_detail_user">
+          <SQL dialect="generic">    
+			select
+				cd.cd_claim_id,
+				cd.cd_covered_customer_id,
+				cd.cd_total_reserve_amt,
+				cd.cd_actual_paid_amt,
+				cd.cd_total_recovery_amt,
+				cd.cd_total_incurred_amt,
+				cd.cd_reserve_hist_amt,
+				cd.cd_claim_status_id,
+				cd.cd_claim_creation_dt,
+				cd.cd_claim_close_dt,
+				cd.cd_policy_id,
+				cd.cd_policy_agency_id,
+				cd.cd_current_owner_id,
+				cd.cd_primary_risk_address_id,
+				cd.cd_incident_id,
+				cd.cd_last_updated_dt,
+				cd.cd_claim_number,
+				cd.cd_claim_status_change_reason,
+				cd.cd_claim_state,
+				cd.cd_claim_litigation_ind,
+				cd.cd_claim_recovery_ind,
+				id.id_incident_reported_dt cd_incident_reported_dt,
+				id.id_incident_creation_dt cd_incident_creation_dt,
+				id.id_incident_dt cd_incident_dt,
+				(select count(distinct t.claim_id) from bi_fact_oc_claim_trx_detail t where t.ct_type_id = 7946 and t.ct_state != 'Completed'
+				and cd.cd_claim_id = t.claim_id) as pending_recovery_ind
+			from
+				bi_fact_oc_claim_detail cd,
+				bi_dim_oc_incident_detail id
+			where
+				cd.cd_incident_id = id.id_incident_id
+			and
+				(cd.cd_claim_creation_dt >= add_months(trunc(sysdate), -12) or cd.cd_claim_status_id != 57546)
+			and 
+			    (%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR cd.cd_policy_agency_id = %OS_PARTNER_ID%)
+			and 
+			    (%OS_USER_ID% is null OR cd.CD_CURRENT_OWNER_ID = %OS_USER_ID%)
+
+		</SQL>
+     </View>
+    
+    <DimensionUsage source="Dim_Customer" name="Customer" caption="Covered Customer" visible="true" foreignKey="CD_COVERED_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    
+    <DimensionUsage source="Dim_Policy" name="Policy" caption="Policy" visible="true" foreignKey="CD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <DimensionUsage source="Dim_Agency" name="Agency" caption="Policy Agency" visible="true" foreignKey="CD_POLICY_AGENCY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Current_Owner" name="Current Owner" visible="true" foreignKey="CD_CURRENT_OWNER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Address" name="Primary Risk Address" caption="Primary Risk Address" visible="true" foreignKey="CD_PRIMARY_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Incident" name="Incident" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Line_of_Business" name="Line of Business" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Cause_of_Loss" name="Cause of Loss" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Notifier" name="Notifier" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Catastrophe" name="Catastrophe" visible="true" foreignKey="CD_CLAIM_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Incident_Number" name="Incident Number" visible="true" foreignKey="CD_INCIDENT_ID" highCardinality="false">
+    </DimensionUsage>
+    
+	<Dimension visible="true" highCardinality="false" name="Last Updated Date" caption="Last Updated Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Last Updated Dates">
+        <Level name="Last Updated Date" visible="true" column="CD_LAST_UPDATED_DT" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Last Updated Date">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Creation Date" caption="Creation Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_creation_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_creation_dt)       td_year,
+			 to_number(to_char(cd_claim_creation_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_creation_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_creation_dt)      td_month,
+			 to_char(cd_claim_creation_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_creation_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_creation_dt)        td_day,
+			 cd_claim_creation_dt					  td_date
+		  FROM
+			 bi_fact_oc_claim_detail
+	 </SQL>
+        </View>
+        <Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Creation Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Creation Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Creation Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Creation Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Submission Date" caption="Claim Submission Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_submission_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			   cd_claim_id,
+			   EXTRACT(YEAR FROM cd_claim_submission_dt)       td_year,
+			   to_number(to_char(cd_claim_submission_dt, 'Q')) td_quarter,
+			   'Q' || to_char(cd_claim_submission_dt, 'Q')     td_quarter_name,
+			   EXTRACT(MONTH FROM cd_claim_submission_dt)      td_month,
+			   to_char(cd_claim_submission_dt, 'Mon')          td_month_name,
+			   to_char(cd_claim_submission_dt,'WW')            td_week,
+			   EXTRACT(DAY FROM cd_claim_submission_dt)        td_day,
+			   cd_claim_submission_dt					 td_date
+		  FROM
+			bi_fact_oc_claim_detail
+		</SQL>
+        </View>
+        <Level name="Claim Submission Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Claim Submission Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Claim Submission Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Claim Submission Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Claim Submission Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Claim Submission Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Submission Day" visible="true" column="TD_DAY" ordinalColumn="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Submission Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Submission Date" description="Claim Submission Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Claim Close Date" caption="Claim Close Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_claim_close_dt">
+          <SQL dialect="generic">    
+		 SELECT
+			 cd_claim_id,
+			 EXTRACT(YEAR FROM cd_claim_close_dt)       td_year,
+			 to_number(to_char(cd_claim_close_dt, 'Q')) td_quarter,
+			 'Q' || to_char(cd_claim_close_dt, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM cd_claim_close_dt)      td_month,
+			 to_char(cd_claim_close_dt, 'Mon')          td_month_name,
+			 to_char(cd_claim_close_dt,'WW')            td_week,
+			 EXTRACT(DAY FROM cd_claim_close_dt)        td_day,
+			 cd_claim_close_dt				         td_date
+		FROM
+		bi_fact_oc_claim_detail
+		</SQL>
+        </View>
+        <Level name="Claim Close Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Claim Close Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Claim Close Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Claim Close Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Claim Close Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Claim Close Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Claim Close Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Close Day" description="Claim Close Date Day">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Claim Close Date" description="Claim Close Date">
+       </Level>
+      </Hierarchy>
+    </Dimension>   
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Incident Date">
+     <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_incident_dt">
+          <SQL dialect="generic">    
+			   SELECT
+				 CD.CD_CLAIM_ID,
+				 EXTRACT(YEAR FROM ID_INCIDENT_DT)       td_year,
+				 to_number(to_char(ID_INCIDENT_DT, 'Q')) td_quarter,
+				 'Q' || to_char(ID_INCIDENT_DT, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM ID_INCIDENT_DT)      td_month,
+				 to_char(ID_INCIDENT_DT, 'Mon')          td_month_name,
+				 to_char(ID_INCIDENT_DT,'WW')            td_week,
+				 EXTRACT(DAY FROM ID_INCIDENT_DT)        td_day,
+				 ID_INCIDENT_DT							 td_date
+			  FROM
+			  BI_DIM_OC_INCIDENT_DETAIL I, BI_FACT_OC_CLAIM_DETAIL CD
+			  WHERE I.ID_INCIDENT_ID = CD.CD_INCIDENT_ID
+	     </SQL>
+       </View>
+      <Level name="Incident Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+		<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Month" visible="true"  column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+				<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+	  		<Level name="Incident Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" 
+			type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Incident Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+      <Level name="Incident Day" visible="true"  column="TD_DAY" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Effective Day">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+			</Annotations>
+      </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Incident Date" description="Incident Date">
+      </Level>
+	  </Hierarchy>
+    </Dimension>	  
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="CD_CLAIM_ID" name="Incident Reported Date" caption="Incident Reported Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="CD_CLAIM_ID">
+        <View alias="vw_cd_incident_reported_dt">
+          <SQL dialect="generic">    
+			   SELECT
+				 CD.CD_CLAIM_ID,
+				 EXTRACT(YEAR FROM ID_INCIDENT_REPORTED_DT)       td_year,
+				 to_number(to_char(ID_INCIDENT_REPORTED_DT, 'Q')) td_quarter,
+				 'Q' || to_char(ID_INCIDENT_REPORTED_DT, 'Q')     td_quarter_name,
+				 EXTRACT(MONTH FROM ID_INCIDENT_REPORTED_DT)      td_month,
+				 to_char(ID_INCIDENT_REPORTED_DT, 'Mon')          td_month_name,
+				 to_char(ID_INCIDENT_REPORTED_DT,'WW')            td_week,
+				 EXTRACT(DAY FROM ID_INCIDENT_REPORTED_DT)        td_day,
+				 ID_INCIDENT_REPORTED_DT						  td_date
+			  FROM
+			  BI_DIM_OC_INCIDENT_DETAIL I, BI_FACT_OC_CLAIM_DETAIL CD
+			  WHERE I.ID_INCIDENT_ID = CD.CD_INCIDENT_ID
+	     </SQL>
+       </View>
+      <Level name="Incident Reported Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" 
+	        type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Reported Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Incident Reported Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" 
+	        type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+	  		<Level name="Incident Reported Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" 
+			levelType="TimeWeeks" hideMemberIf="Never" caption="Incident Reported Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+      <Level name="Incident Reported Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Effective Day" >
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+			</Annotations>
+      </Level>
+	  <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Incident Reported Date" description="Incident Reported Date">
+      </Level>
+    </Hierarchy>
+    </Dimension> 
+    <Dimension type="StandardDimension" visible="true" foreignKey="CD_CLAIM_STATUS_ID" highCardinality="false" name="Claim Status">
+      <Hierarchy visible="true" hasAll="true" primaryKey="OS_OBJECT_STATE_ID">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Claim Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of incident">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Number">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Number" visible="true" column="CD_CLAIM_NUMBER" nameColumn="CD_CLAIM_NUMBER" ordinalColumn="CD_CLAIM_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+	
+	<Dimension type="StandardDimension" visible="true" highCardinality="false" name="Claim Status Reason">
+      <Hierarchy visible="true" hasAll="true" primaryKey="CD_CLAIM_ID">
+        <Level name="Claim Status Reason" visible="true" column="CD_CLAIM_STATUS_CHANGE_REASON" nameColumn="CD_CLAIM_STATUS_CHANGE_REASON" ordinalColumn="CD_CLAIM_STATUS_CHANGE_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Claim Status Reason">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" highCardinality="false" name="Claim_Jurisdiction" caption="Claim Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="State" column="CD_CLAIM_STATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="State">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Claim_Count" column="CD_CLAIM_ID" visible="true" datatype="Numeric" formatString="#,###" aggregator="count" 
+             caption="Total Claim Count" description="Total number of claims">
+    </Measure>
+    
+    <Measure name="Reserve_Amount" column="CD_TOTAL_RESERVE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Outstanding Reserve Amount" description="Total reserver amount" visible="true">
+    </Measure>
+    
+    <Measure name="Actual_Paid_Amount" column="CD_ACTUAL_PAID_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Actual Paid Amount" description="Actual Paid amount" visible="true">
+    </Measure>
+    
+    <Measure name="Recovery_Amount" column="CD_TOTAL_RECOVERY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+             caption="Total Recovered Amount" description="Recovery amount" visible="true">
+    </Measure>
+    
+    <Measure name="Incurred_Amount" column="CD_TOTAL_INCURRED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Incurred Amount" description="Incurred amount" visible="true">
+    </Measure>
+    
+    <Measure name="Reserve_Historical_Amount" column="CD_RESERVE_HIST_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Total Reserve Historical Amount" description="Reserve Historical Amount" visible="true">
+    </Measure>
+    
+    <Measure name="Open_Claim_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Open Claim Count" description="Open Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID != 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Closed_Claim_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Closed Claim Count" description="Closed Claim Count">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_STATUS_ID = 57546 then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+    
+    <Measure name="Total_Completion_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Completion Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CLOSE_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Total_Claim_Creation_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Claim Creation Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CREATION_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    
+    <Measure name="Total_Incident_Completion_Time" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Incident Completion Time (in days)" description="(in days)">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(round((NVL(CD_CLAIM_CLOSE_DT, CD_INCIDENT_REPORTED_DT) - CD_INCIDENT_REPORTED_DT), 2))]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_with_Litigation_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Claim Count with Litigation" description="Claim Count with Litigation">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_with_Recovery_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Claim Count with Recovery" description="Claim Count with Recovery">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_RECOVERY_IND = 1 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Claim_Pending_Recovery_Count" column="PENDING_RECOVERY_IND" datatype="Numeric" formatString="#,###" aggregator="sum" 
+		   caption="Total Claims with Pending Recoveries" description="Total Claims with Pending Recoveries" visible="true">
+    </Measure>
+	
+	<Measure name="Open_Claim_with_Litigation_Count" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Open Claim Count with Litigation" description="Claim Count with Litigation">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 and CD_CLAIM_STATUS_ID != 57546 then CD_CLAIM_ID else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Litigation_Incurred_Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" 
+		   caption="Litigation Claims Total Incurred Amount" description="Total Incurred Amount for Claims with Litigation" visible="true">
+		<MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when CD_CLAIM_LITIGATION_IND = 1 then CD_TOTAL_INCURRED_AMT else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Avg_TAT_Time_Litigation" datatype="Numeric" formatString="#,###.##" aggregator="avg" caption="Average Claim with Litigation TAT" description="Average Claim with Litigation Turn Around Time">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[ (case when CD_CLAIM_LITIGATION_IND = 1 and CD_CLAIM_STATUS_ID = 57546
+		  THEN(CD_CLAIM_CLOSE_DT - CD_CLAIM_CREATION_DT) ELSE null END)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+	<Measure name="Avg_TAT_Time_NonLitigation" datatype="Numeric" formatString="#,###.##" aggregator="avg" caption="Average Claim Non-Litigation TAT" description="Average Claim Non-Litigation Turn Around Time">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[ (case when CD_CLAIM_LITIGATION_IND != 1 and CD_CLAIM_STATUS_ID = 57546
+		  THEN(CD_CLAIM_CLOSE_DT - CD_CLAIM_CREATION_DT) ELSE null END)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+	
+    
+    <CalculatedMember name="Avg_Completion_Time" formatString="###.000" caption="Average Time for Claim Completion" description="%{cube.task.measure.Avg_Completion_Time.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Completion_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    
+    <CalculatedMember name="Avg_Claim_Creation_Time" formatString="###.000" caption="Average Time from Incident to Claim Creation" description="Avg Claim Creation Time" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Claim_Creation_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    
+    <CalculatedMember name="Avg_Incident_Completion_Time" formatString="###.000" caption="Average Time from Incident to Claim Completion" description="Avg Incident Completion Time" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Total_Incident_Completion_Time] / [Measures].[Claim_Count] )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Ratio_Count_Claims_LitigationvsTotal" formatString="###.00%" caption="Ratio of Count for Claims with Litigation vs Total Claims" description="Ratio of Count for Claims with Litigation vs Total Claims" dimension="Measures">
+      <Formula>
+		<![CDATA[IIf( [Measures].[Claim_Count] = 0, null, ([Measures].[Claim_with_Litigation_Count]/[Measures].[Claim_Count]))]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Ratio_Claims_IncurredAmt_LitigationvsTotal" formatString="###.00%" caption="Ratio of Total Incurred for Claims with Litigation vs Total Claims" description="Ratio of Total Incurred for Claims with Litigation vs Total Claims" dimension="Measures">
+      <Formula>
+		<![CDATA[IIf( [Measures].[Claim_Count] = 0, null, ([Measures].[Litigation_Incurred_Amount]/[Measures].[Incurred_Amount]) )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+	<CalculatedMember name="Avg_Claims_TAT_LitigationvsNon" formatString="###.000" caption="Average TAT for Litigation Claims vs non-Litigation Claim" description="Average TAT for Litigation Claims vs non-Litigation Claim" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Claim_Count] = 0, null, [Measures].[Avg_TAT_Time_Litigation]/[Measures].[Avg_TAT_Time_NonLitigation] )]]>
+      </Formula>
+    </CalculatedMember>  
+	
+  </Cube>
+  
+  
+  	<!-- Combination of OPEN_CLAIMS, OPEN_INCIDENT_NO_CLAIM -->
+	
+  <VirtualCube name="VC_OPEN_SUBMISSIONS_AND_OPEN_INCIDENTS">
+	<CubeUsages>
+	<CubeUsage cubeName="OPEN_CLAIMS" ignoreUnrelatedDimensions="true"/>
+	<CubeUsage cubeName="OPEN_INCIDENT_NO_CLAIM"/>
+	</CubeUsages>
+	<VirtualCubeDimension cubeName="OPEN_CLAIMS" name="Claim Number"/>
+	<VirtualCubeDimension cubeName="OPEN_INCIDENT_NO_CLAIM" name="Incident"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Total_Open_Claims]"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Total_Incurred_Amount]"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Total_Actual_Paid_Amount]"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Open_Claims_with_Litigation]"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Open_Claims_with_SIU]"/>
+	<VirtualCubeMeasure cubeName="OPEN_CLAIMS" name="[Measures].[Open_Claims_with_Catastrophe]"/>
+	<VirtualCubeMeasure cubeName="OPEN_INCIDENT_NO_CLAIM" name="[Measures].[Open_Incidents_with_No_Claims]"/>
+
+  </VirtualCube>
+ 
+</Schema>

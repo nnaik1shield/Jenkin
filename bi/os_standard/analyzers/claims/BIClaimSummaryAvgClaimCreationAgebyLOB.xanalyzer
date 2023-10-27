@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2022-12-21T12:31:32.650+05:30" update="2023-01-30T20:08:56.492+05:30">
+        <path name="BIClaimSummaryAvgClaimCreationAgebyLOB" folder="/home/OneShieldBI/analyzers/claims/BIClaimSummaryAvgClaimCreationAgebyLOB.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="CLAIM_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Avg_Claim_Creation_Time]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="DESC" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0">
+                <displayLabels>
+                    <displayLabel locale="" label="Avg Claim Creation Time" labelPlural=""/>
+                </displayLabels>
+                <numberFormat formatCategory="Default" formatScale="0" formatShortcut="NONE" currencySymbol="$">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Line of Business].[Line of Business]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/BarHorizontal" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="153"/>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

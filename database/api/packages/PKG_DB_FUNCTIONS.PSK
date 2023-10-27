@@ -1,0 +1,3024 @@
+CREATE OR REPLACE PACKAGE PKG_DB_FUNCTIONS
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_FUNCTIONS.PSK  $
+-- $Revision:   1.42  $
+--   $Author:   krani  $
+--     $Date:   14 Dec 2011 09:51:34  $
+
+-------------
+
+ as
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --   Package Constants ...
+  ----------------------------------------------------------------
+
+  PastDue                 constant number(12) := 1;
+  CurrentDue              constant number(12) := 2;
+  FutureDue               constant number(12) := 3;
+  TotalDue                constant number(12) := 4;
+  gRecon_get_ReconId_True constant number(12) := 1;
+  gPolInvoiceTrxTypeId    constant number(12) := 6; /*OSPRODUCT-2679*/
+  gDefaultJurisdictionID  constant	number(12) := 0; -- UTPRODUCT2-26
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- Objects ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gObjType_FITransaction        constant object_type.object_type_id%type := 2365046;
+  gObjType_FItem                constant object_type.object_type_id%type := 2365246;
+  gObjType_FIChange             constant object_type.object_type_id%type := 2365146;
+  gObjType_BillingAccount       constant object_type.object_type_id%type := 2365346;
+  gObjType_BillingAccountTrxSet constant object_type.object_type_id%type := 2365946;
+  gObjType_RollupMember         constant object_type.object_type_id%type := 2367846;
+  gObjType_CustomerRecon        constant object_type.object_type_id%type := 2374846;
+  gObjType_AgencyRecon          constant object_type.object_type_id%type := 2367646;
+  gObjType_PartnerRecon         constant object_type.object_type_id%type := 2367746;
+  gObjType_PolicyTerm           constant object_type.object_type_id%type := 2389401;
+  gObjType_StatementProfile     constant object_type.object_type_id%type := 2866546;
+  --2016-06-15 Cheryl pmadev-552
+  gObjType_ScheduledElement     constant object_type.object_type_id%type := 2365546;
+  gObjType_ScheduledPayment     constant object_type.object_type_id%type := 2297206;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- BillingAccountTransactionSet/FITransactionSet ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_FITrxSet_DatePosted        constant business_variable.business_variable_id%type := 29707646;
+  gbv_FITrxSet_TotalItems        constant business_variable.business_variable_id%type := 29707846;
+  gbv_FITrxSet_TotalAmount       constant business_variable.business_variable_id%type := 29707746;
+  gbv_FITrxSet_EntryType         constant business_variable.business_variable_id%type := 29707546;
+  gbv_FITrxSet_ExternalBatchId   constant business_variable.business_variable_id%type := 29707446;
+  gbv_FITrxSet_BatchType         constant business_variable.business_variable_id%type := 29707346;
+  gbv_FITrxSet_CashApplyChk      constant business_variable.business_variable_id%type := 29748846;
+  gbv_FITrxSet_CustomerRollupCnt constant business_variable.business_variable_id%type := 29875146;
+  gbv_FITrxSet_AgencyRollupCnt   constant business_variable.business_variable_id%type := 29759546;
+  gbv_BillAccTrxSet_ParentAcc    constant business_variable.business_variable_id%type := 29713046;
+  gbv_BillAccTrxSet_Funded       constant business_variable.business_variable_id%type := 29746346;
+  gbv_BillAccTrxSet_ProcessDate  constant business_variable.business_variable_id%type := 29707246;
+  gbv_BillAccTrxSet_ProcessCnt   constant business_variable.business_variable_id%type := 29722946;
+  gbv_BillAcctTrxSet_CurrTrx     constant business_variable.business_variable_id%type := 29743646;
+  gbv_BillAcctTrxSet_EnteredCnt  constant business_variable.business_variable_id%type := 29727146;
+  gbv_BillAcctTrxSet_ReconType   constant business_variable.business_variable_id%type := 29751646;
+  gbv_BillAcctTrxSet_AsOfDate    constant business_variable.business_variable_id%type := 29759646;
+  gbv_BillAcctTrxSet_FromDate    constant business_variable.business_variable_id%type := 30003446; --MAGDEV-5163
+  gbv_BillAcctTrxSet_RollupSum   constant business_variable.business_variable_id%type := 29915746;
+  gbv_BillAcctTrxSet_EquityDate  constant business_variable.business_variable_id%type := 34203746;
+  -- Arun OSBILLING-6393 -  Start
+  gbv_TermOutstandingBal         constant business_variable.business_variable_id%type := 34110446;
+  gbv_TermEquityDate             constant business_variable.business_variable_id%type := 34207646;
+  -- Arun OSBILLING-6393 -  End
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- FITransaction ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_FITransaction_PolicyID    constant business_variable.business_variable_id%type := 29721146;
+  gbv_FITransaction_CustomerID  constant business_variable.business_variable_id%type := 29721046;
+  gbv_FITransaction_Amount      constant business_variable.business_variable_id%type := 29708946;
+  gbv_FITransaction_RefBillAcc  constant business_variable.business_variable_id%type := 29745946;
+  gbv_FITransaction_RefPoltrx   constant business_variable.business_variable_id%type := 29744046;
+  gbv_FITransaction_EffDate     constant business_variable.business_variable_id%type := 29709246;
+  gbv_FITransaction_GLDate      constant business_variable.business_variable_id%type := 29755046;
+  gbv_FITransaction_ProcessDate constant business_variable.business_variable_id%type := 29708446;
+  gbv_FITransaction_Type        constant business_variable.business_variable_id%type := 29708346;
+  gbv_FITrx_ManualCashApplyCnt  constant business_variable.business_variable_id%type := 29765346;
+  gbv_FITrx_RefActionPolicy     constant business_variable.business_variable_id%type := 29974046;
+  gbv_FITrx_RefActionPolicyTxn  constant business_variable.business_variable_id%type := 29974146;
+
+  gbv_FITrx_Payment_Type       constant business_variable.business_variable_id%type := 30744646;
+  gbv_FITrx_Check_No          constant business_variable.business_variable_id%type := 29754746;
+  gbv_FITrx_Check_Ref_Details constant business_variable.business_variable_id%type := 29754846;
+  gbv_FITrx_Ref_No             constant business_variable.business_variable_id%type := 32123040;
+  gbv_FITrx_Ref_Details        constant business_variable.business_variable_id%type := 32123140;
+  gbv_FITrx_Money_Order        constant business_variable.business_variable_id%type := 32123340;
+  gbv_FITrx_Other_No           constant business_variable.business_variable_id%type := 32123240;
+  gbv_FITrx_Bank_Code          constant business_variable.business_variable_id%type := 32139440;
+  gbv_FITrx_Description        constant business_variable.business_variable_id%type := 32139340;
+  gbv_FITrx_Credit_Card_No     constant business_variable.business_variable_id%type := 32123540;
+  gbv_FITrx_Credit_Card_No_New constant business_variable.business_variable_id%type := 32848140;
+  gbv_FITrx_CC_Last_Name       constant business_variable.business_variable_id%type := 32123840;
+  gbv_FITrx_CC_First_Name      constant business_variable.business_variable_id%type := 32123640;
+  gbv_FITrx_CC_Exp_Year        constant business_variable.business_variable_id%type := 32124040;
+  gbv_FITrx_CC_Exp_Month       constant business_variable.business_variable_id%type := 32123940;
+  gbv_FITrx_CC_Type            constant business_variable.business_variable_id%type := 32123440;
+
+  gbv_FITrx_eft_Postal    constant business_variable.business_variable_id%type := 32600140;
+  gbv_FITrx_eft_Tran_no   constant business_variable.business_variable_id%type := 32600240;
+  gbv_FITrx_eft_Bank_name constant business_variable.business_variable_id%type := 32600340;
+  gbv_FITrx_eft_id_no     constant business_variable.business_variable_id%type := 32600440;
+  gbv_FITrx_eft_acc_no    constant business_variable.business_variable_id%type := 32600540;
+  gbv_FITrx_eft_acc_no_new    constant business_variable.business_variable_id%type := 32848640;
+  gbv_FITrx_eft_name_f    constant business_variable.business_variable_id%type := 32600840;
+
+  gbv_FITrx_eft_name_l constant business_variable.business_variable_id%type := 32600640;
+  gbv_FITrx_eft_addr1  constant business_variable.business_variable_id%type := 32601040;
+
+  gbv_FITrx_eft_curre constant business_variable.business_variable_id%type := 32601240;
+  gFITrxPay_Eft_type  constant number(12) := 53346;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+  gbv_FITrx_CC_New_4_digit        constant business_variable.business_variable_id%type    :=   32848140;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+  -- 2016-07-14 Cheryl osbilling-1446
+  gbv_FiTrx_transfer_reason    constant business_variable.business_variable_id%type := 31756546;
+  --31689946
+  -- 2016-07-14 Cheryl osbilling-3209
+  gbv_FiTran_reffitem          constant business_variable.business_variable_id%type := 31689946;
+  --2017-10-26 Cheryl osbilling-3568
+  gbv_PolTrxEffectiveDate      constant business_variable.business_variable_id%type   :=   212029;
+  gbv_PolicyTrx_ProcessDate    constant business_variable.business_variable_id%type   :=   212161;
+  gbv_PolicyTrx_BasisRefTrx    constant business_variable.business_variable_id%type   := 22605205;
+  gbv_PolicyTransactionType    constant business_variable.business_variable_id%type   :=   212030;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- BillingAccount ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_BillingAccountType        constant business_variable.business_variable_id%type := 29711346;
+  gbv_PolicyParent              constant business_variable.business_variable_id%type := 29252214;
+  gbv_BillingAccountParent      constant business_variable.business_variable_id%type := 29704546;
+  gbv_BillingAccountBalance     constant business_variable.business_variable_id%type := 29754246;
+  gbv_BillingAcc_RecGraceDays   constant business_variable.business_variable_id%type := 29991246;
+  gbv_BillingAcc_PayGraceDays   constant business_variable.business_variable_id%type := 29991546;
+  gbv_BillingAcc_RecentPayTrx   constant business_variable.business_variable_id%type := 29995446;
+  gbv_billing_due_days          constant business_variable.business_variable_id%type := 31678946;
+  gbv_billing_due_date          constant business_variable.business_variable_id%type := 31679046;
+  gbv_billing_date_ind          constant business_variable.business_variable_id%type := 31682546;
+  gbv_Entity_RefRrimaryAddress  constant business_variable.business_variable_id%type := 29254014;
+  gbv_Address_Country           constant business_variable.business_variable_id%type := 210423;
+  gbv_Address_StateProvince     constant business_variable.business_variable_id%type := 210419;
+  gbv_Partner_RefRrimaryAddress constant business_variable.business_variable_id%type := 29367214;
+  gbv_ExchangeTimezone          constant business_variable.business_variable_id%type := 31812546;
+  gbv_CustRefPrimaryEntity      constant business_variable.business_variable_id%type := 29253414;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --FIChange ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_FIChangeRefFItem      constant business_variable.business_variable_id%type := 29704046;
+  gbv_Fichange_action       constant business_variable.business_variable_id%type := 29709546;
+  gbv_Fichange_action_delta constant business_variable.business_variable_id%type := 29709646;
+  gbv_Fichange_sum_include  constant business_variable.business_variable_id%type := 29709846;
+  gbv_FIchange_RefPolicy    constant business_variable.business_variable_id%type := 29748246;
+  gbv_FIchange_RefPolicytrx constant business_variable.business_variable_id%type := 29748346;
+  gbv_FIchange_RefBelongsTo constant business_variable.business_variable_id%type := 29748646;
+  gbv_FIChange_ProcessDate  constant business_variable.business_variable_id%type := 29719346;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --Fitem ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_Fitem_debit_credit       constant business_variable.business_variable_id%type := 29710046;
+  gbv_Fitem_category           constant business_variable.business_variable_id%type := 29710146;
+  gbv_Fitem_subcategory        constant business_variable.business_variable_id%type := 29710246;
+  gbv_Fitem_effective_date     constant business_variable.business_variable_id%type := 29710446;
+  gbv_Fitem_billing_status     constant business_variable.business_variable_id%type := 29710946;
+  gbv_Fitem_processing_status  constant business_variable.business_variable_id%type := 29711146;
+  gbv_Fitem_bill_status_date   constant business_variable.business_variable_id%type := 29711046;
+  gbv_FItem_RefPolicy          constant business_variable.business_variable_id%type := 29721246;
+  gbv_FItem_RefPolicytrx       constant business_variable.business_variable_id%type := 29748446;
+  gbv_FItem_RefEntityBelongsTo constant business_variable.business_variable_id%type := 29748546;
+  gbv_fitem_amount_due         constant business_variable.business_variable_id%type := 29710546;
+  --addeed 2014-01-04 osbilling-178
+  gbv_Current_recon_batch_id constant business_variable.business_variable_id%type := 32537646;
+  gbv_FItemRefCashApplyBatch   constant business_variable.business_variable_id%type := 33854046;
+
+     -- OSBILLING-5269
+     gbv_CTF_Credit_Card_No_4digit     constant business_variable.business_variable_id%type := 30011046;
+     gbv_CTF_CC_Exp_Month              constant business_variable.business_variable_id%type := 30011246;
+     gbv_CTF_CC_Exp_Year               constant business_variable.business_variable_id%type := 30011146;
+     gbv_CTF_CC_Type                   constant business_variable.business_variable_id%type := 30010846;
+     gbv_FITrx_eft_Routing_Number      constant business_variable.business_variable_id%type := 32029146;
+     gbv_CTF_eft_Routing_Number        constant business_variable.business_variable_id%type := 30011346;
+     gbv_CTF_eft_BankID                constant business_variable.business_variable_id%type := 32088040;
+     gbv_CTF_eft_tran_no               constant business_variable.business_variable_id%type := 32088140;
+     gbv_CTF_eft_acc_no                constant business_variable.business_variable_id%type := 30011946;
+     gbv_CTF_eft_name_f                constant business_variable.business_variable_id%type := 30743846;
+     gbv_CTF_eft_name_l                constant business_variable.business_variable_id%type := 30743946;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- Usersession ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_UserSession_RefConnectedTo constant business_variable.business_variable_id%type := 210090;
+  gbv_ExchangeRefSponsorPartner  constant business_variable.business_variable_id%type := 21814301;
+ -- 2016-06-17 pmadev-552
+   gbv_Error_message             constant business_variable.business_variable_id%type := 32086946;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- Policy ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_Policy_AppliedCashFromAcc constant business_variable.business_variable_id%type := 29753646;
+  gbv_Policy_Balance            constant business_variable.business_variable_id%type := 29754346;
+  gbv_PolicyTerm_EffDate        constant business_variable.business_variable_id%type := 29705846;
+  gbv_PolicyTerm_EquityDate     constant business_variable.business_variable_id%type := 34207646;
+  gbv_Policy_exp_date           constant business_variable.business_variable_id%type := 29098106;--OSBILLING-6417
+  -- 3016-03-28  Cheryl pmadev-691
+  gPolicy_AgencyBilled               constant lookup_list_value.lookup_enum%type            :=   2;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+  gbv_Policy_TotalBalance        constant business_variable.business_variable_id%type := 32092840;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+  -- 2017-01-25 Cheryl osbilling-3588
+  gbv_responsible_billingacct_id constant business_variable.business_variable_id%type        :=   33887946;
+
+     gbv_policy_product_id          constant business_variable.business_variable_id%type := 211636;  -- UTPRODUCT-2199
+     gbv_policy_program_id          constant business_variable.business_variable_id%type := 30223101;-- UTPRODUCT-2199
+     
+
+  gbv_Ref_Most_Recent_Proctrx  constant business_variable.business_variable_id%type  :=   30618246;  -- OSBILLING-4482
+  gbv_PolicyTrxRefBasisCoverage constant business_variable.business_variable_id%type := 21912302;  -- OSBILLING-4482
+  gbv_PolicyRefChosenPlan       constant business_variable.business_variable_id%type := 212021;  -- OSBILLING-4482
+	gbv_AdhocInvoiceIndicator     constant business_variable.business_variable_id%type := 32239646; --OSBILLING 7208
+    gbv_ObjectState               constant business_variable.business_variable_id%type := 210153; --OSBILLING 7208
+  gbv_Poltrx_CreatedbyUI_ind   constant business_variable.business_variable_id%type := 32884848;          -- UTPRODUCT-4018
+
+  gbv_PTP_Comm_Amount              constant business_variable.business_variable_id%type := 32725846;
+  gbv_PTP_Comm_Type                constant business_variable.business_variable_id%type := 33996546;
+
+ -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- PolicyTransaction ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_PolTrx_AppliedCashFromAcc constant business_variable.business_variable_id%type := 29753746;
+  gbv_PolTrx_AppliedCashFromPol constant business_variable.business_variable_id%type := 29753846;
+  gbv_PolTrx_Balance            constant business_variable.business_variable_id%type := 29754446;
+  gbv_PolicyTrx_UI_Type         constant business_variable.business_variable_id%type := 33857446;
+  -- 2016-06-15 Cheryl pmadev-552
+  gbv_PolicyRefModPayPlan       constant business_variable.business_variable_id%type := 31906646;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- PartnerReconciliationRollup ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_Recon_RelatedPolicyID    constant business_variable.business_variable_id%type := 29759946;
+  gbv_Recon_DueDate            constant business_variable.business_variable_id%type := 29755246;
+  gbv_Recon_TotalDue           constant business_variable.business_variable_id%type := 29755146;
+  gbv_Recon_ReconcileWith      constant business_variable.business_variable_id%type := 29760846;
+  gbv_Recon_RelatedPolicyTrx   constant business_variable.business_variable_id%type := 29763746;
+  gbv_Recon_PaidAmount         constant business_variable.business_variable_id%type := 29755746;
+  gbv_Recon_AllocationType     constant business_variable.business_variable_id%type := 29755846;
+  gbv_CustomerReconParentBatch constant business_variable.business_variable_id%type := 29874946;
+  gbv_AgencyReconParentBatch   constant business_variable.business_variable_id%type := 29759346;
+  gbv_PartnerReconRefTask      constant business_variable.business_variable_id%type := 29985846;
+  gbv_StmtPrfl_BillingType     constant business_variable.business_variable_id%type := 31700546;
+  gbv_Recon_Recon_ID           constant business_variable.business_variable_id%type := 32406640;
+  gbv_Recon_PreRecon_ID        constant business_variable.business_variable_id%type := 32408040;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --PartnerReconciliationRollupMember ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_ReconMember_Amount       constant business_variable.business_variable_id%type := 29760946;
+  gbv_ReconMember_RefItem      constant business_variable.business_variable_id%type := 29760346;
+  gbv_RollupMember_Contributor constant business_variable.business_variable_id%type := 29760346;
+  gbv_ReconMemberRefTask       constant business_variable.business_variable_id%type := 29985946;
+  gbv_ReconMember_Recon_ID     constant business_variable.business_variable_id%type := 32406840;
+  gbv_ReconMember_PreRecon_ID  constant business_variable.business_variable_id%type := 32408140;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --PaymentPlanScheduledPayment ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  gbv_payplanschpay_inst_num constant business_variable.business_variable_id%type := 29107006;
+  --2016-06-15 Cheryl pmadev-552
+  gbv_billing_element_id     constant business_variable.business_variable_id%type := 30790846;
+  gbv_element_amount         constant business_variable.business_variable_id%type := 29713846;
+  gbv_actual_due_date        constant business_variable.business_variable_id%type := 30745246;
+  gbv_withdrawal_date        constant business_variable.business_variable_id%type := 32178546; /*OSPRODUCT-1599*/
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --OSBILLING-6149
+  gbv_NonPayCanelDays             constant business_variable.business_variable_id%type := 32623248; -- Non Pay Cancel Days --  32911764;
+    --Partner ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  gbv_PartnerBusinessType    constant business_variable.business_variable_id%type  := 32701946; -- OSPRODUCT-17113
+  g_enum_StatementAgency     constant lookup_list_value.lookup_enum%type           := 200;      -- OSPRODUCT-17113
+  g_enum_AccountCurrent      constant lookup_list_value.lookup_enum%type           := 100;      -- OSPRODUCT-17113
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --  Enums
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  gCash_Level_Statement         constant number(12) := 3;
+  gGenericStatus_Created        constant number(12) := 23;
+  gFItemType_Debit              constant db_fitem_type.db_fitem_type_id%type := 146;
+  gFItemType_Credit             constant db_fitem_type.db_fitem_type_id%type := 246;
+  gFItemBillStatus_Active       constant number(12) := 38246;
+  gFItemProcStatus_Created      constant number(12) := 39246;
+  gFItem_Category_Tax           constant number(12) := 346;
+  gFItem_Category_Surcharge     constant number(12) := 446;
+  gFItem_Category_Fee           constant number(12) := 546;
+  gFItem_Category_Comm          constant number(12) := 946;
+  gFItem_Category_DefPremComm   constant number(12) := 5746;
+  gFitem_category_LossGain      constant number(12) := 5548;--OSPRODUCT-12759
+  gFItem_Category_Disburse      constant lookup_list_value.lookup_enum%type            :=   5046; -- added 20180820 Cheryl osbilling-4755
+  gFItem_Category_Cash          constant number(12) := 646;
+  gFItem_Category_Premium       constant number(12) := 246;
+  gFItem_SubCat_PayPlanChange   constant number(12) := 51746;
+  gFitem_Cat_Dividend           constant number(12) := 5646;
+  gFitem_Cat_GroupDividends     constant number(12) := 5546;
+  gFitem_Cat_ClaimSettlement    constant number(12) := 5146;--OSBILLING-7187
+  gFItem_SubCategory_check      constant number(12) := 53546;--UTXPRODUCT-347																		 
+  g_FItem_SubCat_InstFee_Pay    constant lookup_list_value.lookup_enum%type := 47946;
+  g_FItem_SubCat_InvFee_Rec     constant lookup_list_value.lookup_enum%type := 57246;
+  gFItem_Category_Writeoff      constant number(12) := 1546;
+  gFitem_Category_ExtCredit     constant number(12) := 5346;
+  gFitem_Category_BankCharges   constant number(12) := 5246;
+  gFitem_Category_RetroAdj      constant number(12) := 5846; --OSPRODUCT-16994
+  gFitem_Category_DefPremium    constant number(12) := 5446;
+  gFitem_SubCat_PLRRetroAdj     constant number(12) := 62246;
+  gFitemStatus_Created          constant number(12) := 39246;
+  gFitemCreditType_Common       constant number(2) := 1;
+  gFitemCreditType_External     constant number(2) := 2;
+  gFitemCreditType_GrpDvds    constant number(2) := 3;
+  gFitemDebitType_Dividends    constant number(2) := 4;
+  gFitemEndors_ReduceDiv        constant number(2) := 5;
+  gFitemCreditType_RetroAdj     constant number(2) := 6;
+  gFitem_SubCat_PremRetroAdj    constant number(12) := 62446;
+  gFIChange_Create              constant number(12) := 101;
+  gFIChange_Change              constant number(12) := 201;
+  gFIChange_Yes                 constant number(12) := 1;
+  gFITrxType_Dr_Generate        constant number(12) := 601;
+  gFITrxType_Cr_Generate        constant number(12) := 602;
+  gFITrxStatus_Processed        constant number(12) := 37646;
+  gFITrxStatus_RollBacked        constant number(12) := 37746;
+  gFITrxStatus_Completed        constant number(12) := 40246;
+  gFITrxStatus_InProcess        constant number(12) := 38146;
+  gFITrxType_CashRollback       constant number(12) := 301;
+  gFITrxType_Invoice            constant number(12) := 1603;
+  gFITrxType_Cash_Post          constant number(12) := 603;
+  gFITrxType_Cash_Apply         constant number(12) := 101;
+  gFITrxType_Reversal            constant number(12) := 7801;
+  gFITrxType_WriteOff           constant number(12) := 604;
+  gFITrxType_ReversalWriteOff   constant number(12) := 2701;
+  gFITrxType_AdhocJournal       constant number(12) := 1501;
+  gFITrxType_AdhocReversal      constant number(12) := 1502;
+  gFiTrxType_Dish               constant number(12) := 1201;
+  gFITrxType_CashApply_Reversal constant number(12) := 201;
+  gFITrxType_CreditApply        constant number(12) := 1601;
+  gFITrxType_ExternalCredits    constant number(12) := 6002;
+  gFITrxType_CashCreditTransfer constant number(12) := 401;
+  gFITrxType_PayableEarning     constant number(12) := 801;--OSPRODUCT-8778
+  gBatchStatus_Processed        constant number(12) := 39846;
+  gBatchStatus_InProcess        constant number(12) := 39946;
+  gBatchEntryMethod             constant number(12) := 101;
+  gBatchType                    constant number(12) := 601;
+  gBatchEntryMethod_System      constant number(12) := 401;
+  gBatchStatus_Created          constant number(12) := 23;
+  gBatch_Agency_Type            constant number(12) := 401;
+  gBatch_Adhoc_Journal          constant number(12) := 7001;
+  gBatch_AdhocJournalReversal   constant number(12) := 7002;
+  gBatch_DishAdhocJournal       constant number(12) := 7003;
+  gBatch_Manual_Cash_apply      constant number(12) := 701;
+  gBatch_AutoCreditApply        constant number(12) := 3401;
+  gBatch_AutoWriteOff           constant number(12) := 901;
+  gBatch_AutoCashApply          constant number(12) := 1001;
+  gBatch_ManualWriteOff         constant number(12) := 2101;
+  gBatch_SinglePayment          constant number(12) := 601;
+
+  gBatch_CheckPayment           constant number(12) := 101;
+  gBatch_EFTBatchPayment        constant number(12) := 201;
+  gBatch_CreditCardBatch        constant number(12) := 301;
+
+  gBatch_PayableAdjust          constant number(12) := 2201;
+  gBatch_DisburseAdjust         constant number(12) := 2301;
+  gBatch_CashTransferBatch      constant number(12) := 2401;
+  gBatch_CashUnapply            constant number(12) := 2501;
+  gBatch_CashRollback           constant number(12) := 2601;
+  gBatch_Current_Account_Stmt   constant number(12) := 1201;
+  gBatch_NOIC                   constant number(12) := 4212;
+  gBatch_NOIC_Rescind           constant number(12) := 5046;
+  gBatch_Late_Notice            constant number(12) := 5146;
+  gbatch_late_notice2           constant number(12) := 8646; --OSPRODUCT-1882
+  gBatch_Aging_Status_Update    constant number(12) := 6007;
+  gBatch_Second_Reminder_Note   constant number(12) := 6731;
+  gBatch_Credit_Apply_Reversal  constant number(12) := 7301;
+  gBatchType_Dish               constant number(12) := 2901;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+  gBatchType_SchEFT             constant number(12) := 6001;
+  gBatchType_SchCCDC            constant number(12) := 6002;
+  gBatch_DISHSinglePayment      constant number(12) := 3001;--GCNA-2666
+  gBatch_CCPayment              constant number(12) := 201;
+  gBatch_ChequePayment          constant number(12) := 52140;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+  gBatchType_DishCashApply      constant number(12) := 3101;
+  gBatch_Invoice                constant number(12) := 1801;
+  gBatch_ManualCreditApply      constant number(12) := 3301;
+  gBatch_EFTPayment             constant number(12) := 301;
+  g_Batch_InvceRollupStmt       constant number(12) := 9801;
+  g_BatchLte1RollupStmt        constant number(12)   := 9802;
+  g_BatchLte2RollupStmt        constant number(12)   := 9803;
+  gBillAccType_Agency           constant number(12) := 101;
+  gBillAccType_Customer         constant number(12) := 201;
+  gBillAccType_Policy           constant number(12) := 2246;
+  gBillAccType_Investment       constant number(12) := 2346;
+  gBillAccType_Producer         constant number(12) := 301;
+  gBillingAcStatus_Active       constant number(12) := 37246;
+  gWriteoffScope_Step           constant number(12) := 146;
+  gWriteoffScope_Fitem          constant number(12) := 246;
+  gWriteoffScope_Group          constant number(12) := 346;
+  gCustomerRecon_Type           constant number(12) := 4146;
+  gAgencyRecon_Type             constant number(12) := 2146;
+  gAllocationType_Prorata       constant number(12) := 1;
+  gAllocationType_Sequence      constant number(12) := 2;
+  gAllocationType_Manual        constant number(12) := 3;
+  gAllocationType_Pif           constant number(12) := 4;
+  gPolicyTrxType_Latetrx        constant number(12) := 5146;
+  gCash_Level_Customer          constant number(12) := 1;
+  gCash_Level_Policy            constant number(12) := 2;
+  gEarning_Type_Earned          constant number(12) := 1;
+  gEarning_Type_Unearned        constant number(12) := 2;
+  gEarn_Status_Earned           constant number(12) := 1;
+  gEarn_Status_Unearned         constant number(12) := 2;
+  gEarn_Status_Par_Earned       constant number(12) := 3;
+  gAll_Lines_Insurance          constant number(12) := 999999;
+  gProfileStatus_Inactive       constant number(12) := 47046;
+  gStmt_Profile_Type_Inv        constant number(12) := 1;
+  gPolicy_BillMeth_Direct       constant number(12) := 1;
+  gPolicy_BillMeth_Agency       constant number(12) := 2;
+  gfitem_future_due             constant number(12) := 1;
+  gfitem_current_due            constant number(12) := 2;
+  gfitem_past_due               constant number(12) := 3;
+  gFITrxPay_Check              constant number(12) := 101;
+  gFITrxPay_Returned_Check     constant number(12) := 52440;
+  gFITrxPay_Broker_Check       constant number(12) := 52640;
+  gFITrxPay_Certified_Check    constant number(12) := 52740;
+  gFITrxPay_Internet_Payment    constant number(12) := 51840;
+  gFITrxPay_Money_Order         constant number(12) := 52540;
+  gFITrxPay_Other               constant number(12) := 52240;
+  gFITrxPay_Wire_Transfer       constant number(12) := 52840;
+  gFITrxPay_Credit_Card         constant number(12) := 51940;
+  gFITrxPay_Cash                constant number(12) := 52040;
+  gFITrxPay_Journal             constant number(12) := 52340;
+--OSBILLING-7437 Start ---not used(to be used in utica env)
+  gFITrxPay_Check_Insured    	constant number(12) := 53451;
+  gFITrxPay_Check_Agent         constant number(12) := 53551;
+  gFITrxPay_Check_Mortgagee     constant number(12) := 53651;
+  gFITrxPay_Check_Other         constant number(12) := 53751;
+  gFITrxPay_Premium_Finance     constant number(12) := 53851;
+  gFITrxPay_Utica_First         constant number(12) := 53951;
+  gFITrxPay_Manual_Lockbox      constant number(12) := 54051;
+  --OSBILLING-7437 End
+-- Utica specific agent and customer portal payment modes --OSBILLING-7764
+  g_FITrx_Pay_AgntPrtl_CC       constant number(12) := 54151;
+  g_FITrx_Pay_AgntPrtl_EFT      constant number(12) := 54251;
+  g_FITrx_Pay_CustPrtl_CC       constant number(12) := 54351;
+  g_FITrx_Pay_CustPrtl_EFT      constant number(12) := 54451;--OSBILLING-7764 END
+  g_StmtProfileStateApprove     constant lookup_list_value.lookup_enum%type := 47546;
+  g_StmtBatchSentToPartnerState constant lookup_list_value.lookup_enum%type := 42546;
+  g_StmtBatchCreatedState       constant lookup_list_value.lookup_enum%type := 42646;
+  g_StmtBatchReconciledState    constant lookup_list_value.lookup_enum%type := 42746;
+  --OSBILLING-3234
+  g_StmtBatchInProcessState    constant lookup_list_value.lookup_enum%type := 63646;
+  gBatchType_AgencyStatement    constant lookup_list_value.lookup_enum%type := 801;
+  gFITrxType_Writeoff_Reversal  constant lookup_list_value.lookup_enum%type := 1001;
+  gRecon_get_ReconId_False      constant number(12)                         :=   2;
+  gObjectState_Unbooked         constant lookup_list_value.lookup_enum%type := 58446;
+  gObjectState_Processed        constant lookup_list_value.lookup_enum%type := 43046;
+  gObjectState_Excluded         constant lookup_list_value.lookup_enum%type := 64146;
+  gYes                          constant lookup_list_value.lookup_enum%type := 1;
+  gNo                           constant lookup_list_value.lookup_enum%type := 2;
+  gStatus_Omitted               constant lookup_list_value.lookup_enum%type := 58346;
+  gStatus_MarkedExclude         constant lookup_list_value.lookup_enum%type := 64246;
+  gStatus_New                   constant lookup_list_value.lookup_enum%type := 57946;
+  gStatus_Premiumandcommdiff    constant lookup_list_value.lookup_enum%type := 58046;
+  gStatus_commdiff              constant lookup_list_value.lookup_enum%type := 58146;
+  gStatus_Premiumdiff           constant lookup_list_value.lookup_enum%type := 58246;
+  gStatus_Reconciled            constant lookup_list_value.lookup_enum%type := 58546;
+  gStatus_RCD                   constant lookup_list_value.lookup_enum%type := 64446;
+  gStatus_RPCD                  constant lookup_list_value.lookup_enum%type := 64546;
+  gStatus_RPD                   constant lookup_list_value.lookup_enum%type := 64346;
+  gStatus_MarkedExcludeWithAging constant lookup_list_value.lookup_enum%type := 67746;
+  gStatus_MarkedChangeExclude   constant lookup_list_value.lookup_enum%type := 67946;
+  --3026-03-28  Cheryl pmadev-691
+  gObjState_PolicyActive        constant number(12) := 71;
+  gObjState_PolicyCanceled      constant number(12) := 73;
+  gFItem_Cat_Commission         constant lookup_list_value.lookup_enum%type            :=   946;
+
+  gMatchOption_matchComm       constant lookup_list_value.lookup_enum%type := 1;
+  gMatchOption_matchGross      constant lookup_list_value.lookup_enum%type := 2;
+  gMatchOption_matchGrossComm  constant lookup_list_value.lookup_enum%type := 3;
+  gMatchOption_Manual          constant lookup_list_value.lookup_enum%type := 4;
+  gMatchOption_Upload          constant lookup_list_value.lookup_enum%type := 5;
+  gMatchOption_ExcludeWithAging         constant lookup_list_value.lookup_enum%type := 6;
+  gMatchOption_ExcludeWoutAging      constant lookup_list_value.lookup_enum%type := 7;
+
+ -- OSBILLING-4100
+  g_FItem_SubCat_Commission    constant lookup_list_value.lookup_enum%type := 45646;
+  g_FItem_SubCat_CommPayable   constant lookup_list_value.lookup_enum%type := 3546;
+  g_FItem_SubCat_CommCedingRec constant lookup_list_value.lookup_enum%type := 3846;
+  g_FItem_SubCat_PLRDef_Comm   constant lookup_list_value.lookup_enum%type := 61946;
+  g_FItem_SubCat_ILRDef_Comm   constant lookup_list_value.lookup_enum%type := 61746;
+--OSBILLING-4100
+
+  gCommissionType_Flat         constant lookup_list_value.lookup_enum%type := 2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --  Lookup Lists
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  FITransactionSetBatchType constant lookup_list.lookup_list_id%type := 5366346;
+  BillAccTrxSetBatchFunded  constant lookup_list.lookup_list_id%type := 5276407;
+  FITransactionTypeList     constant lookup_list.lookup_list_id%type := 5366546;
+  FItemDebitCreditList      constant lookup_list.lookup_list_id%type := 5366746;
+  BillingAccountTypeList    constant lookup_list.lookup_list_id%type := 5367146;
+  FIChangeTypeList          constant lookup_list.lookup_list_id%type := 5366646;
+  PolicyTrxtypeList         constant lookup_list.lookup_list_id%type := 50158;
+  FItemPayableEarningStatus constant lookup_list.lookup_list_id%type := 5385546;
+  StatementProfileLOB       constant lookup_list.lookup_list_id%type := 5382546;
+  BillingAccountRollupLevel constant lookup_list.lookup_list_id%type := 5372846;
+  FItemCategoryList         constant lookup_list.lookup_list_id%type := 5366946;
+  PolicyEndorsTypeList      constant lookup_list.lookup_list_id%type := 5303209;
+
+    --OSBILLING-7900--
+	PaymentModeList      constant lookup_list.lookup_list_id%type := 5390346;
+    gPaymentMode_BillMe constant lookup_list_value.lookup_enum%type := 1;
+    --End of OSPRODUCT-970--
+
+  --OSBILLING-4389
+  gBatchStatus_Discarded        constant lookup_list_value.lookup_enum%type            :=   61546;
+  --OSBILLING-7437
+  gFITransaction_Payment_Type   constant lookup_list.lookup_list_id%type := 5377846;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --  For Task Generation
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- Task
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  gbv_Task_Ref_Assigned_To    constant business_variable.business_variable_id%type := 21863802;
+  gbv_Task_TaskCreatedDate    constant business_variable.business_variable_id%type := 200707;
+  gbv_Task_TaskDueDate        constant business_variable.business_variable_id%type := 200708;
+  gbv_Task_TaskType           constant business_variable.business_variable_id%type := 200709;
+  gbv_Task_TaskTitle          constant business_variable.business_variable_id%type := 200710;
+  gbv_Task_TaskDesc           constant business_variable.business_variable_id%type := 200711;
+  gbv_Task_TaskStatus         constant business_variable.business_variable_id%type := 200717;
+  gbv_Task_TaskContentType    constant business_variable.business_variable_id%type := 28219405;
+  gbv_BillingAcc_AccHldr_Name constant business_variable.business_variable_id%type := 29974846;
+
+  gTask_status_complete   constant lookup_list_value.lookup_enum%type := 1;
+  gTask_content_type_task constant lookup_list_value.lookup_enum%type := 3;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  -- Property
+  gPropertyCancelGracedays           constant pd_property_type.pd_property_type_id%type     := 11246; --OSbilling-6417
+  gPropertyApplyHolidayRule           constant pd_property_type.pd_property_type_id%type     := 21946; --OSbilling-6417
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+     -- OSBILLING-7560
+     gv_department_of_surcharge    constant dragon_partner.partner_type_id%type  := 2046;
+     gv_state_approve              constant dragon_partner.partner_state_id%type := 32905;
+     -- OSBILLING-7560
+
+-- UTPRODUCT-3928
+gTrxFundsInst_Active_T             constant db_transaction_funds_inst.active_tf%type    :='T'; 
+gPayerType_pfc                     constant business_variable.business_variable_id%type := 10824;             
+gPayerType_mortgagee               constant business_variable.business_variable_id%type := 10424;   
+gPayerType_primary_insured         constant business_variable.business_variable_id%type := 10224;
+gPayerType_Additional_insured      constant business_variable.business_variable_id%type := 10624;
+gProduct_All                       constant business_variable.business_variable_id%type := 2646;
+gPayerTypeSet_All                  constant business_variable.business_variable_id%type := 10046;
+gProgramSet_All                    constant business_variable.business_variable_id%type := 14048;
+g_new_term_transaction             number := 1;
+gbv_downpayment_id                 constant business_variable.business_variable_id%type := 212016;
+-- UTPRODUCT-3928
+
+  gFITransactionType_Reversal constant number(12) := 6001; --OSBILLING-7354
+  
+  -- Suspension Activity constants OSBILLING-7495
+    gSuspend_UW_Tranx_Activity    constant integer := 1;
+    gSuspend_EFTCC_Req_Activity   constant integer := 12;
+    gSuspend_CreditDisb_Activity  constant integer := 3;
+
+    gSuspend_WriteOff_Activity    constant integer := 6;
+    gSuspend_Invoices_Activity    constant integer := 7;
+    --OSBilling-6385
+    gSuspend_LateNotice1_Activity constant integer   := 8;
+    gSuspend_LateNotice2_Activity constant integer   := 9;
+    gSuspend_PendCancel_Activity    constant integer  := 10;
+    gSuspend_NonPayCancel_Activity  constant integer    := 11;
+    gState_PolicyTermBASusp         constant  object_state.object_state_id%type := 54446;
+    g_BAObjectStateSuspended        constant lookup_list_value.lookup_enum%type  := 37346;
+	gBillTrxType_Cancellation          constant db_transaction_set_type.db_trxset_enum%type := 2;
+    gBillTrxType_Invoice               constant db_transaction_set_type.db_trxset_enum%type := 1801;
+     -- UTPRODUCT-690 -- UTPRODUCT-924  Start 
+    gv_min_overdue_day_noic                           pd_property.pd_property_value%type          := 10846;
+    gv_v_mailing_days                                 pd_property.pd_property_value%type          := 22446;
+    gv_equity_date                                    business_variable.business_variable_id%type := 31774946;
+    -- UTPRODUCT-690 -- UTPRODUCT-924 ends
+    gState_PolicyTrxRejected        constant number(12) := 28905;  --OSPRODUCT-2754
+
+     --UTPRODUCT-4019
+     gbv_payer_withdraw_downpay_tf      constant business_variable.business_variable_id%type := 33019748;
+     gbv_payer_is_valid_tf              constant business_variable.business_variable_id%type := 32993324;
+     gbv_payer_is_payment_pulled        constant business_variable.business_variable_id%type := 33017548;
+     gbv_ptp_withdraw_downpay_tf        constant business_variable.business_variable_id%type := 33019848;
+     gbv_ptp_is_payment_pulled          constant business_variable.business_variable_id%type := 33017148;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --  Package Types
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  type r_policy_term is record(
+    date_eff  varchar2(100),
+    object_id object.object_id%type);
+
+  type r_suspension is record(
+    object_id        object.object_id%type,
+    suspension_state varchar2(100));
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  --   Function and Procedure Definitions ...
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  procedure show_version;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_billingbatch_trx_cnt(in_billing_batch_id in object.object_id%type,
+                                   in_batch_type       in object_bv_value.business_variable_value%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_billingbatch_trx_amount(in_billing_batch_id in object.object_id%type,
+                                      in_batch_type       in object_bv_value.business_variable_value%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_batch_processtrx_count(in_billing_batch_id in object.object_id%type,
+                                     in_batch_type       in object_bv_value.business_variable_value%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_batch_processtrx_amount
+(
+     in_session_id                   in        object.object_id%type,
+     in_transaction_id               in        object.object_id%type,
+     in_billing_trx_set_id           in        object.object_id%type,
+     in_billing_trx_set_type_id      in        object_bv_value.business_variable_value%type,
+     in_gross_amount_tf              in        char default 'F'
+)
+return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_amt_cash_applied_or_posted(in_object_id       in object.object_id%type,
+                                         in_object_type_id  in object.object_type_id%type,
+                                         in_fi_trx_type     in number,
+                                         in_policy_term_id  in object.object_id%type default null,
+                                         in_category_id     in number default null,
+                                         in_sub_category_id in number default null)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_amt_cash_available(in_object_id  in object.object_id%type,
+                                 in_cash_level in number) return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+   --OSBILLING-5926
+  function fn_get_category_amount
+   (
+     in_object_id             in        object.object_id%type, -- Billing Account ID
+     in_credit_type           in        number default 1, -- 1-Common, 2-External, 3-Group Dividens, 4-Dividends(Endorsement Transaction)
+     in_credit_level          in        number default 1 -- 1-policy, 2-account
+     )
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_tot_cash_available(in_object_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_billacc_due_amounts(in_object_id    in object.object_id%type,
+							  in_billacc_type in number,
+							  in_due_type     in number,
+							  in_due_days     in number default 0)
+		return number;
+	-----------------------------------------------------------------------------------------------------------------------------------------------------
+	-- OSBILLING-7723
+	function fn_billacc_due_amounts_no_canc(in_object_id    in object.object_id%type,
+                                  in_billacc_type in number,
+                                  in_due_type     in number,
+                                  in_due_days     in number default 0)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_billacc_due_credit_amounts(in_object_id in object.object_id%type,
+                                         in_due_type  in number,
+                                         in_due_days  in number default 0)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_count_of_notes(in_object_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_past_due_days(in_object_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_fitem_amount_due_get(in_session_id     in object.object_id%type,
+                                   in_transaction_id in object.object_id%type,
+                                   in_object_id      in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_object_id(in_object_value   in object_bv_value.business_variable_value%type,
+                            in_object_type_id in object.object_type_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_validate_customer_policy(in_customer_name in object_bv_value.business_variable_value%type,
+                                       in_policy_no     in object_bv_value.business_variable_value%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_fitem_initial_amt_get(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_object_id      in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_policy_current_date(in_session_id     in object.object_id%type,
+                                      in_transaction_id in object.object_id%type,
+                                      in_policy_id      in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_policy_tzone_date(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_policy_id      in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_policy_current_term(in_session_id     in object.object_id%type,
+                                      in_transaction_id in object.object_id%type,
+                                      in_policy_id      in object.object_id%type,
+                                      in_date           in date default null)  --MUSTDEV-41816) OSPRODUCT-2475
+	return object.object_id%type;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------   
+  procedure sp_policy_curr_term_cacheReset -- OSPRODUCT-5020
+  (
+       in_session_id                 in             object.object_id%type,
+       in_transaction_id             in             object.object_id%type,
+       in_policy_term_id             in             object.object_id%type
+  );
+  -----------------------------------------------------------------------------------------------------------------------------------------------------   
+  function fn_policy_curr_term_cache_get  -- OSPRODUCT-2406
+  (
+       in_session_id                 in             object.object_id%type,
+       in_transaction_id             in             object.object_id%type,
+       in_policy_id                  in             object.object_id%type,
+       in_date                       in             date default null 
+  )
+  return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_policy_billing_account(in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_policy_id      in object.object_id%type)
+    return object.object_id%type;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_rollup_level_string(in_session_id         in object.object_id%type,
+                                      in_transaction_id     in object.object_id%type,
+                                      in_rollup_level_value in object_bv_value.business_variable_value%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_policy_due_amounts(in_object_id        in object.object_id%type,
+                                 in_polbillmeth_type in number,
+                                 in_due_type         in number,
+                                 in_due_days         in number default 0,
+                                 in_business_relation_id  in  object.object_id%type default null  -- OSPRODUCT-29008
+                                 )
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_policy_credit_amount
+(
+     in_session_id            in object.object_id%type,--OSPRODUCT-6046
+     in_transaction_id        in object.object_id%type,--OSPRODUCT-6046
+     in_object_id             in object.object_id%type,
+     in_credit_type           in number default 1, -- 1-Common, 2-External, 3- Group Dividends(Ad-hoc journal), 4- Dividends(Endorsement))
+     in_business_relation_id  in object.object_id%type default null, -- OSPRODUCT-29008
+     in_account_type_id       in object.object_id%type default null  -- OSPRODUCT-29008
+)
+return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_policy_cash_detail
+(
+       in_object_id in object.object_id%type,
+       in_business_relation_id  in        object.object_id%type default null -- OSPRODUCT-29008
+)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_policywise_cash_available(in_object_id in object.object_id%type)
+    return varchar2;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_policy_prior_term
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     in_policy_term_id             in             object.object_id%type default null
+     ) return object.object_id%type;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_policy_next_term(in_session_id     in object.object_id%type,
+                                   in_transaction_id in object.object_id%type,
+                                   in_policy_id      in object.object_id%type)
+    return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_policy_amount_due_get(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_object_id      in object.object_id%type)
+    return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_earned_unearned_amt(in_object_id    in object.object_id%type,
+                                      in_earning_type in number)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_count_stat_profile(in_session_id         in object.object_id%type,
+                                     in_transaction_id     in object.object_id%type,
+                                     in_billing_account_id in object.object_id%type
+
+                                     ) return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_validate_profile_for_policy(in_session_id        in object.object_id%type,
+                                          in_transaction_id    in object.object_id%type,
+                                          in_billingaccount_id in object.object_id%type,
+                                          in_profiletype_id    in object.object_id%type,
+                                          in_policy_id         in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_validate_profile_for_LOB(in_session_id        in object.object_id%type,
+                                       in_transaction_id    in object.object_id%type,
+                                       in_billingaccount_id in object.object_id%type,
+                                       in_billingtype_id    in object.object_id%type,
+                                       in_profiletype_id    in object.object_id%type,
+                                       in_lob_value         in object_bv_value.business_variable_value%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_value_for_LOB(in_session_id      in object.object_id%type,
+                                in_transaction_id  in object.object_id%type,
+                                in_lob_level_value in object_bv_value.business_variable_value%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_fitem_cal_due_date(in_session_id     in object.object_id%type,
+                                 in_transaction_id in object.object_id%type,
+                                 in_billing_id     in object.object_id%type,
+                                 in_actual_due     in object_bv_value.business_variable_value%type,
+                                 in_billing_due    in object_bv_value.business_variable_value%type,
+                                 in_stmnt_date     in date) return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_cal_due_date
+  (
+  in_session_id     in object.object_id%type,
+  in_transaction_id in object.object_id%type,
+  in_stmnt_date     in object_bv_value.business_variable_value%type
+  ) return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_policy_receivable_amt(in_session_id     in object.object_id%type,
+                                        in_transaction_id in object.object_id%type,
+                                        in_object_id      in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_validate_invoice_profile(in_session_id          in object.object_id%type,
+                                       in_transaction_id      in object.object_id%type,
+                                       in_billingaccount_id   in varchar2,
+                                       in_profiletype_id      in object.object_id%type,
+                                       in_policy_id           in object.object_id%type,
+                                       in_billing_type_id     in object.object_id%type,
+                                       in_items_lob           in varchar2,
+                                       in_statementprofile_id in varchar2)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_current_term_values(in_session_id           in object.object_id%type,
+                                      in_transaction_id       in object.object_id%type,
+                                      in_policy_id            in object.object_id%type,
+                                      in_earned_unearned_flag in varchar2)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_billingaccount_timezone_id(in_session_id         in object.object_id%type,
+                                         in_transaction_id     in object.object_id%type,
+                                         in_billing_account_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_billacc_current_date(in_session_id         in object.object_id%type,
+                                       in_transaction_id     in object.object_id%type,
+                                       in_billing_account_id in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_billacc_tzone_date(in_session_id         in object.object_id%type,
+                                     in_transaction_id     in object.object_id%type,
+                                     in_billing_account_id in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_initialize_billing_address(in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_ptp_id         in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_exchange_current_date(in_session_id     in object.object_id%type,
+                                        in_transaction_id in object.object_id%type,
+                                        in_exchange_id    in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_exchange_tzone_date(in_session_id     in object.object_id%type,
+                                      in_transaction_id in object.object_id%type,
+                                      in_exchange_id    in object.object_id%type)
+    return date;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_installment_initial_amt(in_session_id     in object.object_id%type,
+                                          in_transaction_id in object.object_id%type,
+                                          in_installment_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_installment_balance_amt(in_session_id     in object.object_id%type,
+                                          in_transaction_id in object.object_id%type,
+                                          in_installment_id in object.object_id%type,
+										  in_policy_id      in object.object_id%type)    --OSPRODUCT-1764
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_stub_installment_number(in_session_id            in object.object_id%type,
+                                          in_transaction_id        in object.object_id%type,
+                                          in_current_stub_id       in object.object_id%type,
+                                          in_installment_start_num in number)
+    return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_fitem_acct_prd(in_session_id     in object.object_id%type,
+                                 in_transaction_id in object.object_id%type,
+                                 in_object_id      in object.object_id%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitransaction_acct_prd(in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_object_id      in object.object_id%type)
+    return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_gl_acct_prd  -- UTPRODUCT-3402
+  (
+       in_session_id            in   object.object_id%type,
+       in_transaction_id        in   object.object_id%type,
+       in_gl_object_id          in   object.object_id%type
+  )
+  return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+       
+  function fn_get_fitransset_acct_prd(in_session_id     in object.object_id%type,
+                                      in_transaction_id in object.object_id%type,
+                                      in_object_id      in object.object_id%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_validate_auto_apply_policy(in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_object_id      in object.object_id%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_fitem_payment_details(in_session_id     in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_object_id      in object.object_id%type)
+
+   return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_fitem_bill_trx_details(in_session_id     in object.object_id%type,
+                                     in_transaction_id in object.object_id%type,
+                                     in_object_id      in object.object_id%type,
+                                     batch_type_id     in number)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+  function fn_get_term_next_due_date(in_session_id           in object.object_id%type,
+                                     in_transaction_id       in object.object_id%type,
+                                     in_object_id            in object.object_id%type,
+                                     in_billing_account_id   in object.object_id%type  default null  -- #MP
+                                    )
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_term_next_due_amt(in_session_id          in object.object_id%type,
+                                    in_transaction_id      in object.object_id%type,
+                                    in_object_id           in object.object_id%type,
+                                    in_billing_account_id  in object.object_id%type  default null  -- #MP
+                                   )
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitem_gl_account(in_session_id          in object.object_id%type,
+                                   in_transaction_id      in object.object_id%type,
+                                   in_fitem_id            in object.object_id%type,
+                                   in_product_id          in pd_product.pd_product_id%type,
+                                   in_production_branch   in lookup_list_value.lookup_enum%type,
+                                   in_vip_indicator       in lookup_list_value.lookup_enum%type,
+                                   in_fitem_debit_credit  in lookup_list_value.lookup_enum%type,
+                                   in_fitem_category      in lookup_list_value.lookup_enum%type,
+                                   in_fitem_subcategory   in lookup_list_value.lookup_enum%type,
+                                   in_transaction_type_id in lookup_list_value.lookup_enum%type,
+                                   in_account_type_id     in lookup_list_value.lookup_enum%type,
+                                   in_jurisdisction_id    in lookup_list_value.lookup_enum%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_fitem_element_name(in_session_id     in object.object_id%type,
+                                     in_transaction_id in object.object_id%type,
+                                     in_element_md_id  in db_billing_element.db_billing_element_id%type)
+    return varchar2;
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_current_susp_id
+
+  (in_session_id       in object.object_id%type,
+   in_transaction_id   in object.object_id%type,
+   in_action_object_id in object.object_id%type,
+   in_object_type_id   in object.object_id%type
+
+   ) return object.object_id%type;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  procedure sp_create_task
+
+  (in_session_id       in object.object_id%type,
+   in_transaction_id   in object.object_id%type,
+   in_task_object_id   in object.object_id%type, /* Tasked Object ID */
+   in_billing_accnt_id in object.object_id%type,
+   in_task_type        in object.object_id%type);
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_cash_batch_bal_amount(in_session_id     in object.object_id%type,
+                                        in_transaction_id in object.object_id%type,
+                                        in_object_id      in object.object_id%type,
+                                        in_batch_type_id  in db_transaction_set_type.db_trxset_type_id%type)
+    return number;
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_term_lp_suspend_days(in_session_id     in object.object_id%type,
+                                       in_transaction_id in object.object_id%type,
+                                       in_policy_id      in object.object_id%type)
+    return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_val_auto_apply_underpay
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,
+     in_auto_apply_tf                   in             lookup_list_value.lookup_enum%type,
+     in_pay_amt                         in             number
+)
+return varchar2;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_subledger_batch_id
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_subledger_id                    in             number,
+     in_billing_account_id              in             object.object_id%type
+)
+return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_active_stmnt_profile(in_session_id      in object.object_id%type,
+                                       in_transaction_id  in object.object_id%type,
+                                       in_stmt_profile_id in object.object_id%type)
+    return object.object_id%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-17113
+function fn_active_stmtprof_bustype_cnt
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_partner_id                      in             object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_fitem_cal_due_date_new(in_session_id     in object.object_id%type,
+                                     in_transaction_id in object.object_id%type,
+                                     in_billing_id     in object.object_id%type,
+                                     in_actual_due     in object_bv_value.business_variable_value%type,
+                                     in_billing_due    in object_bv_value.business_variable_value%type,
+                                     in_stmnt_date     in date)
+    return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_created_stmnt_batch(in_session_id         in object.object_id%type,
+                                      in_transaction_id     in object.object_id%type,
+                                      in_billing_account_id in object.object_id%type)
+    return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_totalDue_agency_stmt(in_session_id     in object.object_id%type,
+                                       in_transaction_id in object.object_id%type,
+                                       in_btx_set_id     in object.object_id%type)
+    return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_recon_id(in_session_id       in object.object_id%type,
+                           in_transaction_id   in object.object_id%type,
+                           in_get_recon_id_t_f in number,
+                           in_object_id        in object.object_id%type default null)
+    return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_pre_recon_amount(in_session_id     in object.object_id%type,
+                                   in_transaction_id in object.object_id%type,
+                                   in_object_id      in object.object_id%type default null)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitem_category_set_id --MAGDEV-5163 starts
+  (in_category_set_value_id in object.object_id%type default null)
+    return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_agency_recon_batch(in_session_id     in object.object_id%type,
+                                     in_transaction_id in object.object_id%type,
+                                     in_btx_set_id     in object.object_id%type
+
+                                     ) return object.object_id%type; --MAGDEV-5163 ends
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_singlepay_fitem_due_get(in_session_id         in object.object_id%type,
+                                      in_transaction_id     in object.object_id%type,
+                                      in_billingactrxset_id in object.object_id%type)
+    return number;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitem_search_count(in_session_id      in object.object_id%type,
+                                     in_transaction_id  in object.object_id%type,
+                                     in_agency_recon_id in object.object_id%type
+
+                                     ) return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitem_id(in_session_id      in object.object_id%type,
+                           in_transaction_id  in object.object_id%type,
+                           in_agency_recon_id in object.object_id%type,
+                           in_fitem_id        in object.object_id%type)
+    return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_cashpost_apply_amt(in_session_id     in object.object_id%type,
+                                     in_transaction_id in object.object_id%type,
+                                     in_object_id      in object.object_id%type -- BillingAccountTrxSet
+                                     ) return number;
+
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_trx_id(in_session_id     in object.object_id%type,
+                         in_transaction_id in object.object_id%type,
+                         in_policy_number  in object_bv_value.business_variable_value%type,
+                         in_trn_seq_number in object_bv_value.business_variable_value%type,
+                         in_trn_eff_date   in date)
+    return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_get_fitem_last_fnds_mv_date(in_session_id     in object.object_id%type,
+                                          in_transaction_id in object.object_id%type,
+                                          in_fitem_id       in object.object_id%type)
+    return varchar2;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  procedure sp_disb_batch_process_flag_get(in_session_id       in object.object_id%type,
+                                           in_transaction_id   in object.object_id%type,
+                                           in_billacctrxset_id in object.object_id%type,
+                                           out_process_flag    out boolean,
+                                           out_fitem_status    out lookup_list_value.lookup_enum%type);
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+  function fn_get_fitrn_invoice_due_date(in_session_id          in object.object_id%type,
+                                         in_transaction_id      in object.object_id%type,
+                                         in_batransactionset_id in object.object_id%type)
+    return varchar2;
+
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_amnt_writeoff(in_object_id      in object.object_id%type,
+                            in_object_type_id in object.object_type_id%type, -- Billing Account,
+                            in_batrx_type_id  in number -- Automated write of batch --901 , Manua write -2101,2701 write off reversal
+
+                            ) return number;
+  --------------------------------------------------------------------------------------------
+
+  function fn_verify_selected_items(in_session_id        in object.object_id%type,
+                                    in_transaction_id    in object.object_id%type,
+                                    in_list_selected_ids in varchar2,
+                                    in_list_total_id     in object.object_id%type,
+                                    in_bv_id             in business_variable.business_variable_id%type default null,
+                                    in_bv_value          in object_bv_value.business_variable_value%type default null
+
+                                    ) return char;
+  -------------------------------------------------------------------------------------------------------------
+
+  function fn_get_term_last_audit_trxid(in_session_id     in object.object_id%type,
+                                        in_transaction_id in object.object_id%type,
+                                        in_term_object_id in object.object_id%type)
+    return object.object_id%type;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_partDepOfTax_BA
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_ResiDepOfTax_BA
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_On
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_BC
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_AB
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_MB
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_QC
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_return_tax_val_FL
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type   --
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_dish_pay_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billtrxset_id              in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type    default null
+)
+return date;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_substr_business_days
+(
+     in_session_id                    in            object.object_id%type,
+     in_transaction_id                in            object.object_id%type,
+     in_object_id                            in            object.object_id%type,
+     in_start_date                             in                date,
+     in_days_to_substr                      in                number
+)
+return date;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_incomplete_task_num
+(
+     in_session_id                     in               object.object_id%type,
+     in_transaction_id                 in               object.object_id%type,
+     in_object_id                      in               object.object_id%type,
+           in_task_type                      in               object.object_id%type
+)
+return number;
+
+  -------------------------------------------------------------------------------------------------------------
+
+  function fn_set_recon_status(in_session_id      in object.object_id%type,
+                               in_transaction_id  in object.object_id%type,
+                               in_agency_recon_id in object.object_id%type default null)
+    return number;
+
+function fn_Set_Recon_Status_new
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_agency_recon_id                 in             object.object_id%type,
+     in_Genericobject_state             in             object.object_id%type,
+     in_Match_options                   in             object_bv_value.business_variable_value%type,
+     in_Mark_as_omitted                 in             object_bv_value.business_variable_value%type,
+     in_Excluded                        in             object_bv_value.business_variable_value%type,
+     in_Paid_Commission_per             in             object_bv_value.business_variable_value%type,
+     in_Commission                      in             object_bv_value.business_variable_value%type,
+     in_Paid_Commission                 in             object_bv_value.business_variable_value%type,
+     in_Agency_gross_due                in             object_bv_value.business_variable_value%type,
+     in_Paid_Gross                      in             object_bv_value.business_variable_value%type,
+     in_reconcile_with_difference       in             object_bv_value.business_variable_value%type
+
+)
+return number;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Recon_gross
+(
+     in_Match_options                   in             object_bv_value.business_variable_value%type,
+     in_carrier_gross                   in             object_bv_value.business_variable_value%type,
+     in_agent_Gross                    in             object_bv_value.business_variable_value%type
+
+)
+return object_bv_value.business_variable_value%type;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Recon_comm_per
+(
+     in_Match_options                   in             object_bv_value.business_variable_value%type,
+     in_carrier_comm_per                   in             object_bv_value.business_variable_value%type,
+     in_agent_comm_per                    in             object_bv_value.business_variable_value%type
+
+)
+return object_bv_value.business_variable_value%type;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Recon_comm_amt
+(
+     in_Match_options                   in             object_bv_value.business_variable_value%type,
+     in_carrier_comm_amt                   in             object_bv_value.business_variable_value%type,
+     in_agent_comm_amt                    in             object_bv_value.business_variable_value%type
+)
+return object_bv_value.business_variable_value%type;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+ function fn_get_Recon_net_amt
+ (							   
+							   in_Match_options       in object_bv_value.business_variable_value%type,
+                               in_carrier_gross_amt   in object_bv_value.business_variable_value%type,
+                               in_agent_gross_amt     in object_bv_value.business_variable_value%type,
+                               in_carrier_comm_amt    in object_bv_value.business_variable_value%type,
+                               in_agent_comm_amt      in object_bv_value.business_variable_value%type,
+                               in_recon_gross_or_net  in object_bv_value.business_variable_value%type default 2 -- OSPRODUCT-8958
+)
+return object_bv_value.business_variable_value%type;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Recon_diff_amt
+(							  in_Match_options      in object_bv_value.business_variable_value%type,
+                              in_carrier_gross_amt  in object_bv_value.business_variable_value%type,
+                              in_agent_gross_amt    in object_bv_value.business_variable_value%type,
+                              in_carrier_comm_amt   in object_bv_value.business_variable_value%type,
+                              in_agent_comm_amt     in object_bv_value.business_variable_value%type,
+                              in_carrier_total_due  in object_bv_value.business_variable_value%type,
+                              in_recon_gross_or_net in object_bv_value.business_variable_value%type default 2 -- OSPRODUCT-8958
+)
+return object_bv_value.business_variable_value%type; 
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Recon_accept_diff
+(
+     in_Match_options                   in             object_bv_value.business_variable_value%type,
+     in_carrier_gross_amt               in             object_bv_value.business_variable_value%type,
+     in_agent_gross_amt                 in             object_bv_value.business_variable_value%type,
+     in_carrier_comm_amt                   in             object_bv_value.business_variable_value%type,
+     in_agent_comm_amt                    in             object_bv_value.business_variable_value%type,
+     in_carrier_total_due                 in             object_bv_value.business_variable_value%type,
+     in_accept_diff                       in             object_bv_value.business_variable_value%type
+)
+return object_bv_value.business_variable_value%type;
+---------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_validate_ThinPolicy_exists
+(
+
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_policy_trx_id         in        object.object_id%type,
+     in_policynumber          in        varchar2,
+     in_effective_date        in        date,
+     in_expiry_date           in        date
+) return number;
+  -------------------------------------------------------------------------------------------------------------
+  function fn_validate_ThinPolicy_number(
+
+                                         in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_policynumber   in varchar2)
+    return varchar2;
+  -------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+
+    function fn_validate_customerno_exists
+(
+
+       in_session_id       in                object.object_id%type,
+       in_transaction_id   in                object.object_id%type,
+       in_customernumber    in                varchar2,
+
+       in_customer_id       in               object.object_id%type
+
+) return number;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  function fn_suspense_disburse_item_get(in_session_id           in object.object_id%type,
+                                         in_transaction_id       in object.object_id%type,
+                                         in_billing_account_no   in number, -- BA of Suspense Refund partner that is a receiver of the CashTransfer
+                                         in_billingAcctTrxSet_id in object.object_id%type -- Batch ID of CashTransferTrxSet that belong to Suspense Account
+                                         ) return object.object_id%type;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_Agency_Statement_Status
+(
+
+       in_policy_id                  in            object.object_id%type,
+       in_partner_agency_id          in            object.object_id%type,
+       in_stmt_as_of_date            in            varchar2 default null,
+       in_policy_trx_id                 in        object.object_id%type default null
+
+) return number;
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_Bcsr_For_BillingTask
+return number;
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_check_cashFitem_exts_tf
+(
+in_billingaccounttrxset in   object.object_id%type
+)
+return varchar2;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_billacc_comm_amount
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_object_id                     in   object.object_id%type,
+     in_init_amount_tf             in   char default 'T'
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_fitem_recon_details
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_object_id                     in   object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_batch_name_for_UI
+(
+     in_session_id                 in         object.object_id%type,
+     in_transaction_id             in         object.object_id%type,
+     in_billingaccounttrxset       in         object.object_id%type,
+     in_fittrxset_type             in         lookup_list_value.LOOKUP_ENUM%type
+ )
+return varchar2;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_check_DefPrem_exts_tf
+(
+     in_billingaccount_id in   object.object_id%type
+)
+return varchar2;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_get_policy_billacc_amount
+(
+     in_session_id                 in               object.object_id%type,
+     in_transaction_id             in               object.object_id%type,
+     in_object_id                     in         object.object_id%type,
+     in_type_id                                    in          db_fitem_type.db_fitem_type_id%type,
+     in_category_id                   in                   number
+)
+return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_most_recent_batrxset
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccount_id          in             object.object_id%type,
+     in_batch_type_id               in             object.object_id%type,
+     in_batch_entry_method         in             varchar2 default 'System'
+)
+return object.object_id%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_most_recent_proc_batrxset
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccount_id          in             object.object_id%type
+
+)
+return object.object_id%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_fitrxset_max_due_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransactionset_id        in             object.object_id%type
+
+)
+return varchar2;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_ag_recon_roll_fitemnotnull
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_ag_recon_roll_id           in             object.object_id%type
+
+)
+return object_bv_value.business_variable_value%type;
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_ag_recon_roll_reconcile
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_fitransactionset_id        in             object.object_id%type
+
+)
+return object_bv_value.business_variable_value%type;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_verify_installment_totals
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type -- policy_image id
+)
+return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_verify_installment_dates
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type -- policy_image id
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------
+function fn_get_acct_prd_formatted
+(
+in_session_id     in object.object_id%type,
+in_transaction_id in object.object_id%type,
+in_process_date in date)
+return varchar2;
+----------------------------------------------------------------------------------------------------------------------
+function fn_AssocCashApply_exts_tf
+(
+in_session_id in   object.object_id%type,
+in_transaction_id in   object.object_id%type,
+in_fitem_id in   object.object_id%type
+)
+return varchar2;
+
+  ---------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     -- 2016-08-29 Cheryl osbilling-2929 Check if policy number already exists
+  function fn_validate_Policy_exists(
+
+                                         in_session_id     in object.object_id%type,
+                                         in_transaction_id in object.object_id%type,
+                                         in_policynumber   in varchar2)
+
+    return number;
+---------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+--
+--  2016-09-21 Cheryl osbilling-2933 add billing account gross due amount
+--
+function  fn_billacc_gross_amounts
+(
+     in_object_id             in        object.object_id%type
+)
+return number;
+---------------------------------------------------------------------------------------------------
+--
+--  2016-09-21 Cheryl osbilling-2933 add policy gross due amount
+--
+function  fn_policy_gross_amounts
+(
+     in_object_id             in        object.object_id%type
+)
+return number;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+--------------------------------------------------------------------------------------------------
+--
+--  2016-09-21 Cheryl osbilling-2933 add billing account commission amount
+--
+function  fn_billacc_comm_agency_amount
+(
+     in_object_id                     in   object.object_id%type
+)
+return number;
+--------------------------------------------------------------------------------------------------
+--
+--  2016-09-21 Cheryl osbilling-2933 add policy commission amount
+--
+function  fn_policy_commission_amounts
+(
+     in_object_id             in        object.object_id%type,
+     in_business_relation_id  in        object.object_id%type default null -- OSPRODUCT-29008
+)
+return number;
+-------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+function fn_billacc_commission (in_object_id    in object.object_id%type)
+return number;
+-------------------------------------------------------------------------------------------------
+function fn_policy_commission (in_object_id    in object.object_id%type)
+return number;
+-------------------------------------------------------------------------------------------------
+function fn_ba_dish_available_tf
+(
+         in_billing_account_id object.object_id%type
+)
+return char;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-------------------------------------------------------------------------------------------------
+function  fn_get_ult_partner_account
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billing_account_id         in             object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_check_account_rollup_batch
+(
+
+       in_session_id               in             object.object_id%type,
+       in_transaction_id           in             object.object_id%type,
+       in_billing_account_id       in             object.object_id%type,
+       in_db_trx_type_id           in             number
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_billingacct_total_due
+(
+       in_session_id               in             object.object_id%type,
+       in_transaction_id           in             object.object_id%type,
+       in_billing_account_id       in             object.object_id%type,
+       in_billing_acc_trx_set_id   in             object.object_id%type,
+       in_aging_status             in             number
+
+)return number;
+-------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+function fn_policy_due_amounts_new
+(
+     in_object_id             in        object.object_id%type,
+     in_polbillmeth_type      in number,
+     in_due_type              in        number,
+     in_due_days              in        number default 0
+)
+return number;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_latest_task
+(
+       in_session_id               in             object.object_id%type,
+       in_transaction_id           in             object.object_id%type,
+       in_object_id                in             object.object_id%type
+
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_most_recent_recon_ref
+(
+       in_session_id               in             object.object_id%type,
+       in_transaction_id           in             object.object_id%type,
+       in_billingaccount_id        in             object.object_id%type,
+       in_exclude                  in             object.object_id%type default null
+)return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_most_recent_agency_stmt_ref
+(
+       in_session_id               in             object.object_id%type,
+       in_transaction_id           in             object.object_id%type,
+       in_billingaccount_id        in             object.object_id%type,
+       in_statement_type           in             object_bv_value.business_variable_value%type  default null,
+       in_statement_profile_id     in             object.object_id%type default null,
+       in_exclude                  in             object.object_id%type default null
+
+)return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_get_ba_instalment_balance
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_ba_installment_id       in        object.object_id%type,
+     in_billing_account_id      in        number
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+/*function fn_get_noic_due_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_rolluptrx_id               in             object.object_id%type
+)
+return varchar2;*/
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function  fn_get_account_balance
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_billing_account_id       in        object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_ba_earned_unearned_amnt
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_account_id     in        object.object_id%type,
+     in_earned_unearned_id     in        number -- Pass the earning method
+) return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_batch_gross_amount_get
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_trx_set_id     in        object.object_id%type,
+     in_billing_account_id     in        object.object_id%type
+)return number ;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ function fn_get_acct_invc_prfl
+(
+       in_session_id       in                object.object_id%type,
+       in_transaction_id   in                object.object_id%type,
+       in_billingaccount_id    in            object.object_id%type
+) return number;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_recon_reconciled_tf
+(
+     in_session_id              in                object.object_id%type,
+     in_transaction_id          in                object.object_id%type,
+     in_fitransactionset_id     in                object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_recon_processed_tf
+(
+     in_session_id              in                object.object_id%type,
+     in_transaction_id          in                object.object_id%type,
+     in_fitransactionset_id     in                object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_show_mark_complete_tf
+(
+     in_session_id              in                object.object_id%type,
+     in_transaction_id          in                object.object_id%type,
+     in_fitransactionset_id     in                object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_recon_unbooked_tf
+(
+     in_session_id              in                object.object_id%type,
+     in_transaction_id          in                object.object_id%type,
+     in_fitransactionset_id     in                object.object_id%type
+
+)
+return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_term_due_amt
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_object_id             in        object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_payment_mode_id
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_policy_id              in        object.object_id%type
+
+) return number;
+-----------------------------------------------------------------------------------------------------------------
+function fn_rescind_pndg_canc_yn
+(
+
+      in_session_id        in       object.object_id%type,
+      in_transaction_id    in       object.object_id%type,
+      in_policy_term_id    in     object.object_id%type,
+      in_policy_id         in       object.object_id%type,
+      in_pd_property_value      in     pd_property.pd_property_value%type
+) return char;
+-----------------------------------------------------------------------------------------------------------------
+function fn_get_fitems_total
+(
+     in_object_id        in        object.object_id%type,
+     in_fitem_category   in        object_bv_value.business_variable_value%type,
+     in_object_type      in        numeric
+)
+return number;
+----------------------------------------------------------------------------------------------------------------
+function fn_recon_descripencies_tf
+(
+     in_session_id              in                object.object_id%type,
+     in_transaction_id          in                object.object_id%type,
+     in_fitransactionset_id     in                object.object_id%type
+
+)
+return char;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_recon_save_outcome
+(
+     in_session_id                 in                object.object_id%type,
+     in_transaction_id             in                object.object_id%type,
+     in_billingaccounttrxset_id    in                object.object_id%type
+) return number;
+------------------------------------------------------------------------------------------------------------------
+function fn_get_total_unassociated_cash
+(
+     in_session_id          in           object.object_id%type,
+     in_transaction_id      in           object.object_id%type,
+     in_billingaccount_id   in           object.object_id%type
+
+) return number;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_total_applied_amount
+(
+     in_session_id          	 in           object.object_id%type,
+     in_transaction_id      	 in           object.object_id%type,
+     in_billingaccounttrxset_id  in 	      object.object_id%type
+) return number;
+------------------------------------------------------------------------------------------------------------------
+function fn_get_total_reconciled_amount
+(
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_billingaccounttrxset_id  in      object.object_id%type
+
+) return number;
+------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-7929
+function fn_get_total_reconciled_amount_ui
+(
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_billingaccounttrxset_id  in      object.object_id%type
+
+) return number;
+--OSPRODUCT-7929
+------------------------------------------------------------------------------------------------------------------
+function fn_check_item_exists_tf
+(
+     in_session_id            in           object.object_id%type,
+     in_transaction_id        in           object.object_id%type,
+     in_billingaccount_id     in           object.object_id%type
+
+) return char;
+------------------------------------------------------------------------------------------------------------------
+
+function fn_verify_comm_totals
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type
+)
+return char;
+------------------------------------------------------------------------------------------------------------------
+function fn_validate_modified_payplan
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type
+)
+return char;
+-----------------------------------------------------------------------------------------------------------------
+function fn_get_rollup_aging
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_reconrollup_id             in             object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------
+function  fn_get_billaccount_id
+(
+    in_object_value          in    object_bv_value.business_variable_value%type
+)
+return number;
+------------------------------------------------------------------------------------------------------------------
+function fn_check_if_large_stmt_tf
+(
+     in_object_id                  in             object.object_id%type
+)
+return char;
+------------------------------------------------------------------------------------------------------------------
+function fn_create_large_stmt_tf
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_category_total_amt
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id        in        object.object_id%type,
+     in_fitem_category   in        object_bv_value.business_variable_value%type
+)
+return number;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_related_invoice
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type
+)
+return  object.object_id%type;
+----------------------------------------------------------------------------------------------------------------
+function fn_check_valid_disburproof
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type
+)
+return  char;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_comm_earning_status
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_id                  in        object.object_id%type,
+     in_installment_id             in        object.object_id%type
+
+) return char;
+----------------------------------------------------------------------------------------------------------------
+-- #MP
+function fn_check_payplan_stub_flag
+(
+     in_session_id            in           object.object_id%type,
+     in_transaction_id        in           object.object_id%type,
+     in_ptp_id                in           object.object_id%type,
+     in_payer_entity_id       in           object.object_id%type default null
+) return char;
+----------------------------------------------------------------------------------------------
+function fn_get_rollup_agency
+(
+     in_session_id            in           object.object_id%type,
+     in_transaction_id        in           object.object_id%type,
+     in_bats_id           in           object.object_id%type
+
+) return number;
+----------------------------------------------------------------------------------------------
+function  fn_ba_accbill_due_amt
+(
+     in_session_id      in    object.object_id%type,
+     in_transaction_id    in    object.object_id%type,
+     in_object_id             in        object.object_id%type,
+     in_due_type              in        number
+)
+return number;
+----------------------------------------------------------------------------------------------------------------
+-- DDWIDEV-216
+function fn_preferred_date_get
+(
+     in_session_id              in       object.object_id%type,
+     in_transaction_id          in       object.object_id%type,
+     in_date                    in       date,
+     in_preferred_days          in       number
+)
+return  date;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_pif_balance --VAULTDEV-8269
+  (
+    in_session_id         in object.object_id%type,
+    in_transaction_id     in object.object_id%type,
+    in_billing_account_id in object.object_id%type,
+    in_policy_id        in object.object_id%type default null
+  ) return number;
+-- DDWIDEV-216
+function fn_first_day
+(
+     in_session_id              in       object.object_id%type,
+     in_transaction_id          in       object.object_id%type,
+     in_date                    in       date
+)
+return  date;
+----------------------------------------------------------------------------------------------------------------
+function fn_amnt_net_writeoff
+(
+     in_object_id             in        object.object_id%type,
+     in_object_type_id        in        object.object_type_id%type, -- Billing Account,
+     in_batrx_type_id         in        number default null -- Automated write of batch --901 , Manua write -2101,2701 write off reversal
+
+) return number;
+----------------------------------------------------------------------------------------------------------------
+--VAULTDEV-7854
+     function fn_acctbill_fitem_amt_due_get
+     (
+          in_session_id     in object.object_id%type,
+          in_transaction_id in object.object_id%type,
+          in_object_id      in object.object_id%type
+     )
+     return number;
+function fn_latest_disb_profile_tf
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_acc_id         in        object.object_id%type,
+     in_disb_object_id         in        object.object_id%type
+) return char;
+
+function fn_latest_payment_profile_tf
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_acc_id         in        object.object_id%type,
+     in_pay_object_id         in        object.object_id%type
+) return char;
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_validate_selected_policies
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_selected_policy_ids             in             varchar2
+) return char;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_minimum_NID
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type
+)
+return varchar2;
+-------------------------------------------------------------------------------
+function fn_get_term_balance
+(
+     in_session_id            in           object.object_id%type,
+     in_transaction_id        in           object.object_id%type,
+     in_policy_term_id        in           object.object_id%type
+
+
+) return number;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_term_payer_balance
+     (
+          in_session_id            in           object.object_id%type,
+          in_transaction_id        in           object.object_id%type,
+          in_policy_term_id        in           object.object_id%type,
+          in_policy_term_payer_id  in           object.object_id%type
+) return number;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_minimum_Term_with_bal
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type
+)
+return object.object_id%type;
+----------------------------------------------------------------------------------------------------------------
+function fn_get_net_balance
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_object_id              in        object.object_id%type
+) return number;
+------------------------------------------------------------------------------------------------------------------------
+
+function  fn_get_debit_amount
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_billingaccount_id       in        object.object_id%type default null, -- UTPRODUCT-4957
+     in_policy_id               in        object.object_id%type default null,
+     in_policy_term_id          in        object.object_id%type default null
+)
+return float;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function  fn_get_credit_amount
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_billingaccount_id       in        object.object_id%type,
+     in_policy_id               in        object.object_id%type default null,
+     in_policy_term_id          in        object.object_id%type default null
+)
+return float;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function  fn_get_cash_amount
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_billingaccount_id       in        object.object_id%type,
+     in_policy_id               in        object.object_id%type default null,
+     in_policy_term_id          in        object.object_id%type default null
+)
+return float;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_policy_term_equity_date_get (
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_policy_term_id             in   object.object_id%type,
+     in_transaction_effective_date in   date default null
+) return date;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_batrxset_equity_date_get(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_ba_trx_set_id              in        object.object_id%type
+) return date;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_policyterm_equity_date_set(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_ba_trx_set_id              in        object.object_id%type
+);
+
+-------------------------------------------------------------------------------------------------------------------------------
+-- 3015
+function fn_mod_pay_plan_timing_list_tf
+     (
+          in_pay_plan_timing_id         number,
+          in_selected_policy            object_bv_value.business_variable_value%type,
+          in_session_id                 object.object_id%type,
+          in_billing_account_id         object.object_id%type default null,
+          in_transaction_id             object.object_id%type
+     )
+return char;
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+function fn_active_card_pay_profile_cnt
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_acc_id         in        object.object_id%type
+) return number;
+
+function fn_active_eft_pay_profile_cnt
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_acc_id         in        object.object_id%type
+) return number;
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+function fn_active_pay_arngmnt_cnt
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_action_object_id       in        object.object_id%type,
+     in_billing_acc_id         in        object.object_id%type
+) return number;
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+function fn_consolidated_sched_tf
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_bill_plan_id           in        object.object_id%type
+) return number;
+--OSBilling-6435
+function fn_get_bats_from_history
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_transaction_hist_id              in        object.object_id%type
+)
+return object.object_id%type;
+-------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-5358
+function fn_paymentplanschedule_bal_amt
+(
+    in_session_id            IN object.object_id%TYPE,
+    in_transaction_id        IN object.object_id%TYPE,
+    in_chosen_payment_plan   IN object.object_id%TYPE
+) return CHAR;
+
+-------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------
+--OSBilling-6417
+function fn_get_target_cancel_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id               in             object.object_id%type,
+     in_compliance_matrix_tf       in             char default 'F',        -- OSBILLING-6897 
+     in_override_date_tf     in char default 'T'
+)
+return date;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING- 6718
+FUNCTION fn_policy_receivable_items (
+     in_session_id                  IN object.object_id%TYPE,
+     in_transaction_id              IN object.object_id%TYPE,
+     in_policy_id                   IN object.object_id%TYPE,
+	in_billing_acc                 IN object.object_id%TYPE,
+	in_res_bill_acc                IN object.object_id%TYPE default null
+   )
+RETURN varchar2;
+-------------------------------------------------------------------------------------------------------------------------------
+	--OSBILLING-6717
+----------------------------------------------------------------------------------------------------------------------------------------------------
+FUNCTION fn_policy_nondisbursable_items
+(
+     in_session_id            IN   object.object_id%TYPE,
+     in_transaction_id        IN   object.object_id%TYPE,
+     in_policy_id             IN   object.object_id%TYPE,
+     in_billing_account_id    IN   object.object_id%TYPE default null
+) 
+RETURN varchar2;
+
+------------------------------------------------------------------------------------------------------------------------------------
+function fn_sort_rc_memeber
+(
+     in_session_id             in            object.object_id%type,
+     in_transaction_id         in            object.object_id%type,
+     in_recon_item_list        in  out       pkg_os_object.t_object_list
+) return pkg_os_object.t_object_list;
+------------------------------------------------------------------------------------------------------------------------------------
+function  fn_policy_due_credit_amounts
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_policy_id             in        object.object_id%type,
+     in_due_type              in        number,
+     in_due_days              in        number default 0
+)
+return number;
+--------------------------------------------------------OSBILLING 7208 start------------------------------------------------------------------------------
+function FN_CREATE_ADHOC_INVOICE (in_session_id            IN object.object_id%TYPE,
+                                  in_transaction_id        IN object.object_id%TYPE,
+                                  in_policy_id             IN object.object_id%TYPE)
+
+     RETURN CHAR ;
+
+------------------------------------------------------------------------------------------------------------------------------------
+function fn_direct_bill_to_cust_cnt (in_session_id            IN object.object_id%TYPE,
+                                     in_transaction_id        IN object.object_id%TYPE,
+                                     in_billing_account_id    IN object.object_id%TYPE)
+
+     RETURN CHAR ;
+--------------------------------------------------------OSBILLING 7208 end-------------------------------------------------------------------------
+function fn_dirbill_tocust_CCEFT_pol_cnt
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_billing_account_id              in             object.object_id%type
+)
+return CHAR;
+------------------------------------------------------------------------------------------------------------------------------------
+-- Arun OSBILLING-6393 -  Start
+function  fn_get_min_term_equity_date
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_policy_id               in        object.object_id%type
+
+)
+return date;
+-- Arun OSBILLING-6393 -  Start
+-------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------OSBILLING 7208 end-------------------------------------------------------------------------
+ function fn_policy_payables_amounts
+ (
+	  in_session_id            in        object.object_id%type,
+	  in_transaction_id        in        object.object_id%type,
+	  in_policy_id             in        object.object_id%type,
+	  in_billing_account_id    in        object.object_id%type,
+	  in_earned_unearned_id    in        number -- Pass the earning method
+ )
+ return number;
+
+ function fn_ba_payables_amounts
+ (
+	  in_session_id            in        object.object_id%type,
+	  in_transaction_id        in        object.object_id%type,
+	  in_billing_account_id    in        object.object_id%type,
+	  in_earned_unearned_id    in        number -- Pass the earning method
+ )
+ return number;
+---------------------------------------------------------------------------------------------------------------------------------
+-- OSBILLING-7560 Start
+     function fn_get_surcharge_department
+(
+      in_session_id                 in             object.object_id%type,
+      in_transaction_id             in             object.object_id%type,
+          in_jurisdiction_id            in             object.object_id%type
+) return number;
+-- OSBILLING-7560 End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ --OSBILLING-7495
+      function fn_is_batch_trx_suspended
+    (
+         in_session_id                 in             object.object_id%type,
+         in_transaction_id             in             object.object_id%type,
+         in_fitrxset_id                in             object.object_id%type,
+         in_action_object_type         in             object_bv_value.business_variable_value%type,-- (PolicyTransaction Or BATS)
+         in_batch_id                   in             object.object_id%type
+    )
+    return number;
+-------------------------------------------------------------------------------------------------------------------------------------------------
+ --OSBILLING-6149
+function fn_get_reins_tolerence_days(  in_session_id             in object.object_id%type,
+                                               in_transaction_id         in object.object_id%type,
+                                               in_pol_trx_id             in object.object_id%type,
+                                               in_compliance_matrix_tf   in char default 'F'        
+                                        )
+return number;
+----------------------------------------------
+   -- OSBILLING-6897 Start 
+    function fn_apply_holiday_rule
+    (
+         in_session_id               in        object.object_id%type,
+         in_transaction_id           in        object.object_id%type,
+         in_date_value               in        date,
+         in_pol_trx_id			  in 	  object.object_id%type, -- OSBILLING-6897  
+         in_compliance_matrix_tf     in        char default 'F'       -- OSBILLING-6897  
+    )
+    return date;
+    -- OSBILLING-6897 End;  
+      --OSBILLING-7829 start
+     function fn_get_processed_date
+     (
+          in_session_id                 in             object.object_id%type,
+          in_transaction_id             in             object.object_id%type,
+          in_action_object_id            in             object.object_id%type
+     ) return date;
+     --OSBILLING-7829 end
+
+ --OSPRODUCT-931 Starts    
+     function fn_payment_plan_schedule_tf 
+     (
+               in_session_id                 in             object.object_id%type,
+               in_transaction_id             in             object.object_id%type,
+               in_action_object_id           in            object.object_id%type
+     )
+     return number;
+     
+function fn_get_billingaccount_cash
+(
+     in_object_id in object.object_id%type -- Billing Account ID
+)
+return number;
+---------------------------------------------------------------------------------------------------
+--UTPRODUCT-690 -- UTPRODUCT-924
+function fn_req_pendingcancel_date_get
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     in_due_date                   in             date,
+     in_compliance_matrix_tf       in             char default 'F',
+     in_current_date               in             date default null
+)
+return date;
+-- UTPRODUCT-690 -- UTPRODUCT-924
+---------------------------------------------------------------------------------------------------     
+-----------------------------------------------
+--osproduct-1216
+function fn_RewriteChangePolNoIndicator
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_number              in           VARCHAR2 --rewrite policy number
+)
+return number;
+---------------------------------------------------------------------------------------------------     
+--osproduct-2434
+function fn_consolidated_sched_cnt
+(
+     in_session_id             in        object.object_id%type,
+     in_transaction_id         in        object.object_id%type,
+     in_billing_acc_id     in     object.object_id%type
+) return number;
+--------------------------------------------------------------------------------------------------
+--UTPRODUCT-1045
+
+-- OSPRODUCT-2839
+function fn_return_reinstatement_due
+(
+     in_session_id                  in        object.object_id%type,
+     in_transaction_id              in        object.object_id%type,
+     in_policy_term_id              in        object.object_id%type
+)
+return number;
+
+function fn_cal_check_digit
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_bar_code                        in             number
+)
+return number;
+-------------------------------------------------------------------------------------------------
+/*OSPRODUCT-2679*/
+procedure sp_delete_invoice_transaction
+(
+     in_session_id                      in              object.object_id%type,
+     in_transaction_id                  in              object.object_id%type,
+     in_action_object_id                in              object.object_id%type
+);
+-------------------------------------------------------------------------------------------------
+-- OSPRODUCT-4111
+function fn_get_installment_aging
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_installment_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type
+)
+return number;
+---------------------------------------------------------------
+--OSPRODUCT-3715	
+function fn_get_curr_disb_amt
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccount             in             object.object_id%type
+
+) return number;
+---------------------------------------------------------------
+--OSPRODUCT-8671 
+function fn_get_policy_curr_disb_amt
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type
+
+) return number;
+-------------------------------------------------------------------------------------------------
+--OSPRODUCT-4399
+function fn_get_policy_frm_bats
+(
+      in_session_id                 in             object.object_id%type,
+      in_transaction_id             in             object.object_id%type,
+      In_Billingaccounttrxset       In             Object.Object_Id%Type
+) return varchar2;
+
+-- Added OSPRODUCT-3380
+function fn_fitem_category_get
+(
+     in_fitem_sub_category_id       in        number
+) return number;
+-- OSPRODUCT-3380
+----------------------------------------------------------------------------------------------
+--OSPRODUCT-4571
+function  fn_ba_susp_eff_date_check_tf
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_susp_eff_date              in             date,
+     in_object_id                  in             object.object_id%type
+)
+return char;
+function fn_get_most_recent_payment
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type
+
+) return object.object_id%type;
+--OSPRODUCT-5658
+function fn_get_associated_policy
+(
+      in_session_id                 in             object.object_id%type,
+      in_transaction_id             in             object.object_id%type,
+      in_policy_id                  in             object.object_id%type,
+      in_BillingaccountId           in             Object.Object_Id%Type
+) return varchar2;
+--OSPRODUCT-6844
+function fn_is_down_payment_paid
+(
+     in_session_id                      in          system_log.user_session_id%type,
+     in_transaction_id                  in          system_log.transaction_id%type,
+     in_policy_term_id                  in          object.object_id%type
+)
+return char;
+---------------------------------------------------------------
+--OSPRODUCT-6360
+function fn_get_associated_policy_flag
+(
+      in_policy_id                  in             object.object_id%type,      
+      in_billing_account_id         in             object.object_id%type
+)
+return varchar2;
+---------------------------------------------------------------
+--OSPRODUCT-7057
+function fn_get_fitem_recon_statement
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_agency_recon_id                 in             object.object_id%type
+
+)
+return varchar2;
+------------------------------------------------------------------------
+--OSPRODUCT-7057
+function fn_policy_trx_dues_exists
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_transaction_id           in             object.object_id%type
+
+)
+return number;
+------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-6033
+function fn_ReconAllItems_exists_tf
+(
+     in_session_id                 in                object.object_id%type,
+     in_transaction_id             in                object.object_id%type,
+     in_billingaccounttrxset_id    in                object.object_id%type
+) return number;
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-6033
+function fn_ReconProcessedItems_exts_tf
+(
+     in_session_id                 in                object.object_id%type,
+     in_transaction_id             in                object.object_id%type,
+     in_billingaccounttrxset_id    in                object.object_id%type
+) return number;
+----------------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-6983
+function fn_get_primary_entity_name
+(
+      in_session_id                 in             object.object_id%type,
+      in_transaction_id             in             object.object_id%type,
+      in_customer_id                  in             object.object_id%type
+)
+return varchar2;
+
+-- OSPRODUCT-6983
+function fn_get_account_holder_name
+(
+      in_session_id                 in             object.object_id%type,
+      in_transaction_id             in             object.object_id%type,
+      in_billing_account_id         in             object.object_id%type
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-7708
+function fn_most_recent_cashposttrx 
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccount_id          in             object.object_id%type
+)
+return object.object_id%type;
+----------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-7271
+function fn_check_net_disbursement
+(
+     in_session_id                 object.object_id%type,
+     in_transaction_id             object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-7957
+function fn_ba_most_recent_invoice
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccount_id          in             object.object_id%type
+)return object.object_id%type;
+----------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-3816
+function fn_is_valid_policy_tf
+(
+      in_session_id        	in        object.object_id%type,
+     in_transaction_id       in        object.object_id%type,
+      in_policy_id            in        object.object_id%type,     
+      in_responsible_ba_id    in        object.object_id%type,
+      in_billing_account_id   in        Object.Object_Id%type
+)return varchar2;
+-----------------------------------------------------------------------------
+function fn_is_policy_valid_tf   --OSPRODUCT-21189
+  (
+         in_session_id               in  object.object_id%type,
+         in_transaction_id           in  object.object_id%type,
+         in_policy_id                in  object.object_id%type,
+         in_billing_account_id       in  object.object_id%type
+                                                           
+  )
+  return char;   
+-----------------------------------------------------------------------------
+-- UTPRODUCT-4018
+function fn_recent_pol_trx_of_type
+  (
+      in_session_id        	  in        object.object_id%type,
+      in_transaction_id       in        object.object_id%type,
+      in_policy_id            in        object.object_id%type,     
+      in_trx_type_id          in        number
+)
+return  object.object_id%type;
+-----------------------------------------------------------------------------
+-- UTPRODUCT-3929
+
+function fn_next_sch_pull_obj
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_PTP_id                          in             object.object_id%type
+)    return object.object_id%type;
+
+-- UTPRODUCT-3928
+function fn_trx_withdraw_fund_tf
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_object_id                       in             object.object_id%type
+)    return varchar2;
+-- UTPRODUCT-3928
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- UTPRODUCT-3928
+function fn_payplan_downpayment_amount
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_payplan_object_id               in             object.object_id%type
+)    return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--OSPRODUCT-6572
+function fn_pol_amnt_writeoff
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_policy_id                       in             object.object_id%type,--policy id
+     in_batrx_type_id                   in             number -- Automated write of batch --901 , Manual write -2101,2701 write off reversal
+
+) 
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-9352
+function fn_get_dbt_crdt_reconciled_amt
+(
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_billingaccounttrxset_id  in      object.object_id%type,
+	in_debit_credit_id		   in	 number default 146
+
+) return number;
+--UTPRODUCT-4420
+function fn_associated_payment_plan
+(
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_billing_account          in      object.object_id%type,
+     in_policy_id                in      object.object_id%type
+)  return varchar2;
+--UTPRODUCT-4420
+-----------------------------------------------------------------------------------------------------------------------------
+function fn_amt_cash_app_or_post_or_trasfrd         --UTPRODUCT-4812
+(
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_object_id                in      object.object_id%type,
+     in_category_id              in      number default null,
+     in_sub_category_id          in      number default null
+)  return number;
+--UTPRODUCT-4812
+-----------------------------------------------------------------------------------------------------------------------------
+--UTPRODUCT-4847
+function fn_get_term_payer_init_amt
+(
+     in_session_id            in           object.object_id%type,
+     in_transaction_id        in           object.object_id%type,
+     in_policy_term_id        in           object.object_id%type,
+     in_policy_term_payer_id  in           object.object_id%type
+) return number;
+--UTPRODUCT-4847
+-----------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-11564
+function fn_get_fichange_src_tgt_details
+(    
+     in_session_id               in      object.object_id%type,
+     in_transaction_id           in      object.object_id%type,
+     in_object_id                 in        object.object_id%type
+     
+     )
+return varchar2;
+-----------------------------------------------------------------------------------------------------------------------------
+-- UTPRODUCT-4957 Starts
+function  fn_get_debit_item_count
+(
+     in_session_id              in        object.object_id%type,
+     in_transaction_id          in        object.object_id%type,
+     in_billingaccount_id       in        object.object_id%type,
+     in_policy_id               in        object.object_id%type default null,
+     in_policy_term_id          in        object.object_id%type default null
+)    return number;
+
+function fn_validate_cc
+(
+     in_session_id            in        object.object_id%type,
+     in_transaction_id        in        object.object_id%type,
+     in_ctf_id                in        object.object_id%type,
+     in_card_type             in        number,
+     in_card_number           in        varchar2 default null,
+     in_security_code         in        varchar2 default null,
+     in_flag                  in        number default null  
+)    return number;
+-- UTXPRODUCT-189 Start
+function fn_cr_apply_at_inv_inst_tf --fn_change_at_inv_inst_tf
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccouttrxset_id     in             object.object_id%type
+)    return char;
+-- UTXPRODUCT-189 end
+
+--OSPRODUCT-15762
+function fn_get_part_clawback_comm_amt
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccout              in             object.object_id%type
+) return number;
+
+-- OSPRODUCT-16665
+function fn_get_payment_plan_id
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_image_id            in             object.object_id%type
+) return object.object_id%type;
+
+function fn_get_billing_account_id
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billing_acc_type_id        in             number
+) return object.object_id%type;
+-- end OSPRODUCT-16665
+-------------------------------------------------------------------
+function fn_get_credit_on_billAccount
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billingaccout              in             object.object_id%type
+) return number;
+
+----- OSPRODUCT-17657 Start -----
+function fn_is_disbursible_fitem_for_customer_tf
+(
+   in_session_id                 in    object.object_id%type,
+   in_transaction_id             in    object.object_id%type,
+   in_billing_account_id         in    object.object_id%type,
+   in_fitem_id                   in    object.object_id%type
+)
+return char ;
+----- OSPRODUCT-17657 End -----
+function fn_check_valid_payment_trx
+(
+     in_session_id       in   object.object_id%type,
+     in_transaction_id   in   object.object_id%type,
+     in_BATS_id          in   object.object_id%type,
+     in_policy_id        in   business_variable.business_variable_id%type
+)
+return char;
+
+---------------------------------------------
+--OSPRODUCT-19738
+function fn_disburse_button_for_stmt
+(
+         in_session_id     object.object_id%TYPE,
+         in_transaction_id object.object_id%TYPE,
+         in_statement_id   object.object_id%TYPE
+)
+return number;
+------------------------------------------------
+--OSPRODUCT-20729
+function fn_billing_address_get   
+(
+         in_session_id          object.object_id%TYPE,
+         in_transaction_id      object.object_id%TYPE,
+         in_billingaccount_id   object.object_id%TYPE
+)
+return varchar2;
+---------------------------------------------------------
+function fn_get_policy_balance_amt
+(
+     in_session_id                         in         object.object_id%type,
+     in_transaction_id                     in         object.object_id%type,
+     in_policy_id                          in         object.object_id%type
+)    
+return  number;
+-- OSPRODUCT-19296
+---------------------------------------------------------
+-- UTPRODUCT2-26 - Start
+function fn_get_installment_lead_time
+(
+    in_session_id               in        object.object_id%type,
+    in_transaction_id           in        object.object_id%type,
+    in_policy_id                in        object.object_id%type default null,     
+    in_installment_id           in        object.object_id%type default null,     
+    in_policy_term_id           in        object.object_id%type default null, 
+    in_installment_no           in        number default null 
+)
+return number;
+-- UTPRODUCT2-26 - End
+---------------------------------------------------------
+--OSPRODUCT-21417
+function fn_delinquency_task_closure
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_billingaccount_id          in        object.object_id%type
+)
+return number;
+
+---------------------------------------------------------
+-- UTPRODUCT2-60 - Start
+function fn_term_pending_cancel_count
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_term_id             in        object.object_id%type
+)
+return number;
+-- UTPRODUCT2-60 -  End
+---------------------------------------------------------
+-- OSPRODUCT-23622 Start
+function fn_discarding_cpp_trx_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_id                  in        object.object_id%type
+)
+return char;
+-- OSPRODUCT-23622 End
+---------------------------------------------------------
+
+-- OSPRODUCT-23655 Start
+function fn_payplan_conflict_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policy_trx_id              in        object.object_id%type
+)
+return char;
+-- OSPRODUCT-23655 End
+---------------------------------------------------------
+
+
+-- OSPRODUCT-22096 start
+function fn_processed_renewal_exists_tf
+(
+     in_session_id      in object.object_id%type,
+     in_transaction_id  in object.object_id%type,
+     in_policy_id       in object.object_id%type
+)
+return char;
+-- OSPRODUCT-22096 end
+---------------------------------------------------------
+--OSPRODUCT-25324
+function fn_validate_account_cash_availble_tf
+(            
+    in_session_id                 in   object.object_id%type,
+    in_transaction_id             in   object.object_id%type,
+    in_ptp_id                     in   object.object_id%type
+) return char;
+---------------------------------------------------------
+--OSPRODUCT-25777 start
+function fn_term_installment_tf
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_policytrx_id               in        object.object_id%type,
+     in_term_installment_id        in        object.object_id%type
+)
+return char;
+--OSPRODUCT-25777 end
+---------------------------------------------------------
+-- OSPRODUCT-14767 start
+function fn_valid_policy_chng_due_dt_tf
+(     
+     in_session_id		         in	 object.object_id%type,
+     in_transaction_id 	         in	 object.object_id%type,
+     in_policy_id		         in	 object.object_id%type,
+     in_responsible_ba_id 		 in	 object.object_id%type,
+     in_billing_account_id		 in	 Object.Object_Id%type
+)
+return char;
+------- OSPRODUCT-14767 end
+---------------------------------------------------------
+-- OSPRODUCT-30708
+function fn_check_unknown_ind (in_session_id     in  object.object_id%type,
+                               in_transaction_id in  object.object_id%type,
+                               in_btx_set_id     in  object.object_id%type,
+                               in_BV_id           in  object.object_id%type 
+                               )
+return char;
+----------------------------------------------------------------------
+-- OSPRODUCT-30799
+function fn_check_active_profile
+(
+     in_session_id             in  object.object_id%type,
+     in_transaction_id 		 in  object.object_id%type,
+     in_billingaccount_id      in  object.object_id%type
+)
+return Number;
+----------------------------------------------------------------------
+--OSPRODUCT-30865
+Function fn_check_account_schedule_view 
+(
+    in_session_id                in  object.object_id%type,
+    in_transaction_id            in  object.object_id%type,
+    in_billing_account_id        in  object.object_id%type
+)
+return char;
+--------------------------------------------------------------------------
+function fn_financial_elements_created_tf  --OSPRODUCT-30359
+(
+    in_session_id               in  object.object_id%type,
+    in_transaction_id           in  object.object_id%type,
+    payplan_id                  in  object.object_id%type
+)
+return char;
+------------------------------------------------------------------------
+function fn_single_payment_allowed_tf      --OSPRODUCT-33224
+(
+     in_session_id                 in            object.object_id%type,
+     in_transaction_id             in            object.object_id%type,
+     in_bill_acc_id                in            object.object_id%type
+)
+return char;
+
+end PKG_DB_FUNCTIONS;
+/

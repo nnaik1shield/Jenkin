@@ -1,0 +1,120 @@
+<!--
+	$Modified By By: Ssingh
+	$Date:   14 December 2022  $
+-->
+<Schema name="Oneshield BI - Data Science">
+
+  <Dimension visible="true" highCardinality="false" name="Dim_Producer">
+    <Hierarchy name="Producer" visible="true" hasAll="true" allMemberName="All Producers" primaryKey="PP_PRODUCER_ID">
+      <Table name="BI_DIM_PRODUCER_PARTNER">
+      </Table>
+      <Level name="Producer Name" column="PP_PRODUCER_NAME" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Producer Name">
+	<Property name="Partner Code" column="PP_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Partner Name" column="PP_PARTNER_NAME" type="String">
+        </Property>
+	<Property name="Partner Parent Name" column="PP_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Partner Type" column="PP_PARTNER_TYPE" type="String">
+        </Property>
+	</Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Dim_Quote">
+    <Hierarchy name="Quote" visible="true" hasAll="true" allMemberName="All Quotes" primaryKey="QD_QUOTE_ID">
+      <Table name="BI_FACT_QUOTE_DETAIL">
+      </Table>
+      <Level name="Quote Name" column="QD_QUOTE_NAME" nameColumn="QD_QUOTE_NAME" ordinalColumn="QD_QUOTE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Quote Name">
+	</Level>
+	<Level name="Program" column="QD_PROGRAM_TYPE" nameColumn="QD_PROGRAM_TYPE" ordinalColumn="QD_PROGRAM_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Program">
+	</Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="false" highCardinality="false" name="Dim_Underwriter">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Underwriters" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Underwriter">
+      </Table>
+      <Level name="Underwriter" visible="true" column="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Underwriter">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+    <Dimension visible="true" highCardinality="false" name="Dim_Writing_Company">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Writing Companies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Writing_Company">
+      </Table>
+	  <Level name="Writing Company Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Status">
+	</Level>
+     <Level name="Writing Company" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Name">
+	 <Property name="Writing Company Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Writing Company Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+	<Property name="Writing Company Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Effective Date">
+	</Property>
+	<Property name="Writing Company Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Writing Company Expiry Date">
+	</Property>
+	</Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="ANOMALY_DETECTION" caption="Anomaly Detection" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_QUOTE_ANOMALY">
+    </Table>
+    
+    <DimensionUsage source="Dim_Quote" name="Quote" foreignKey="QUOTE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Producer" name="Producer" foreignKey="PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Dim_Underwriter" name="Underwriter" foreignKey="UNDERWRITER_ID" highCardinality="false">
+    </DimensionUsage>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Ad_Attributes" caption="Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="Quote_Number" column="POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+        </Level>
+	   <Level name="Policy_Number" column="POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+        </Level>
+	   <Level name="Address_City" column="ADDRESS_CITY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Address City">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Ad_Jurisdiction" caption="Jurisdiction">
+      <Hierarchy hasAll="true">
+        <Level name="Jurisdiction" column="PROVINCE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Jurisdiction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+     <Dimension type="StandardDimension" highCardinality="false" name="Ad_UWAlert" caption="UW Alert">
+      <Hierarchy hasAll="true">
+	   <Level name="Underwriter_Alert" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"  caption="Underwriter Alert" description="Underwriter Alert">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[(case when UW_ALERT_RAISED_IND = 1
+						   then 'Yes'
+					   else
+						   'No'
+				   end)
+				  ]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Total_Quotes" column="QUOTE_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Quotes" description="Total Quotes">
+    </Measure>
+    <Measure name="Total_Quote_Premium" column="PREMIUM_AMOUNT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Premium" description="Total Premium">
+    </Measure>
+    <Measure name="Anomaly_Score" column="ANOMALY_SCORE" datatype="Numeric" formatString="####.00" aggregator="avg" caption="Anomaly Score" description="Anomaly Score">
+    </Measure>
+
+  </Cube>
+  
+</Schema>

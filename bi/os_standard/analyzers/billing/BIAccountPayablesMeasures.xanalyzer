@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2022-12-09T15:29:41.197+05:30" update="2023-05-04T00:24:11.088+05:30">
+        <path name="BIAccountPayablesMeasures" folder="/home/OneShieldBI/analyzers/billing/BIAccountPayablesMeasures.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Billing" cube="ACCOUNT_PAYABLE" reportTypeEnum="PIVOT" showRowGrandTotal="false" showColumnGrandTotal="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Customers]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]"/>
+            <measure formula="[Measures].[Total_Payable_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="ASC" id="[MEASURE:1]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes/>
+        <filters/>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Bar" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Account Payable Age].[Payable Age]</drillColumn>
+            <drillColumn>[Account Payable Type].[Type of Payables]</drillColumn>
+            <drillColumn>[Billing Account].[Account Type]</drillColumn>
+            <drillColumn>[Billing Account].[Account Holder Name]</drillColumn>
+            <drillColumn>[Billing Account].[Billing Account Number]</drillColumn>
+            <drillColumn>[Customer].[Customer Type]</drillColumn>
+            <drillColumn>[Customer].[Customer Name]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Line of Business].[Product]</drillColumn>
+            <drillColumn>[Measures].[Total_Payable_Amount]</drillColumn>
+            <drillColumn>[Partner].[Partner Name]</drillColumn>
+            <drillColumn>[Partner].[Partner Status]</drillColumn>
+            <drillColumn>[Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Policy].[Policy Term]</drillColumn>
+            <drillColumn>[Policy].[Policy Primary Risk Address]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths=""/>
+        <columnDataFieldWidths actualWidths="120,169">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>-49</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[]</pluginData>
+    </uiAttributes>
+</reportRecord>

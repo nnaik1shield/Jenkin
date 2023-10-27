@@ -1,0 +1,1460 @@
+<Schema name="Dragon Cubes">
+
+<!--
+	$Workfile:   oneshield.mondrian.xml    $
+	$Revision:   1.62  $
+	$Author:   pmedapati  $
+	$Date:   13 Feb 2012 12:28:38  $
+-->
+
+  <Dimension visible="true" highCardinality="false" name="Address">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Countries" primaryKey="AD_ADDRESS_ID">
+      <Table name="BI_DIM_ADDRESS_DETAIL">
+	  <SQL dialect="generic"><![CDATA[BI_DIM_ADDRESS_DETAIL.AD_ADDRESS_ID != 0]]></SQL>
+      </Table>
+      <Level name="Country" visible="true" column="CL_COUNTRY_ID" nameColumn="AD_COUNTRY_NAME" ordinalColumn="AD_COUNTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="Jurisdiction" visible="true" column="JL_JURISDICTION_ID" nameColumn="AD_JURISDICTION_NAME" ordinalColumn="AD_JURISDICTION_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="City" visible="true" column="AD_ADDRESS_CITY" nameColumn="AD_ADDRESS_CITY" ordinalColumn="AD_ADDRESS_CITY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="ZipCode" visible="true" column="AD_ADDRESS_ZIP_CODE" ordinalColumn="AD_ADDRESS_ZIP_CODE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Line of Business">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+      <Table name="BI_DIM_PRODUCT_DETAIL">
+      </Table>
+      <Level name="Line of Business" visible="true" column="LT_LOB_ID" nameColumn="PD_LOB_NAME" ordinalColumn="PD_LOB_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="Product" visible="true" column="PD_PRODUCT_ID" nameColumn="PD_PRODUCT_NAME" ordinalColumn="PD_PRODUCT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Producer">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Producers" primaryKey="PP_PRODUCER_ID">
+      <Table name="BI_DIM_PRODUCER_PARTNER">
+      </Table>
+      <Level name="Ultimate Parent Agency" visible="true" ordinalColumn="PP_PARTNER_UPARENT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Ultimate Parent Agency Name">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN PP_PARTNER_UPARENT_ID IS NULL THEN 'None' ELSE PP_PARTNER_UPARENT_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_UPARENT_CODE" type="Numeric" caption="Ultimate Parent Partner Number">
+        </Property>
+      </Level>
+      <Level name="Parent Agency" visible="true" ordinalColumn="PP_PARTNER_PARENT_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the parent of Agency">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN PP_PARTNER_PARENT_ID IS NULL THEN 'None' ELSE PP_PARTNER_PARENT_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_PARENT_CODE" type="Numeric" caption="Parent Partner Number">
+        </Property>
+      </Level>
+      <Level name="Agency" visible="true" ordinalColumn="PP_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the Agency">
+        <KeyExpression>
+          <SQL dialect="oracle">
+            <![CDATA[CASE WHEN BI_DIM_PRODUCER_PARTNER.PE_PARTNER_ID IS NULL THEN 'None' ELSE PP_PARTNER_NAME END]]>
+          </SQL>
+        </KeyExpression>
+        <Property name="PARTNER_NUMBER" column="PP_PARTNER_CODE" type="Numeric" caption="Partner Number">
+        </Property>
+      </Level>
+      <Level name="Producer" visible="true" column="PP_PRODUCER_ID" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Producer">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Underwriter">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Underwriters" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Underwriter">
+      </Table>
+      <Level name="Underwriter" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Underwriter">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Creator">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Creators" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Creator">
+      </Table>
+      <Level name="Creator Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Creator role name">
+      </Level>
+      <Level name="Creator User" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Creator">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Assigned User" caption="%{shared.dimension.assigned_user.caption}">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Assigned Users" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Assigned User">
+      </Table>
+      <Level name="Assigned Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{shared.dimension.assigned_user.assigned_role.caption}">
+      </Level>
+      <Level name="Assigned User" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{shared.dimension.assigned_user.assigned_user.caption}" description="Name of the user task is assigned to">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Logged User">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Logged Users" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Logged User">
+      </Table>
+      <Level name="Logged User Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+      </Level>
+      <Level name="Logged User Name" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the user">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Customer">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+      <Level name="Customer" visible="true" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+      </Level>
+      <Level name="Customer ID" visible="true" column="CD_CUSTOMER_ID" ordinalColumn="CD_CUSTOMER_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique ID of the Customer">
+        <Property name="Entity Type" column="CD_INSURED_TYPE" type="String">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Carrier Branch">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Carrier Branches" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Carrier_Branch">
+      </Table>
+      <Level name="Carrier Branch" visible="true" column="PE_PARTNER_ID" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Writing Company">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Writing Companies" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Writing_Company">
+      </Table>
+      <Level name="Writing Company" visible="true" column="PE_PARTNER_ID" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the Carrier Branch">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Partner/Agent">
+    <Hierarchy visible="true" hasAll="true" allMemberName="Partner/Agent" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Partner_Agent">
+      </Table>
+      <Level name="Partner/Agent" visible="true" column="PE_PARTNER_ID" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Name of the Partner/Agent">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Financial Item Category">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Categories" primaryKey="FC_CATEGORY_ID">
+      <Table name="BI_DIM_FITEM_CATEGORY">
+      </Table>
+      <Level name="Category" visible="true" column="FC_CATEGORY_ID" nameColumn="FC_CATEGORY_NAME" ordinalColumn="FC_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the category">
+      </Level>
+      <Level name="Sub-Category" visible="true" column="FC_SUB_CATEGORY_ID" nameColumn="FC_SUB_CATEGORY_NAME" ordinalColumn="FC_SUB_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the sub-category">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Billing_Account_Dim" caption="Billing Account">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Billing Accounts" primaryKey="BA_BILLING_ACCOUNT_ID">
+      <Table name="BI_DIM_BILLING_ACCOUNT">
+      </Table>
+      <Level name="Account Type" visible="true" column="BA_BILLING_ACCOUNT_TYPE" nameColumn="BA_BILLING_ACCOUNT_TYPE" ordinalColumn="BA_BILLING_ACCOUNT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The type of Billing Account">
+      </Level>
+      <Level name="Account Holder Name" visible="true" column="BA_BILLING_ACCOUNT_ID" nameColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" ordinalColumn="BA_BILLING_ACCOUNT_HOLDER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Account Holder">
+        <Property name="Billing Account Number" column="BA_BILLING_ACCOUNT_NUMBER" type="String">
+        </Property>
+        <Property name="Billing Account ID" column="BA_BILLING_ACCOUNT_ID" type="Numeric">
+        </Property>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <!-- Join BI_DIM_POLICY_DETAIL.POD_POLICY_EFF_DATE with BI_DIM_TIME_DETAIL.TD_DATE with PK = BI_DIM_POLICY_DETAIL.POD_POLICY_ID
+	Alias: PT_POL_EFF_DT
+  -->	
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Policy_Transaction_PolicyEffDate_Dim" caption="Time (Policy Effective Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="POD_POLICY_ID" primaryKeyTable="BI_DIM_POLICY_DETAIL">
+      <Join leftKey="POD_POLICY_EFF_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_POLICY_DETAIL">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="PT_POL_EFF_DT">
+        </Table>
+      </Join>
+      <Level name="Policy Effective Date Year" visible="true" table="PT_POL_EFF_DT" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Policy Effective Date (Year)" description="Policy Effective Date Year">
+      </Level>
+      <Level name="Policy Effective Date Quarter" visible="true" table="PT_POL_EFF_DT" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Policy Effective Date (Quarter)" description="Name or Number of the Quarter">
+      </Level>
+      <Level name="Policy Effective Date Month" visible="true" table="PT_POL_EFF_DT" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Policy Effective Date (Month)" description="Name of the Month">
+      </Level>
+      <Level name="Policy Effective Date" visible="true" table="PT_POL_EFF_DT" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Policy Effective Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <!-- Join BI_DIM_POLICY_DETAIL.POD_POLICY_EXP_DATE with BI_DIM_TIME_DETAIL.TD_DATE with PK = BI_DIM_POLICY_DETAIL.POD_POLICY_ID 
+	Alias: PT_POL_EXP_DT
+  -->
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Policy_Transaction_PolicyExpDate_Dim" caption="Time (Policy Expiration Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="POD_POLICY_ID" primaryKeyTable="BI_DIM_POLICY_DETAIL">
+      <Join leftKey="POD_POLICY_EXP_DATE" rightKey="TD_DATE">
+        <Table name="BI_DIM_POLICY_DETAIL">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="PT_POL_EXP_DT">
+        </Table>
+      </Join>
+      <Level name="Policy Expiration Date Year" visible="true" table="PT_POL_EXP_DT" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Policy Expiration Date (Year)" description="Policy Expiration Date Year">
+      </Level>
+      <Level name="Policy Expiration Date Quarter" visible="true" table="PT_POL_EXP_DT" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Policy Expiration Date (Quarter)" description="Name or Number of the Quarter">
+      </Level>
+      <Level name="Policy Expiration Date Month" visible="true" table="PT_POL_EXP_DT" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Policy Expiration Date (Month)" description="Name of the Month">
+      </Level>
+      <Level name="Policy Expiration Date" visible="true" table="PT_POL_EXP_DT" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Policy Expiration Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension visible="true" highCardinality="false" name="Policy">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Policies" primaryKey="POD_POLICY_ID">
+      <Table name="BI_DIM_POLICY_DETAIL">
+      </Table>
+      <Level name="Policy Number" visible="true" column="POD_POLICY_NUMBER" nameColumn="POD_POLICY_NUMBER" ordinalColumn="POD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Number">
+      </Level>
+      <Level name="Policy Term" visible="true" column="POD_POLICY_TERM" nameColumn="POD_POLICY_TERM" ordinalColumn="POD_POLICY_TERM" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy Term">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Billing_Transaction_Dim" caption="Billing Transactions">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Billing Transactions" primaryKey="BT_ID">
+      <Table name="BI_DIM_BILLING_TRX">
+      </Table>
+      <Level name="Transaction Type" visible="true" column="BT_TYPE" nameColumn="BT_TYPE" ordinalColumn="BT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Billing Transaction Type">
+      </Level>
+      <Level name="Transaction ID" visible="true" column="BT_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique Identifier for Billing Transaction">
+      </Level>
+      <Level name="Transaction Post Status" visible="true" column="BT_POST_STATUS" ordinalColumn="BT_POST_STATUS" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Post Status">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Billing_Batch_Dim" caption="Billing Batch Details">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Billing Batches" primaryKey="BB_ID">
+      <Table name="BI_DIM_BILLING_BATCH">
+      </Table>
+      <Level name="Batch ID" visible="true" column="BB_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique Identifier for Billing Batch">
+      </Level>
+      <Level name="Batch Ref. No." visible="true" column="BB_BATCH_REF_NO" ordinalColumn="BB_BATCH_REF_NO" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Ref. No.">
+      </Level>
+      <Level name="External Batch No." visible="true" column="BB_EXTERNAL_BATCH_NO" ordinalColumn="BB_EXTERNAL_BATCH_NO" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="External Batch No.">
+      </Level>
+      <Level name="Batch Type" visible="true" column="BB_BATCH_TYPE" ordinalColumn="BB_BATCH_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Type">
+      </Level>
+      <Level name="Batch Entry Method" visible="true" column="BB_BATCH_ENTRY_METHOD" ordinalColumn="BB_BATCH_ENTRY_METHOD" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Entry Method">
+      </Level>
+      <Level name="Batch Status" visible="true" column="BB_BATCH_STATUS" ordinalColumn="BB_BATCH_STATUS" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Status">
+      </Level>
+      <Level name="Batch Posted Date" visible="true" column="BB_BATCH_POSTED_DATE" ordinalColumn="BB_BATCH_POSTED_DATE" type="Date" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Posted Date">
+      </Level>
+      <Level name="Batch Processed Date" visible="true" column="BB_BATCH_PROCESSED_DATE" ordinalColumn="BB_BATCH_PROCESSED_DATE" type="Date" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Batch Processed Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Billing_Transaction_Payment_Type_Dim" caption="Payment Type">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Payment Types" primaryKey="BT_ID">
+      <Table name="BI_DIM_BILLING_TRX">
+      </Table>
+      <Level name="Payment Type" visible="true" column="BT_PAYMENT_TYPE" nameColumn="BT_PAYMENT_TYPE" ordinalColumn="BT_PAYMENT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Type">
+      </Level>
+      <Level name="Payment Details" visible="true" column="BT_PAYMENT_TYPE_DETAIL" nameColumn="BT_PAYMENT_TYPE_DETAIL" ordinalColumn="BT_PAYMENT_TYPE_DETAIL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Payment Details">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Billing_Transaction_GLedgerDate_Dim" caption="Time (General Ledger Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="BT_ID" primaryKeyTable="BI_DIM_BILLING_TRX">
+      <Join leftKey="BT_GLEDGER_DT" rightKey="TD_DATE">
+        <Table name="BI_DIM_BILLING_TRX">
+        </Table>
+        <Table name="BI_DIM_TIME_DETAIL" alias="BT_GL_TIME">
+        </Table>
+      </Join>
+      <Level name="GL Date Year" visible="true" table="BT_GL_TIME" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="GL Date (Year)" description="General Ledger Date Year">
+      </Level>
+      <Level name="GL Date Quarter" visible="true" table="BT_GL_TIME" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="GL Date (Quarter)" description="Name or Number of the Quarter">
+      </Level>
+      <Level name="GL Date Month" visible="true" table="BT_GL_TIME" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="GL Date (Month)" description="Name of the Month">
+      </Level>
+      <Level name="GL Date" visible="true" table="BT_GL_TIME" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="GL Date" description="Effective Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Underwriting Rule">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Underwriting Rules" primaryKey="CR_RULE_ID">
+      <Table name="BI_DIM_COVERAGE_RULE">
+      </Table>
+      <Level name="Underwriting Rule Type" visible="true" column="CR_RULE_TYPE_ID" nameColumn="CR_RULE_TYPE_NAME" ordinalColumn="CR_RULE_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Coverage Rule Type">
+      </Level>
+      <Level name="Underwriting Rule Message" visible="true" column="CR_RULE_MESSAGE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Coverage Rule Alert Message">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Effective Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EFF_TIME">
+      </Table>
+      <Level name="Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+      </Level>
+      <Level name="Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Effective Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Effective Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Expiration Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EXP_TIME">
+      </Table>
+      <Level name="Expiration Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Expiration Year">
+      </Level>
+      <Level name="Expiration Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+      </Level>
+      <Level name="Expiration Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Expiration Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Expiration Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Last Updated Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="LUD_TIME">
+      </Table>
+      <Level name="Last Updated Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Last Updated Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+      </Level>
+      <Level name="Last Updated Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+      </Level>
+      <Level name="Last Updated Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Last updated date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Creation Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+      </Table>
+      <Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+      </Level>
+      <Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+      </Level>
+      <Level name="Creation Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Creation Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Bind Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="BID_TIME">
+      </Table>
+      <Level name="Bind Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Bind Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+      </Level>
+      <Level name="Bind Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+      </Level>
+      <Level name="Bind Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Bind Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Completed Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="CMP_TIME">
+      </Table>
+      <Level name="Completed Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Completed Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+      </Level>
+      <Level name="Completed Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+      </Level>
+      <Level name="Completed Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Completed Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Due Date)" caption="%{shared.dimension.time(due_date).caption}">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="DUE_DATE_TIME">
+      </Table>
+      <Level name="Due Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="%{shared.dimension.time(due_date).due_date_year.caption}" description="Year">
+      </Level>
+      <Level name="Due Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="%{shared.dimension.time(due_date).due_date_quarter.caption}" description="Name or number of the Quarter">
+      </Level>
+      <Level name="Due Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="%{shared.dimension.time(due_date).due_date_month.caption}" description="Name of the month">
+      </Level>
+      <Level name="Due Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="%{shared.dimension.time(due_date).due_date.caption}" description="Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Last Logged in Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="DLL_DATE">
+      </Table>
+      <Level name="Last Logged Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Last Logged Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+      </Level>
+      <Level name="Last Logged Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+      </Level>
+      <Level name="Last Logged Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Segment">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Segments" primaryKey="IC_INDUSTRY_ID">
+      <Table name="BI_DIM_INDUSTRY_CLASS">
+      </Table>
+      <Level name="Industry" visible="true" column="IC_INDUSTRY_NAME" nameColumn="IC_INDUSTRY_NAME" ordinalColumn="IC_INDUSTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Industry">
+      </Level>
+      <Level name="Industry ID" visible="true" column="IC_INDUSTRY_ID" ordinalColumn="IC_INDUSTRY_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique ID of the Industry">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Cube name="QUOTE" caption="Quote Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_QUOTE_DETAIL">
+	<SQL dialect="generic"> 
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_QUOTE_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Effective Date)" name="Time (Effective Date)" visible="true" foreignKey="QD_QUOTE_EFF_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Expiration Date)" name="Time (Expiration Date)" visible="true" foreignKey="QD_QUOTE_EXP_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Last Updated Date)" name="Time (Last Updated Date)" visible="true" foreignKey="QD_LAST_UPDATED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="QD_CREATE_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Bind Date)" name="Time (Bind Date)" visible="true" foreignKey="QD_BIND_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Completed Date)" name="Time (Completed Date)" visible="true" foreignKey="QD_COMPLETED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" visible="true" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Segment" name="Segment" visible="true" foreignKey="IC_INDUSTRY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension visible="true" highCardinality="false" name="Quote Name">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+        <Level name="Quote Name" visible="true" column="QD_QUOTE_ID" nameColumn="QD_QUOTE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Quote">
+          <Property name="Quote ID" column="QD_QUOTE_ID" type="String">
+          </Property>
+          <Property name="Policy Number" column="QD_POLICY_NUMBER" type="String" description="Corresponding policy number of the quote">
+          </Property>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Underwriting Rule Indicator" caption="Underwriting Rule Indicator">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Underwriting Rule Indicator" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="At least one underwriting rule was tripped for this quote">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN QD_UW_ALERT_RAISED_IND=1 THEN 'Yes'  WHEN QD_UW_ALERT_RAISED_IND=0 THEN 'No'  ELSE 'N/A' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Channel">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Channels">
+        <Level name="Channel" visible="true" column="QD_CHANNEL_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Premium Band" caption="Premium Band" description="Band the submitted premium falls into">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Premium Bands">
+        <Level name="Premium Band" visible="true" column="QD_PREMIUM_BAND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Band the submitted premium falls into">
+          <OrdinalExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when (instr(QD_PREMIUM_BAND, '<') > 0) then -1
+when (instr(QD_PREMIUM_BAND, '>') > 0) then 500000 else
+to_number(Substr(QD_PREMIUM_BAND, 0, instr(QD_PREMIUM_BAND, ' -')-1)) end]]>
+            </SQL>
+          </OrdinalExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Copied Indicator" caption="Copied Indicator" description="Indicator for whether quote arose from a copy">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Copied Indicator" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Indicator for whether quote arose from a copy">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN QD_COPIED_IND=0 THEN 'No'  WHEN QD_COPIED_IND=1 THEN 'Yes'  ELSE 'Unknown' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension type="StandardDimension" visible="true" foreignKey="OS_OBJECT_STATE_ID" highCardinality="false" name="Status">
+      <Hierarchy visible="true" hasAll="true">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Status" visible="true" column="OS_QUOTE_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Quote status">
+        </Level>
+        <Level name="Current State" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of quote">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="UW_Referral_Outcome" caption="Underwriting Referral Outcome" description="The outcome of an underwring referral">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="UW_Referral_Outcome" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Underwriting Referral Outcome" description="The outcome of an underwring referral">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN QD_UW_REF_TRACKER_OUTCOME=36601 THEN 'Accepted'
+		                  WHEN QD_UW_REF_TRACKER_OUTCOME=36701 THEN 'Rejected'
+					   WHEN QD_UW_REF_TRACKER_OUTCOME=36501 THEN 'In Progress'
+					   WHEN QD_UW_REF_TRACKER_OUTCOME=36801 THEN 'In Progress' 
+					   ELSE 'Unknown' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Quote Rejection Reason" caption="Quote Rejection Reason">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Quote Rejection Reason" visible="true" column="QD_POLICY_REJECTION_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Rejection Reason for the Quote">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when QD_POLICY_REJECTION_REASON is not null then QD_POLICY_REJECTION_REASON  else 'N/A' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Quote Declined Reason" caption="Quote Declined Reason">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Quote Declined Reason" visible="true" column="QD_DECLINE_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Decline Reason for the Quote">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when QD_DECLINE_REASON is not null then QD_DECLINE_REASON  else 'N/A' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Disposition" caption="Disposition">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Disposition" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bound or Not Bound">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when QD_BOUND_IND = 1 then 'Bound'  else 'Not Bound' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Program">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Programs">
+        <Level name="Program" visible="true" column="QD_PROGRAM_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Quote_Count" column="QD_QUOTE_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="Quote Count" description="Total number of quotes">
+    </Measure>
+    <Measure name="Bind_Count" column="QD_BOUND_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Bind Count" description="Number of quotes bound">
+    </Measure>
+    <Measure name="Copied_Count" column="QD_COPIED_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Copied Count" description="Number of quotes copied">
+    </Measure>
+    <Measure name="Rated_Count" column="QD_RATED_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Rated Count" description="Number of quotes rated at least once" visible="true">
+    </Measure>
+    <Measure name="Rejected_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Quote Rejected Count" description="Number of quotes rejected" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 23005, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Lapsed_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Lapsed Count" description="Number of quotes lapsed" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 40446, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Declined_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Declined Count" description="Number of quotes declined" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 85, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Premium" column="QD_PREMIUM_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Premium" description="Premium of the quote">
+    </Measure>
+    <Measure name="Bound_Premium" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Bound Premium" description="Premium of the quote">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 67, QD_PREMIUM_AMT, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Rejected_Premium" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Rejected Premium" description="Total premium of rejected quotes">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 23005, QD_PREMIUM_AMT, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Lapsed_Premium" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Lapsed Premium" description="Total premium of quotes lapsed">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_QUOTE_DETAIL.OS_OBJECT_STATE_ID, 40446, QD_PREMIUM_AMT, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Avg_Time_to_Issue" column="QD_TIME_TO_BIND_DAYS" datatype="Numeric" formatString="####.0" aggregator="avg" caption="Avg Time to Issue (days)" description="Average time to bind a quote">
+    </Measure>
+    <Measure name="Submission_Count" column="QD_SUBMISSION_ID" datatype="Integer" formatString="#,###" aggregator="distinct-count" caption="Submission Count" description="Count of all submitted policies" visible="true">
+    </Measure>
+    <Measure name="UW_Underwriting_Rule_Count" column="QD_UW_ALERTS_UNDERWRITING_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Underwriting Type Rule Count" description="Count of all underwriting rules triggered" visible="false">
+    </Measure>
+    <Measure name="UW_Hardstop_Rule_Count" column="QD_UW_ALERTS_HARDSTOP_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - HardStop Rule Count" description="Count of all hardstop underwriting alerts triggered" visible="false">
+    </Measure>
+    <Measure name="UW_NO_Rule_Count" column="QD_NO_ALERTS_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - No Rules Tripped Count" description="Underwriting - No Rules Tripped Count" visible="false">
+    </Measure>
+    <Measure name="UW_Rule_Overridden_Count" column="QD_UW_ALERTS_OVERRIDE_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Rules Override Count" description="Count of all underwriting rules over-ridden" visible="false">
+    </Measure>
+    <Measure name="UW_Total_Referred_Count" column="QD_REFERRED_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Total Referral Count" description="Number of times this quote was referred to underwriting." visible="false">
+    </Measure>
+    <Measure name="UW_Peer_Referred_Count" column="QD_UW_REF_PEER_REFERRED_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Peer Referred Count" description="Number of times the referrals for this quote were peer referred." visible="false">
+    </Measure>
+    <Measure name="UW_Referral_Process_Time" column="QD_TIME_TO_CLOSE_UW_REF_DAYS" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Total Referral Process Time" description="Total Time taken to close referral for this quote" visible="false">
+    </Measure>
+    <Measure name="UW_Referred_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Underwriting Referred Count" description="No. of Quotes referred" visible="false">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN QD_REFERRED_NBR > 0 THEN 1 ELSE 0 END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <CalculatedMember name="Hit_Ratio" formatString="###.00%" caption="Bind Rate%" formula="IIf( [Measures].[Bind_Count] = 0, null, ([Measures].[Bind_Count] / [Measures].[Quote_Count]) )" dimension="Measures">
+    </CalculatedMember>
+    <CalculatedMember name="Reject_Ratio" formatString="###.00%" caption="Reject Ratio%" formula="IIf( [Measures].[Rejected_Count] = 0, null, ([Measures].[Rejected_Count] / [Measures].[Quote_Count]) )" dimension="Measures">
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Bound_Premium" formatString="$#,###.00" caption="Avg Bound Premium" description="Average bound premium" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Bind_Count] = 0, null, [Measures].[Bound_Premium] / [Measures].[Bind_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Quotes_per_Submission" formatString="###.00" caption="Avg Quotes per Submission" description="Average quotes per submission " dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Submission_Count] = 0, null, [Measures].[Quote_Count] / [Measures].[Submission_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Rated_Ratio" formatString="###.00%" caption="Rated Ratio %" description="Rated ratio" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Quote_Count] = 0, null, ([Measures].[Rated_Count] / [Measures].[Quote_Count]))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Total_UW_Rule_Count" formatString="#,###" caption="Underwriting - Total Rule Count" description="Total count of hardstop and underwriting rules" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[([Measures].[UW_Underwriting_Rule_Count] + [Measures].[UW_Hardstop_Rule_Count])]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Override_Ratio" formatString="###.00%" caption="Underwriting - Override Ratio %" description="Override Ratio" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Total_UW_Rule_Count] = 0, null, ([Measures].[UW_Rule_Overridden_Count] / ([Measures].[Total_UW_Rule_Count])))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_No_Of_Referrals" formatString="###.00" caption="Underwriting - Avg Referrals" description="Average number of Underwriting Referrals per Quote" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Quote_Count] = 0, null,  [Measures].[UW_Referred_Count]/[Measures].[Quote_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_No_Of_Rules" formatString="###.00" caption="Underwriting - Avg Rules" description="Average number of Underwriting Alerts per Quote" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Quote_Count] = 0, null,  [Measures].[Total_UW_Rule_Count]/[Measures].[Quote_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Ref_Close_Time_Per_Quote" formatString="###.00" caption="Underwriting - Avg Referral Process Time" description="Underwriting - Avg Time taken to process referrals per Quote" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Transaction Count] = 0 , 0 , ([Measures].[UW_Referral_Process_Time] / [Measures].[Quote_Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+  </Cube>
+  <Cube name="POLICYTRANSACTION" caption="Policy Transaction Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_POLICY_TRX_DETAIL">
+	<SQL dialect="generic">
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_POLICY_TRX_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="PT_CREATE_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Last Updated Date)" name="Time (Last Updated Date)" visible="true" foreignKey="PT_LAST_UPDATE_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Completed Date)" name="Time (Completed Date)" visible="true" foreignKey="PT_COMPLETED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" visible="true" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Segment" name="Segment" visible="true" foreignKey="IC_INDUSTRY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy" name="Policy" visible="true" foreignKey="PT_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PolicyEffDate_Dim" name="Policy_Transaction_PolicyEffDate_Dim" caption="Policy Effective Date" visible="true" foreignKey="PT_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PolicyExpDate_Dim" name="Policy_Transaction_PolicyExpDate_Dim" caption="Policy Expiration Date" visible="true" foreignKey="PT_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    
+    <Dimension type="TimeDimension" visible="true" foreignKey="PT_EFF_DT" highCardinality="false" name="Time (Transaction Effective Date)">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+        <Table name="BI_DIM_TIME_DETAIL" alias="TRX_TIME">
+        </Table>
+        <Level name="Transaction Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Transaction Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Transaction Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+        <Level name="Transaction Effective Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    <Dimension visible="true" highCardinality="false" name="Policy Transaction Type">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Transactions">
+        <Level name="Transaction Type" visible="true" column="PT_TYPE_NAME" nameColumn="PT_TYPE_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Transaction ID" visible="true" column="PT_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+          <Property name="Transaction Effective Date" column="PT_EFF_DT" type="String">
+          </Property>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Premium Band">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Premium Bands">
+        <Level name="Premium Band" visible="true" column="PT_PREMIUM_BAND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Band the submitted premium falls into">
+          <OrdinalExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when (instr(PT_PREMIUM_BAND, '<') > 0) then -1
+when (instr(PT_PREMIUM_BAND, '>') > 0) then 500000 else
+to_number(Substr(PT_PREMIUM_BAND, 0, instr(PT_PREMIUM_BAND, ' -')-1)) end]]>
+            </SQL>
+          </OrdinalExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="OS_OBJECT_STATE_ID" highCardinality="false" name="Status">
+      <Hierarchy visible="true" hasAll="true">
+        <Table name="BI_DIM_OBJECT_STATE">
+        </Table>
+        <Level name="Status" visible="true" column="OS_POLICY_TRX_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Policy transaction status">
+        </Level>
+        <Level name="Current State" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of policy transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="New or Renew Term" caption="New or Renew" description="Indicator for whether transaction belongs to the first term or the next term">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="New or Renew" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Indicator for whether transaction belongs to the first term or the next term">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN PT_NEW_RENEW_IND=0 THEN 'New'  WHEN PT_NEW_RENEW_IND=1 THEN 'Renew'  ELSE 'N/A' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Underwriting Rule Indicator" caption="Underwriting - Rule Indicator">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Underwriting Rule Indicator" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Does this transaction has at least one underwriting alert">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN PT_UW_ALERTS_UNDERWRITING_NBR > 0 THEN 'Yes' ELSE 'No' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Program">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Programs">
+        <Level name="Program" visible="true" column="PT_PROGRAM_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Transaction Count" column="PT_ID" datatype="Integer" formatString="#,###" aggregator="count">
+    </Measure>
+    <Measure name="Completed Count" column="PT_COMPLETED_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Completed Count">
+    </Measure>
+    <Measure name="Renewal Referral Count" column="PT_RENEWAL_REFERRAL_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Renewal Referral Count">
+    </Measure>
+    <Measure name="Rewrite Referral Count" column="PT_REWRITE_REFERRAL_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Rewrite Referral Count">
+    </Measure>
+    <Measure name="Rejected_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Rejected Count" description="Number of transactions rejected" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_POLICY_TRX_DETAIL.OS_OBJECT_STATE_ID, 28905, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Premium" column="PT_PREMIUM_CHANGE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum">
+    </Measure>
+    <Measure name="Avg Premium" column="PT_PREMIUM_CHANGE_AMT" datatype="Numeric" formatString="$#,###" aggregator="avg">
+    </Measure>
+    <Measure name="Avg Time to Process" column="PT_TIME_PROCESS_DAYS" datatype="Numeric" formatString="####.0" aggregator="avg" caption="Avg Days to Process ">
+    </Measure>
+    <Measure name="Days to Process" column="PT_TIME_PROCESS_DAYS" datatype="Numeric" formatString="####.0" aggregator="sum" caption="Days to Process ">
+    </Measure>
+    <Measure name="Tax Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Tax Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when PT_TAX_AMT = 0 then null else PT_TAX_AMT end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Surcharge Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Surcharge Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when PT_SURCHARGE_AMT = 0 then null else PT_SURCHARGE_AMT end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Fee Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Fee Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when PT_FEE_AMT = 0 then null else PT_FEE_AMT end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Commission Amount" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Commission Amount">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when PT_COMMISSION_AMT = 0 then null else PT_COMMISSION_AMT end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="UW_Rule_Count" column="PT_UW_ALERTS_UNDERWRITING_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Underwriting Type Rule Count" description="Count of all underwriting alerts triggered" visible="true">
+    </Measure>
+    <Measure name="UW_Hardstop_Rules_Count" column="PT_UW_ALERTS_HARDSTOP_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - HardStop Rule Count" description="Count of all hardstop underwriting alerts triggered" visible="true">
+    </Measure>
+    <Measure name="UW_NO_Rule_Count" column="PT_NO_ALERTS_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - No Rules Tripped Count" description="Underwriting - No Rules Tripped Count" visible="true">
+    </Measure>
+    <Measure name="UW_Total_Referred_Count" column="PT_REFERRED_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Total Referral Count" description="Number of times this transaction was referred to Underwriter">
+    </Measure>
+    <Measure name="UW_Peer_Referred_Count" column="PT_UW_REF_PEER_REFERRED_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Peer Referred Count" description="Number of times the referrals for this transaction were peer referred.">
+    </Measure>
+    <Measure name="UW_Referral_Process_Time" column="PT_TIME_TO_CLOSE_UW_REF_DAYS" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Total Referral Process Time" description="Total Time taken to close referral for this transaction">
+    </Measure>
+    <Measure name="UW_Referred_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Underwriting Referred Count" description="No. of Transactions referred">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[CASE WHEN PT_REFERRED_NBR > 0 THEN 1 ELSE 0 END]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <CalculatedMember name="Total_UW_Rule_Count" formatString="#,###" caption="Underwriting - Total Rule Count" description="Total Rule Count" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[([Measures].[UW_Rule_Count] + [Measures].[UW_Hardstop_Rules_Count])]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Rule_Per_Trx" formatString="###.00" caption="Underwriting - Avg Rules" description="Avg Rules per Transaction" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Transaction Count] = 0 , 0 , ([Measures].[Total_UW_Rule_Count] / [Measures].[Transaction Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Referral_Per_Trx" formatString="###.00" caption="Underwriting - Avg Referrals" description="Avg Referrals per Transaction" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Transaction Count] = 0 , 0 , ([Measures].[Referred_Count] / [Measures].[Transaction Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_Ref_Close_Time_Per_Trx" formatString="###.00" caption="Underwriting - Avg Referral Process Time" description="Underwriting - Avg Time taken to process referrals per Transaction" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Transaction Count] = 0 , 0 , ([Measures].[UW_Referral_Process_Time] / [Measures].[Transaction Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+  </Cube>
+  <Cube name="TASK_CUBE" caption="Task Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_TASK_DETAIL">
+	<SQL dialect="generic">
+         <![CDATA[%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_TASK_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Assigned User" name="Assigned User" visible="true" foreignKey="UD_ASSIGNED_USER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="TD_CREATE_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Completed Date)" name="Time (Completed Date)" visible="true" foreignKey="TD_COMPLETED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Due Date)" name="Time (Due Date)" visible="true" foreignKey="TD_DUE_DT" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Task Type" caption="%{dimension.task_type.caption}">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Task Types">
+        <Level name="Task Type" visible="true" column="TD_TASK_TYPE_DESC" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{dimension.task_type.task_type.caption}" description="Type of task. Useful if this is a system generated task">
+        </Level>
+        <Level name="Task Title" visible="true" column="TD_TASK_TITLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Task Title" description="Title of task. Useful if this is a system generated task">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Overdue" caption="%{dimension.overdue.caption}">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Complete and Incomplete">
+        <Level name="Overdue" visible="true" column="TD_OVERDUE_IND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{dimension.overdue.overdue.caption}" description="Is this Task overdue?">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case 
+					when TD_OVERDUE_IND=1 then 'Yes'  
+					when  TD_OVERDUE_IND=2 then 'No'  
+					when  TD_OVERDUE_IND is null then 'No'  
+					else 'No' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Internal Indicator" caption="%{dimension.internal.caption}">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Internal" visible="true" column="TD_INTERNAL_IND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{dimension.internal.internal.caption}" description="Is the task being assigned internally ?">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case 
+					when TD_INTERNAL_IND=1 then 'Yes'  
+					when  TD_INTERNAL_IND=2 then 'No'  
+					when  TD_INTERNAL_IND is null then 'No'  
+					else 'No' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Task Status" caption="%{dimension.task_status.caption}">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Task Status" visible="true" column="TD_STATUS_IND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{dimension.task_status.task_Status.caption}" description="Status of the Task">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case 
+					when TD_STATUS_IND=1 then 'Complete'  
+					when  TD_STATUS_IND=2 then 'Incomplete'  
+					when  TD_STATUS_IND is null then 'N/A'  
+					else 'N/A' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Task Rejection Reason" caption="%{dimension.task_rejection_reason.caption}">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Task Rejection Reason" visible="true" column="TD_POLICY_REJECTION_REASON" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="%{dimension.task_rejection_reason.task_rejection_reason.caption}" description="Rejection Reason for the Task">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Task ID" caption="Task ID">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Task ID" visible="true" column="TD_TASK_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Task ID" description="Task Id">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Task_Count" column="TD_TASK_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="%{cube.task.measure.Task_Count.caption}" description="%{cube.task.measure.Task_Count.Description}">
+    </Measure>
+    <Measure name="Open_Task_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.Open_Task_Count.caption}" description="%{cube.task.measure.Open_Task_Count.Description}">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(TD_STATUS_IND, 2, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Completed_Task_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.Completed_Task_Count.caption}" description="%{cube.task.measure.Completed_Task_Count.Description}">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(TD_STATUS_IND, 1, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Overdue_Task_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.Overdue_Task_Count.caption}" description="%{cube.task.measure.Overdue_Task_Count.Description}">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(TD_OVERDUE_IND, 1, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="On_Time_Task_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.On_Time_Task_Count.caption}" description="%{cube.task.measure.On_Time_Task_Count.Description}">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when TD_STATUS_IND = 1 and TD_COMPLETED_DT < TD_DUE_DT and TD_COMPLETED_DT != '01-JAN-1900' then 1 else 0 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Late_Task_Count" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.Late_Task_Count.caption}" description="%{cube.task.measure.Late_Task_Count.Description}">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[case when TD_STATUS_IND = 1 and (TD_COMPLETED_DT > TD_DUE_DT or TD_COMPLETED_DT = '01-JAN-1900') then 1 else 0 end]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total_Completion_Time" column="TD_TIME_TO_COMPLETE_DAYS" datatype="Numeric" formatString="#,###" aggregator="sum" caption="%{cube.task.measure.Total_completion_Time.caption}" description="%{cube.task.measure.Total_completion_Time.Description}">
+    </Measure>
+    <CalculatedMember name="Avg_Completion_Time" formatString="###" caption="%{cube.task.measure.Avg_Completion_Time.caption}" description="%{cube.task.measure.Avg_Completion_Time.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Task_Count] = 0, null, [Measures].[Total_Completion_Time] / [Measures].[Task_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Percent_Completed_Tasks" formatString="###.0%" caption="%{cube.task.measure.Percent_Completed_Tasks.caption}" description="%{cube.task.measure.Percent_Completed_Tasks.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( ([Measures].[Task_Count] = 0 or [Measures].[Completed_Task_Count] = 0), null, [Measures].[Completed_Task_Count] / [Measures].[Task_Count])]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Percent_Incomplete_Tasks" formatString="###.0%" caption="%{cube.task.measure.Percent_Incomplete_Tasks.caption}" description="%{cube.task.measure.Percent_Incomplete_Tasks.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( ([Measures].[Task_Count] = 0 or [Measures].[Open_Task_Count] = 0), null, [Measures].[Open_Task_Count] / [Measures].[Task_Count])]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Percent_Overdue_Tasks" formatString="###.0%" caption="%{cube.task.measure.Percent_Overdue_Tasks.caption}" description="%{cube.task.measure.Percent_Overdue_Tasks.Description}" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( ([Measures].[Open_Task_Count] = 0 or [Measures].[Overdue_Task_Count] = 0), null, [Measures].[Overdue_Task_Count] / [Measures].[Open_Task_Count])]]>
+      </Formula>
+    </CalculatedMember>
+  </Cube>
+  <Cube name="BILLING_LEDGER_CUBE" caption="Billing Transaction Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_FICHANGE_DETAIL">
+    </Table>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy_Transaction_PolicyEffDate_Dim" name="Policy_Transaction_PolicyEffDate_Dim" visible="true" foreignKey="PT_POLICY_TRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" visible="true" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Dim" name="Billing_Transaction_Dim" visible="true" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_Payment_Type_Dim" name="Billing_Transaction_Payment_Type_Dim" visible="true" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Transaction_GLedgerDate_Dim" name="Billing_Transaction_GLedgerDate_Dim" visible="true" foreignKey="BT_FITRANSACTION_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Policy" name="Policy" visible="true" foreignKey="POD_POLICY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Debit_Credit" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Debit_Credit" visible="true" column="FCD_FITEM_TYPE" nameColumn="FCD_FITEM_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Debit/Credit" description="Is this financial item a debit or a credit?">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Change_Type" caption="Change Type" description="Is this change a Create, Change or a FYI type">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Change_Type" visible="true" column="FCD_CHANGE_ACTION_TYPE" nameColumn="FCD_CHANGE_ACTION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Change Type" description="Is this change a Create, Change or a FYI type">
+        </Level>
+        <Level name="Change_ID" visible="true" column="FCD_FICHANGE_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Change ID" description="Unique Identifier for this Change">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Billing Status" caption="Billing Status">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Billing Status" visible="true" column="FCD_BILLING_STATUS_IND" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Status of the Billing Transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Installment_Number_Dim" caption="Installment Number">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Installment Number" visible="true" column="FCD_INSTALLMENT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Installment Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="FItem_Category" caption="Category" description="The Category this Financial Transaction belongs to">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="FItem_Category" visible="true" column="FCD_CATEGORY_NAME" nameColumn="FCD_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Category" description="The Category this Financial Transaction belongs to">
+        </Level>
+        <Level name="FItem_Sub_Category" visible="true" column="FCD_SUB_CATEGORY_NAME" nameColumn="FCD_SUB_CATEGORY_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="Sub Category" description="The Sub-Category this Financial Transaction belongs to">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" foreignKey="FCD_AGENCY_DUE_DT" highCardinality="false" name="Time (Payment Due Date)">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+        <Table name="BI_DIM_TIME_DETAIL" alias="FITEM_AGENCY_DUE_DT_TIME">
+        </Table>
+        <Level name="Agency Due Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Agency Due Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Agency Due Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+        <Level name="Agency Due Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" foreignKey="FCD_INSTALLMENT_DUE_DT" highCardinality="false" name="Time(Invoice Due Date)">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+        <Table name="BI_DIM_TIME_DETAIL" alias="FITEM_INSTALLMENT_DUE_DT_TIME">
+        </Table>
+        <Level name="Installment Due Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Installment Due Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Installment Due Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+        <Level name="Installment Due Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="TimeDimension" visible="true" foreignKey="FCD_PROCESSING_DT" highCardinality="false" name="Time (Processing Date)">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+        <Table name="BI_DIM_TIME_DETAIL" alias="FCD_PROCESSING_DT">
+        </Table>
+        <Level name="Processing Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Processing Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Processing Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+        <Level name="Processing Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="FIChange_Count" column="FCD_FICHANGE_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Transaction Count">
+    </Measure>
+    <Measure name="FIChange_Amount" column="FCD_CHANGE_AMT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Transaction Amount">
+    </Measure>
+  </Cube>
+  <Cube name="BILLING_FITRANSACTION_CUBE" caption="Billing Financial Transaction Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_FITRANSACTION_DETAIL">
+    </Table>
+    <DimensionUsage source="Billing_Batch_Dim" name="Billing_Batch_Dim" visible="true" foreignKey="BB_BATCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing_Account_Dim" visible="true" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Customer" name="Customer" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Partner/Agent" name="Partner/Agent" visible="true" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="FINANCIAL_TRANSACTION" caption="Financial Transactions" description="Financial Transactions">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="FT_TRANSACTION_TYPE" visible="true" column="FT_TRANSACTION_TYPE" nameColumn="FT_TRANSACTION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Transaction Type" description="Type of Transaction( Cash Post/Cash Apply/Write Off etc.)">
+        </Level>
+        <Level name="FT_PAYMENT_TYPE" visible="true" column="FT_PAYMENT_TYPE" nameColumn="FT_PAYMENT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Payment Type" description="Type of Payment (Cash/Check/CC/EFT etc.)">
+        </Level>
+        <Level name="FT_PAYMENT_DETAILS" visible="true" column="FT_PAYMENT_DETAILS" nameColumn="FT_PAYMENT_DETAILS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Payment Details" description="Reference Details of ther Payment">
+        </Level>
+        <Level name="FT_POSTED_STATUS" visible="true" column="FT_POSTED_STATUS" nameColumn="FT_POSTED_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Posted Status" description="Status of the Transaction">
+        </Level>
+        <Level name="FT_APPLY_STATUS" visible="true" column="FT_APPLY_STATUS" nameColumn="FT_APPLY_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Apply Status" description="Apply Status of the Transaction">
+        </Level>
+        <Level name="FT_ID" visible="true" column="FT_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Transaction ID" description="Unique Identifier for this Transaction">
+        </Level>
+        <Level name="FT_GL_POST_DATE" visible="true" column="FT_GL_POST_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="GL Post Date" description="General Ledger Post Date">
+        </Level>
+        <Level name="FT_EFFECTIVE_DATE" visible="true" column="FT_EFFECTIVE_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Effective Date" description="Effective Date of the Transaction">
+        </Level>
+        <Level name="FT_POSTED_DATE" visible="true" column="FT_POSTED_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Posted Date" description="Posted Date of the Transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="FT_AMOUNT" column="FT_AMOUNT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Transaction Amount">
+    </Measure>
+    <Measure name="Batch Total Items" column="BB_BATCH_TOTAL_ITEMS" datatype="Numeric" formatString="#,###" aggregator="count" caption="Batch Transactions Count">
+    </Measure>
+    <Measure name="Batch Total Amount" column="BB_BATCH_TOTAL_AMOUNT" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Batch Total Amount">
+    </Measure>
+  </Cube>
+  <Cube name="UNDERWRITING_SUMMARY_CUBE" caption="Underwriting Referral Summary Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_UW_REFERRAL_TRACKER">
+	 <SQL dialect="generic">
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_UW_REFERRAL_TRACKER.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="URT_START_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Completed Date)" name="Time (Completed Date)" visible="true" foreignKey="URT_END_DATE" highCardinality="false">
+    </DimensionUsage>
+<!--
+    <DimensionUsage source="Policy" name="Policy" visible="true" foreignKey="URT_PT_ID" highCardinality="false">
+    </DimensionUsage>
+-->    
+    
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" visible="true" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="UW_Referral_Outcome" caption="Disposition" description="The outcome of an underwring referral">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="UW_Referral_Outcome" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Disposition" description="The outcome of an underwring referral">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN URT_TRACKER_OUTCOME=36601 THEN 'Accepted'
+		                  WHEN URT_TRACKER_OUTCOME=36701 THEN 'Rejected'
+					   WHEN URT_TRACKER_OUTCOME=36501 THEN 'In Progress'
+					   WHEN URT_TRACKER_OUTCOME=36801 THEN 'In Progress' 
+					   ELSE 'Unknown' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Policy Transaction" caption="Policy Transaction">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Policy Transaction" visible="true" column="URT_TRANSACTION_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Type of Policy Transaction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Total_Referral_Count" column="URT_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Referred Count" description="Total number of Underwriting Alerts">
+    </Measure>
+    <Measure name="UW_Peer_Referred_Count" column="URT_UW_REF_PEER_REFERRED_NBR" datatype="Integer" formatString="#,###" aggregator="sum" caption="Underwriting - Peer Referred Count" description="Number of times this referral was peer referred.">
+    </Measure>
+    <Measure name="Total_Transaction_Count" column="URT_PT_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Transaction Count" description="Total number of Transactions with referrals">
+    </Measure>
+    <Measure name="Resolution_Time" column="URT_RESOLUTION_TIME" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Resolution Time" description="Resolution Time in Days">
+    </Measure>
+    <Measure name="Avg_Resolution_Time" column="URT_RESOLUTION_TIME" datatype="Numeric" formatString="#,###.00" aggregator="avg" caption="Avg Resolution Time" description="Average Resolution Time taken in Days">
+    </Measure>
+    <Measure name="Rejected_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Rejected Count" description="Number of referrals rejected" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_UW_REFERRAL_TRACKER.URT_REFERRAL_REJECT_IND, 1, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Accepted_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Accepted Count" description="Number of referrals accepted" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_UW_REFERRAL_TRACKER.URT_REFERRAL_ACCEPT_IND, 1, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Referred_to_Peer_Count" datatype="Integer" formatString="#,###" aggregator="sum" caption="Referred to Peer Count" description="Number of referrals referred to Peer" visible="true">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_UW_REFERRAL_TRACKER.URT_REFERRAL_PEER_IND, 1, 1, 0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <CalculatedMember name="Accepted_Referrals_Ratio" formatString="###.00%" caption="Accept Ratio %" description="Accept Ratio of Referrals" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Accepted_Count] = 0, null,  ( [Measures].[Accepted_Count]/[Measures].[Total_Referral_Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Rejected_Referrals_Ratio" formatString="###.00%" caption="Reject Ratio %" description="Reject Ratio of Referrals" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Rejected_Count] = 0, null,  ( [Measures].[Rejected_Count]/[Measures].[Total_Referral_Count] ))]]>
+      </Formula>
+    </CalculatedMember>
+    <CalculatedMember name="Avg_No_of_Referrals" formatString="#,###.00" caption="Avg No of Referrals per Transaction" description="Average No of Referrals per Transaction" dimension="Measures">
+      <Formula>
+        <![CDATA[IIf( [Measures].[Total_Referral_Count] = 0, null, [Measures].[Total_Referral_Count] / [Measures].[Total_Transaction_Count] )]]>
+      </Formula>
+    </CalculatedMember>
+  </Cube>
+  <Cube name="UNDERWRITING_DETAIL_CUBE" caption="Underwriting Referral Detail Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_UW_REFERRAL_DETAIL">
+	 <SQL dialect="generic"> 
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_UW_REFERRAL_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+    </DimensionUsage>
+<!--
+    <DimensionUsage source="Policy" name="Policy" visible="true" foreignKey="URD_PT_ID" highCardinality="false">
+    </DimensionUsage>
+-->    
+    <DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="URD_TRIGGER_CREATE_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Completed Date)" name="Time (Completed Date)" visible="true" foreignKey="URD_TRIGGER_CLOSED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Underwriting Rule" name="Underwriting Rule" visible="true" foreignKey="PC_COVERAGE_RULE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" visible="true" foreignKey="PE_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Writing Company" name="Writing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Triggered By Transaction" caption="Triggered By Transaction">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Triggered By Transaction" visible="true" column="URD_TRANSACTION_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="The Policy Transaction this alert was triggered by">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Alert_Override_Indicator" caption="UW Alert Override Indicator">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Alert_Override_Indicator" visible="true" column="URD_TRIGGER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="UW Alert Override Indicator" description="Is this Alert Overridden or not">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN URD_TRIGGER_STATUS=1 THEN 'Yes'  
+						WHEN URD_TRIGGER_STATUS=0 THEN 'No'  
+						WHEN URD_TRIGGER_STATUS is null THEN 'N/A'  
+						ELSE 'N/A' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="UW_Trigger_Override_Actor_Set" caption="Override Actor Set">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="UW_Trigger_Override_Actor_Set" visible="true" column="URD_OVERRIDE_ACTOR_TYPE_SET" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Override Actor Type Set" description="Actor Type which has overridden the Underwriting Alert Trigger">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Total_Alert_Count" column="URD_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="UW Alert Rule Count">
+    </Measure>
+  </Cube>
+  
+  <Cube name="USER_DETAIL_CUBE" caption="User Detail Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_DRAGON_USER_DETAIL">
+	<SQL dialect="generic">
+         <![CDATA[(%OS_PARTNER_ID% is null OR %OS_PARTNER_ID% = 118 OR BI_FACT_DRAGON_USER_DETAIL.PE_PARTNER_ID = %OS_PARTNER_ID%)]]>           
+      </SQL>
+    </Table>
+    <DimensionUsage source="Time (Effective Date)" name="Time (Effective Date)" visible="true" foreignKey="DUD_EFFECTIVE_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Expiration Date)" name="Time (Expiration Date)" visible="true" foreignKey="DUD_TERMINATION_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Last Logged in Date)" name="Time (Last Logged in Date)" visible="true" foreignKey="DUD_LAST_LOGGED_IN_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Logged User" name="Logged User" visible="true" foreignKey="DUD_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Carrier Branch" name="Carrier Branch" visible="true" foreignKey="DUD_CARRIER_BRANCH_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <Dimension type="StandardDimension" visible="true" foreignKey="DUD_USER_STATUS_ID" highCardinality="false" name="User Status">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="OS_OBJECT_STATE_ID">
+        <Table name="BI_DIM_OBJECT_STATE" alias="USER_OBJECT_STATE">
+        </Table>
+        <Level name="User Status" caption="User Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current status of User">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Out Of Office Flag" caption="Out Of Office Flag">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Out Of Office Flag" visible="true" column="DUD_OUT_OF_OFFICE_FLAG" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Out Of Office Flag">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[CASE WHEN DUD_OUT_OF_OFFICE_FLAG=1 THEN 'Yes'  WHEN DUD_OUT_OF_OFFICE_FLAG=0 THEN 'No'  ELSE 'N/A' END]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Service Group" caption="Service Group">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Service Group" visible="true" column="DUD_SERVICE_GROUP_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Service Group">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Total_Policy_Count" column="DUD_POLICY_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Policy Count">
+    </Measure>
+    <Measure name="Total_Quote_Count" column="DUD_QUOTE_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Quote Count">
+    </Measure>
+    <Measure name="Total_Transaction_Count" column="DUD_TRANSACTION_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Transaction Count">
+    </Measure>
+    <Measure name="Total_Premium" column="DUD_TOTAL_PREMIUM" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Premium">
+    </Measure>
+    <Measure name="Total_Task_Count" column="DUD_TOTAL_TASK_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Task Count">
+    </Measure>
+    <Measure name="Total_Overdue_Task_Count" column="DUD_TOTAL_OVERDUE_TASK_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Overdue Task Count">
+    </Measure>
+    <Measure name="Total_Incomplete_Task_Count" column="DUD_TOTAL_INCOMP_TASK_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Incomplete Task Count">
+    </Measure>
+    <Measure name="Total_Logged_In_Count" column="DUD_LOGGED_IN_COUNT" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Logged In User Count">
+    </Measure>
+  </Cube>
+  
+  <Cube name="BILLING_SNAPSHOT_CUBE" caption="Billing Snapshot Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_BILLING_SNAPSHOT">
+    </Table>
+    <DimensionUsage source="Customer" name="Customer" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Billing_Account_Dim" name="Billing Account" caption="Billing Account" visible="true" foreignKey="BA_BILLING_ACCOUNT_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Snapshot Date">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Snapshot Date" visible="true" column="BS_SNAPSHOT_PERIOD" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Policy Transaction Type">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Policy Transaction Type" visible="true" column="BS_TRANS_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Policy Number">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Policy Number" visible="true" column="BS_POLICY_NBR" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Billable Amount" column="BS_TOTAL_BILL" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Billable Amount" visible="true">
+    </Measure>
+    <Measure name="Current Due" column="BS_CURRENT_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Current Due" visible="true">
+    </Measure>
+    <Measure name="Past Due" column="BS_PAST_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Past Due" visible="true">
+    </Measure>
+    <Measure name="Total Due" column="BS_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Total Due" visible="true">
+    </Measure>
+    <Measure name="Overdue 0-30" column="BS_OVERDUE_0_30" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 0-30" visible="true">
+    </Measure>
+    <Measure name="Overdue 31-60" column="BS_OVERDUE_31_60" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 31-60" visible="true">
+    </Measure>
+    <Measure name="Overdue 61-90" column="BS_OVERDUE_61_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Overdue 61-90" visible="true">
+    </Measure>
+    <Measure name="More than 90" column="BS_OVERDUE_BEYOND_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="More than 90" visible="true">
+    </Measure>
+    <Measure name="Future Due" column="BS_FUTURE_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Future Due" visible="true">
+    </Measure>
+    <Measure name="Unapplied Cash" column="BS_UNAPPLIED_CASH" datatype="Numeric" formatString="$#,###.####" aggregator="sum" caption="Unapplied Cash" visible="true">
+    </Measure>
+    <Measure name="Statutory Billable Amount" column="BS_STAT_TOTAL_BILL" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Current Due" column="BS_STAT_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Past Due" column="BS_STAT_PAST_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Total Due" column="BS_STAT_TOTAL_DUE" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 0-30" column="BS_STAT_OVERDUE_0_30" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 31-60" column="BS_STAT_OVERDUE_31_60" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 61-90" column="BS_STAT_OVERDUE_61_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+    <Measure name="Statutory Overdue 90+" column="BS_OVERDUE_BEYOND_90" datatype="Numeric" formatString="$#,###.####" aggregator="sum" visible="true">
+    </Measure>
+  </Cube>
+</Schema>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action-sequence> 
+  <title>Workload for Peers Bar Chart</title>
+  <version>1</version>
+  <logging-level>ERROR</logging-level>
+  <documentation> 
+    <author>OneShield</author>  
+    <description>Empty blank action sequence document</description>  
+    <help/>  
+    <result-type/>  
+    <icon/> 
+  </documentation>
+
+  <inputs> 
+    <userObjectId type="long"> 
+      <sources> 
+        <request>userObjectId</request>  
+        <session>SESSION_USER_OBJECT_ID</session> 
+      </sources> 
+    </userObjectId>  
+    <userActorRoleId type="long"> 
+      <sources> 
+        <request>userActorRoleId</request>  
+        <session>SESSION_USER_ACTOR_ROLE_ID</session> 
+      </sources> 
+    </userActorRoleId> 
+  </inputs>
+
+  <outputs>
+    <image-tag type="content">
+      <destinations>
+        <response>content</response>
+      </destinations>
+    </image-tag>
+  </outputs>
+
+  <resources> 
+    <bar_chart_attributes> 
+      <solution-file> 
+        <location>bar_chart_definition.xml</location>  
+        <mime-type/> 
+      </solution-file> 
+    </bar_chart_attributes> 
+  </resources>
+  
+  <actions> 
+    <action-definition> 
+      <component-name>SQLLookupRule</component-name>
+      <action-type>getUserActorTypeId</action-type>
+      <action-inputs> 
+        <userActorRoleId type="string"/> 
+      </action-inputs>
+      <action-outputs> 
+        <query-result type="result-set" mapping="INCOMPLETE_TASKS_FOR_PEERS"/>  
+        <user_name type="string"/>  
+        <incomplete_task_count type="long"/> 
+      </action-outputs>
+      <component-definition> 
+        <jndi><![CDATA[OneshieldData]]></jndi>  
+        <query><![CDATA[select ud.UD_USER_NAME as user_name, count(*) as incomplete_task_count
+  from bi_fact_task_detail ft, bi_dim_user_detail ud
+ where ft.UD_ASSIGNED_USER_ID = ud.UD_USER_ID
+   and ft.TD_STATUS_IND = 2
+   and ud.UD_USER_ROLE_ID = {PREPARE:userActorRoleId}
+group by ud.UD_USER_NAME]]></query>  
+        <live><![CDATA[true]]></live> 
+      </component-definition> 
+    </action-definition>
+  
+    <action-definition> 
+      <component-name>OpenFlashChartComponent</component-name>
+      <action-type>Generate Chart</action-type>
+      <action-inputs> 
+        <chart-data type="result-set" mapping="INCOMPLETE_TASKS_FOR_PEERS"/> 
+      </action-inputs>
+      <action-resources> 
+        <chart-attributes type="resource" mapping="bar_chart_attributes"/> 
+      </action-resources>
+      <action-outputs> 
+        <image-tag type="content"/> 
+      </action-outputs>
+      <component-definition> 
+        <title>Workload for Peers</title> 
+      </component-definition> 
+    </action-definition>
+ 
+  </actions> 
+</action-sequence>

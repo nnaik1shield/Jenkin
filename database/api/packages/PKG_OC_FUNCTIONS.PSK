@@ -1,0 +1,985 @@
+CREATE OR REPLACE PACKAGE PKG_OC_FUNCTIONS IS
+
+----------------------------------------
+-- $Workfile:   PKG_OC_FUNCTIONS.PSK  $
+-- $Revision: 1 $
+--   $Author: nkumar $
+--     $Date: 2015-01-14 02:54:24 -0500 (Wed, 14 Jan 2014) $
+-----------------------------------------
+
+ -- This package contains claim system - specific SQL functions.
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+gTask_Status_Incomplete          constant number(1) := 2;
+gObjType_IncidentLoss            constant  object_type.object_type_id%type := 3201546;
+gbv_RefClaimant                  constant  business_variable.business_variable_id%type := 32462846;
+gbv_InjuredPartyType             constant  business_variable.business_variable_id%type :=  32354046;
+gObjType_CoverageConstraint      constant  object_type.object_type_id%type := 3375946;
+gbv_CoverageConstraintType       constant  business_variable.business_variable_id%type :=  33931346;
+aggregate_limit                  constant  number(12) :=  10146;
+per_occ_per_person_limit         constant  number(12) :=  14446;
+deductible_limit                 constant  number(12) :=  10546;
+PerOccurence_Limit               constant  number(12) :=  10246;
+gbv_AggregateExhlimit            constant  object_type.object_type_id%type := 32563846;
+gbv_PerOccExhlimit               constant  object_type.object_type_id%type := 32683046;
+gbv_PerOccPerPersonExhlimit      constant  object_type.object_type_id%type := 34004246;
+gbv_AggregateRec                 constant  object_type.object_type_id%type := 34025646;
+gbv_PerOccRec                    constant  object_type.object_type_id%type := 34030046;
+gbv_PerOccPerPersonRec           constant  object_type.object_type_id%type := 34030246;
+gbv_CovConstraintLimit           constant  object_type.object_type_id%type := 33931446;
+gObjType_DPU                     constant  object_type.object_type_id%type := 2384646;
+gbv_object_label                 constant  business_variable.business_variable_id%type := 211882;
+gObjType_Claim                   constant  object_type.object_type_id%type := 3203646;
+gObjType_ClaimTrxMember          constant  object_type.object_type_id%type := 3331846;
+gObjType_ClaimBusinessDup        constant  object_type.object_type_id%type := 3374146;
+gObjType_MemeberSubCoverage      constant object_type.object_type_id%type := 3400046;
+gObjType_DisbursmentProfileusage constant object_type.object_type_id%type := 2384646;
+gObjType_StatementProfile        constant object_type.object_type_id%type := 2866546;
+
+-- zipcode based queue assignment bvs
+gObjType_ServiceGroupTerritory   constant object_type.object_type_id%type := 2358246;
+gbv_reference_territory_serviced constant  business_variable.business_variable_id%type :=  29618346;
+gbv_service_territory_zipcode constant  business_variable.business_variable_id%type :=  34621948;
+
+gbv_ObjectState                   constant  business_variable.business_variable_id%type := 210153;
+gbv_AppliedCoverage               constant  business_variable.business_variable_id%type := 32430946;
+gbv_CovFinancialCategory          constant  business_variable.business_variable_id%type := 34223146;
+gbv_Coverage_Id                   constant  business_variable.business_variable_id%type := 32430346;
+gbv_subclaimtrxActlChangeInRsv    constant  business_variable.business_variable_id%type := 32633146;
+gbv_mainVsSubCoverage             constant  business_variable.business_variable_id%type := 34242246;
+gbv_ReferenceSubCoverage          constant  business_variable.business_variable_id%type := 34241646;
+
+gbv_IncidentEntityPartyRole       constant  business_variable.business_variable_id%type := 32325746;
+gbv_IncidentLossReferredClaim     constant  business_variable.business_variable_id%type := 32536048;
+gbv_IncidentLossReferredClaimant  constant  business_variable.business_variable_id%type := 32462846;
+
+                                     
+
+gEnum_MainVsSubCov_Main           constant  lookup_list_value.lookup_enum%type := 1;
+
+gEnum_FinancialCat_Indemnity      constant  lookup_list_value.lookup_enum%type := 10046;
+gEnum_FinancialCat_Defense        constant  lookup_list_value.lookup_enum%type := 10146;
+gEnum_FinancialCat_Expense        constant  lookup_list_value.lookup_enum%type := 10246;
+gbv_CoverageAvailableLimit        constant  business_variable.business_variable_id%type := 32560548;
+gbv_CoveAggAvailableLimit         constant  business_variable.business_variable_id%type := 32560648;
+gbv_AssociatedSubCoverage         constant  business_variable.business_variable_id%type := 34241646;
+gObjType_ClaimTrxCovSetMember     constant  object_type.object_type_id%type  := 3398346;
+gbv_LOBAvailableAggLimit          constant  business_variable.business_variable_id%type := 33020148;
+gbv_LOBAvailablePerClaimLimit     constant  business_variable.business_variable_id%type := 34246846;
+gbv_ClaimRefVednor               constant  object_type.object_type_id%type := 35747148;
+
+gbv_ClaimBusinessDupRef          constant  business_variable.business_variable_id%type :=  33913146;
+gbv_RefSubClaimTrx                constant  business_variable.business_variable_id%type := 32379746;
+gbv_ClaimRefCatastrophe          constant  business_variable.business_variable_id%type :=  34181846;
+gbv_ClaimDisassociationReason    constant  business_variable.business_variable_id%type :=  34185946;
+gbv_ServiceGroupMemeber          constant  business_variable.business_variable_id%type :=  2358346;
+gbv_ServiceGroupRef              constant  business_variable.business_variable_id%type :=  29618746;
+gbv_path_ListOfElement           constant business_variable_path.business_variable_path%type := '210356.211681';
+gbv_assigned_user                constant  business_variable.business_variable_id%type :=  32593608;
+gbv_queue_object_id           constant  business_variable.business_variable_id%type :=  32593508;
+gbv_assigned_object_id           constant  business_variable.business_variable_id%type :=  32592708;
+gbv_claimTrx_type_id           constant  business_variable.business_variable_id%type :=  32465146; --msaOSPRODUCT-12002
+gbv_record_only_flag_id           constant  business_variable.business_variable_id%type :=  34230046;
+gObjectType_MemberSubCov          constant  object_type.object_type_id%type  := 3400046;
+gbv_RefCoverageSetTransaction     constant  business_variable.business_variable_id%type := 34202646;
+gEnum_ComFire_InsuranceLine       constant  lookup_list_value.lookup_enum%type := 15464;
+
+gbv_LOBAggLimit                   constant  business_variable.business_variable_id%type := 33020248;
+gbv_LOBPerOccLimit                constant  business_variable.business_variable_id%type := 33020648;
+
+gbv_Main_Sub_Cov_Type             constant  business_variable.business_variable_id%type := 34242246;
+gbv_Reference_main_cov            constant  business_variable.business_variable_id%type := 34241646;
+
+gbv_Ref_associatedProfile         constant  business_variable.business_variable_id%type := 32828640;
+gbv_Ref_DisbBatchUsingProfile     constant  business_variable.business_variable_id%type := 31711146;
+gbv_Ref_PaymentInRefRecovery      constant  business_variable.business_variable_id%type := 33986646;
+
+gObjectType_FITransaction         constant  object_type.object_type_id%type := 2365046;
+gbv_Ref_AssociatedFItem           constant  business_variable.business_variable_id%type := 31689946;
+gbv_ClaimCovBasedFlag             constant  business_variable.business_variable_id%type := 34211746;
+gbv_RefConnectedTo	              constant  business_variable.business_variable_id%type := 210090;
+gEnum_ClaimTrxType_Payment        constant  lookup_list_value.lookup_enum%type := 5;
+gEnum_ClaimTrxType_PayIn          constant  lookup_list_value.lookup_enum%type := 8046;
+gEnum_ClaimTrxType_Recovery       constant  lookup_list_value.lookup_enum%type := 7946;
+gEnum_PaymentDisbursed            constant  lookup_list_value.lookup_enum%type := 2;
+gbv_RefAdhocBATS                  constant  business_variable.business_variable_id%type := 32511046;
+gbv_PaymentDisbType               constant  business_variable.business_variable_id%type := 32422146;
+gbv_RefDisbBATS                   constant  business_variable.business_variable_id%type := 34063246;
+gbv_FITrxSetType                  constant  business_variable.business_variable_id%type := 29707346;
+gEnum_Adhoc_FITrxSetType          constant  lookup_list_value.lookup_enum%type := 7001;
+gEnum_Disb_FITrxSetType           constant  lookup_list_value.lookup_enum%type := 2301;
+gEnum_BATS_ProcessedState         constant  lookup_list_value.lookup_enum%type := 39846;
+gEnum_BATS_DiscardedState         constant  lookup_list_value.lookup_enum%type := 61546;
+gEnum_ClaimTrx_RejectedState      constant  lookup_list_value.lookup_enum%type := 61146;
+gEnum_ClaimTrx_CanceledState      constant  lookup_list_value.lookup_enum%type := 60346;
+gEnum_Claim_ClosedState           constant  lookup_list_value.lookup_enum%type := 57546;
+gEnum_Claim_WithdrawnState        constant  lookup_list_value.lookup_enum%type := 59248;
+
+
+
+
+-- IncidentLossSetCoveringLOBCR
+gObjectType_IncidentLossSetCoveringLOBCR      constant  object_type.object_type_id%type := 3393246;
+gbv_LOBSelectionFlag                          constant  business_variable.business_variable_id%type := 34113846;
+gbv_PolicyInsuranceLine                       constant  business_variable_path.business_variable_path%type := '34114646.26806004';
+gList_InsuranceLine                           constant  number :=  5301305;
+
+-- IncidentLossSetCoveringPolicyCR
+gObjectType_IncidentLossSetCoveringPolicyCR   constant  object_type.object_type_id%type := 3201746;
+gbv_PolicyAssociatedToClaimFlag               constant  business_variable.business_variable_id%type := 34113346;
+
+
+gbv_Reference_Maps_to               constant  business_variable.business_variable_id%type := 21783501;
+gbv_Reference_Subclaim_Owner        constant  business_variable.business_variable_id%type := 32652146;
+gbv_Reference_Generated_from_Loss   constant  business_variable.business_variable_id%type := 32387846;
+
+
+gbv_PaymentTypeCd                   constant  business_variable.business_variable_id%type := 35854148;
+gbv_ClaimsPaymentCovInfo_Type       constant  business_variable.business_variable_id%type := 36562248;
+
+gObjectType_DragonUser                                                      constant  object_type.object_type_id%type := 309;
+gObjectType_ACORD_Claim_Search_ClaimInvestigationAddRq_AdjusterParty        constant  object_type.object_type_id%type := 4181748;
+gObjectType_ACORD_Claim_Search_ClaimsParty                                  constant  object_type.object_type_id%type := 3972548;
+gObjectType_ACORD_Claim_Search_ClaimInvestigationAddRq_ClaimsParty          constant  object_type.object_type_id%type := 4181648;
+gObjectType_ACORD_Claim_Search_ClaimsParty_ClaimsInjuredInfo                constant  object_type.object_type_id%type := 4155148;
+gObjectType_ACORD_Claim_Search_ClaimInvestigationAddRq_PropertyLossInfo     constant  object_type.object_type_id%type := 4182348;
+gObjectType_ACORD_Claim_Search_ClaimInvestigationAddRq_AutoLossInfo         constant  object_type.object_type_id%type := 4181848;
+gObjectType_ACORD_Claim_Search_ClaimsPayment                                constant  object_type.object_type_id%type := 3933448;
+gObjectType_ACORD_Claim_Search_ClaimsPayment_PaymentTypeCd                  constant  object_type.object_type_id%type := 3933548;
+
+
+gbv_path_ACORD_Claim_Search_Communications                                  constant  business_variable_path.business_variable_path%type := '35646848.35643448';
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+type r_cov_property_list is record
+(
+     coverage_id                  object_bv_value.business_variable_value%type,
+     cov_total_reserve        	  object_bv_value.business_variable_value%type,
+     cov_available_agg_limit      object_bv_value.business_variable_value%type,
+	   cov_available_occ_limit 			object_bv_value.business_variable_value%type
+);
+type t_cov_property_list   is table of r_cov_property_list  index by varchar2(100);
+
+gnull_cov_prop_list             t_cov_property_list;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+type r_lob_cov_list is record
+(
+     insurance_line_id            object_bv_value.business_variable_value%type,
+     lob_total_reserve        	  object_bv_value.business_variable_value%type
+);
+type t_lob_cov_list is table of r_lob_cov_list  index by varchar2(100);
+
+dot						constant	char(1)	:=	'.';
+
+
+gnull_lob_cov_list             t_lob_cov_list;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_predecessor_peer_id
+(
+      in_session_id        object.object_id%type,
+      in_transaction_id    object.object_id%type,
+      in_parent_id         object.object_id%type,
+      in_child_type_id     object_type.object_type_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_incompleted_tasks_count
+(
+
+      in_session_id			   	object.object_id%type,
+      in_transaction_id			object.object_id%type,
+      in_action_object_id   object.object_id%type
+)
+return number;
+--------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_cov_exhausted_amount
+(
+
+      in_session_id			   	object.object_id%type,
+      in_transaction_id			object.object_id%type,
+      in_action_object_id       object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_least_limit_constraint
+(
+
+      in_session_id			   	object.object_id%type,
+      in_transaction_id			object.object_id%type,
+      in_action_object_id       object.object_id%type
+)
+return number;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_claims_trx_process
+(
+     in_session_id				in          object.object_id%type,
+     in_transaction_id			in          object.object_id%type,
+     in_billingaccount_trxset_id	in          object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_action_outcome_id          in out      outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_claims_multiplicty_edit
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_relation_bv_id             in             business_variable.business_variable_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_incident_add_st
+(
+     in_session_id				in          object.object_id%type,
+     in_transaction_id			in          object.object_id%type,
+     in_action_object_id           in             object.object_id%type,
+     io_action_outcome_id          in out      outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+/*procedure sp_add_custom_coverage
+(
+     in_session_id				  in          object.object_id%type,
+     in_transaction_id			in          object.object_id%type,
+     in_action_object_id    in          object.object_id%type,
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);*/
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_warning_for_policy
+(
+      in_session_id        object.object_id%type,
+      in_transaction_id    object.object_id%type,
+      in_action_object_id        object.object_id%type
+)
+return char;
+
+function fn_get_default_adjuster
+(
+      in_session_id        object.object_id%type,
+      in_transaction_id    object.object_id%type
+)
+return number;
+
+--------------------------------------------------------------------------------------------------
+
+procedure sp_bats_process
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_ba_trxset_id        in          object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);
+
+--------------------------------------------------------------------------------------------------
+
+procedure sp_disbursement_create
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_ba_trxset_id        in          object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_action_outcome_id   in out      outcome.outcome_id%type,
+     in_fitem_id            in          number
+);
+--------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- returns incident number
+procedure sp_generate_incident_number
+(
+      in_session_id         in    object.object_id%type,
+      in_transaction_id     in    object.object_id%type,
+      in_object_id          in    object.object_id%type,
+      out_incident_number   in out   varchar2
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+-- returns claim number
+procedure sp_generate_claim_number
+(
+      in_session_id        			in    object.object_id%type,
+      in_transaction_id    			in    object.object_id%type,
+      in_object_id           		in    object.object_id%type,
+      in_incidentLossSetId      in    object.object_id%type,
+      in_count_loss_set_claims  in    number,
+      out_claim_number          in out   varchar2
+);
+--------------------------------------------------------------------------------------------------
+
+procedure sp_claim_disburse_confirm
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_ba_trxset_id        in          object.object_id%type,    /* BillingAccountTransactionSet ID */
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);
+
+---------------------------------------------------------------------------------------------------
+
+function fn_set_Ref_Primary_Claimant
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id  in object.object_id%type,
+    in_priority_type     in object_bv_value.business_variable_value%type
+)
+return number;
+
+---------------------------------------------------------------------------------------------------
+
+function fn_cal_ClaimCoverage_Avb_Limit
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id  in object.object_id%type
+)
+return number;
+
+---------------------------------------------------------------------------------------------------
+function fn_duplicate_task_num
+(
+      in_session_id              in        object.object_id%type,
+      in_transaction_id          in        object.object_id%type,
+      in_object_id               in        object.object_id%type,
+      in_task_type               in        dragon_task.task_type%type,
+      in_task_title              in        dragon_task.task_title%type
+)
+return number;
+
+---------------------------------------------------------------------------------------------------
+function fn_check_existing_DPU
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type,
+    in_address    in         object.object_id%type
+)
+return number;
+
+---------------------------------------------------------------------------------------------------
+
+procedure sp_validate_specialty_stype
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_action_object_id  in object.object_id%type,
+       io_action_outcome_id in out outcome.outcome_id%type
+) ;
+
+---------------------------------------------------------------------------------------------------
+
+function fn_tokenize_set_lookup
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       lookup_list_id       lookup_list_value.lookup_list_id%type,
+       set_bv_value         in object_bv_value.business_variable_value%type
+)
+return varchar2;
+
+---------------------------------------------------------------------------------------------------
+
+function fn_tokenize_set_ref_lookup
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_action_object     in object.object_id%type,
+       set_bv_id            number,
+       set_bv_value         in object_bv_value.business_variable_value%type
+
+)
+return varchar2;
+
+---------------------------------------------------------------------------------------------------
+
+function fn_claim_creation_loop_outcome
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type
+)
+return number;
+
+---------------------------------------------------------------------------------------------------
+
+function fn_validate_create_claim
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type
+)
+return char;
+
+---------------------------------------------------------------------------------------------------
+procedure sp_set_multiple_child
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_object_id         in object.object_id%type,
+       io_outcome_id        in out outcome.outcome_id%type
+) ;
+
+---------------------------------------------------------------------------------------------------
+procedure sp_set_selected_references
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_object_id         in         object.object_id%type,
+	in_exec_mode         in         char,
+    io_outcome_id        in out     outcome. outcome_id%type
+);
+
+---------------------------------------------------------------------------------------------------
+procedure sp_claims_vendor_evaluation
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_task_object_id         in object.object_id%type,
+       io_outcome_id        in out outcome.outcome_id%type
+) ;
+
+---------------------------------------------------------------------------------------------------
+function fn_calculate_average_rating
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type,
+    in_vendor_id         in         object.object_id%type,
+    in_user_id         	 in     	  object.object_id%type,
+    in_service_type_id   in      	  number,
+    in_specialty_id      in         number
+)
+return float;
+
+---------------------------------------------------------------------------------------------------
+procedure sp_create_vendor_eval_tasks
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_action_object_id         in object.object_id%type,
+       io_outcome_id        in out outcome.outcome_id%type
+) ;
+
+---------------------------------------------------------------------------------------------------
+procedure sp_create_medicare_objects
+(
+       in_session_id        in object.object_id%type,
+       in_transaction_id    in object.object_id%type,
+       in_action_object_id         in object.object_id%type,
+       io_outcome_id        in out outcome.outcome_id%type
+) ;
+---------------------------------------------------------------------------------------------------
+procedure sp_group_user_association
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+    );
+---------------------------------------------------------------------------------------------------
+procedure sp_group_user_dissociation
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+    );
+---------------------------------------------------------------------------------------------------
+function fn_validate_queue_assignment
+(
+	 in_session_id                 in             object.object_id%type,
+	 in_transaction_id             in             object.object_id%type,
+	 in_current_user_id            in             object.object_id%type,
+	 in_action_object_id           in             object.object_id%type
+)
+return char;
+---------------------------------------------------------------------------------------------------
+function fn_validate_assign_to_me
+(
+	 in_session_id                 in             object.object_id%type,
+	 in_transaction_id             in             object.object_id%type,
+	 in_current_user_id            in             object.object_id%type,
+	 in_action_object_id           in             object.object_id%type
+)
+return char;
+
+---------------------------------------------------------------------------------------------------
+procedure sp_process_erp_coverage
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_incident_policyCR_id       in             object.object_id%type,
+     in_identified_pt_id           in             object.object_id%type,
+     io_policy_trx_id              in out         object.object_id%type
+);
+---------------------------------------------------------------------------------------------------
+function fn_validate_disb_prf_disable
+    (
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+    )
+return char ;
+---------------------------------------------------------------------------------------------------
+
+function fn_get_subclaimCR
+(
+      in_session_id        		in 	object.object_id%type,
+      in_transaction_id   		in 	object.object_id%type,
+      in_coverage_set_trx     in  object.object_id%type,
+      in_cov_category_flag    in  object.object_id%type
+)
+return number;
+
+----------------------------------------------------------------------------------------------------
+procedure sp_claimtrx_billing_int
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     v_claimTrx_object_id   in          object.object_id%type,
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);
+
+---------------------------------------------------------------------------------------------------
+
+procedure sp_validate_claims_referral
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     io_action_outcome_id          in out         outcome.outcome_id%type
+    );
+
+---------------------------------------------------------------------------------------------------
+function fn_get_subclaim_trx_of_cov
+(
+      in_session_id           in  object.object_id%type,
+      in_transaction_id       in  object.object_id%type,
+      in_claim_coverage_id    in  object.object_id%type,
+      in_claim_trx_id    in  object.object_id%type
+)
+return char;
+
+---------------------------------------------------------------------------------------------------
+function fn_validate_reserve_referral
+(
+      in_session_id           in  object.object_id%type,
+      in_transaction_id       in  object.object_id%type,
+      in_claim_trx_reserve_id    in  object.object_id%type
+)
+return char;
+---------------------------------------------------------------------------------------------------
+function fn_validate_profile_trx
+(
+     in_session_id          in  object.object_id%type,
+     in_transaction_id      in  object.object_id%type,
+	 in_object_id			in  object.object_id%type,
+     in_claim_object_id     in  object.object_id%type
+) return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_total_insured_count
+(
+	in_session_id			in  object.object_id%type,
+	in_transaction_id 		in  object.object_id%type,
+	in_object_id			in	object.object_id%type,
+	in_incident_object_id 	in 	object.object_id%type
+)
+return number;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_get_parent_coverage
+(
+      in_session_id        			in    object.object_id%type,
+      in_transaction_id    			in    object.object_id%type,
+      in_coverage_object_id     in    object.object_id%type
+
+)return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-13057
+procedure sp_tasktype_close (
+    in_session_id         IN   object.object_id%TYPE,
+    in_transaction_id     IN   object.object_id%TYPE,
+    in_action_object_id      IN   object.object_id%TYPE
+
+) ;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_is_comp_cover_obj_tf
+(
+      in_session_id        			in    object.object_id%type,
+      in_transaction_id    			in    object.object_id%type,
+      in_coverage_id                    in    object.object_id%type
+)return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--OSPRODUCT-27920
+function fn_incident_related_catid
+(
+      in_session_id           in    object.object_id%type,
+      in_transaction_id    	in    object.object_id%type,
+      in_incident_type_id          in    object.object_id%type
+)return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+--OSPRODUCT-13230
+function fn_duplicate_task_num1
+(
+      in_session_id              in        object.object_id%type,
+      in_transaction_id          in        object.object_id%type,
+      in_object_id               in        object.object_id%type,
+      in_task_type_id               in        dragon_task.task_type_id%type,
+      in_task_title              in        dragon_task.task_title%type
+)
+return number;
+--------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-13230
+procedure sp_tasktypeid_38748_close (
+    in_session_id         IN   object.object_id%TYPE,
+    in_transaction_id     IN   object.object_id%TYPE,
+    in_action_object_id      IN   object.object_id%TYPE
+
+) ;
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-12733
+
+function fn_duplicatetask_usingtaskid
+(
+      in_session_id              in        object.object_id%type,
+      in_transaction_id          in        object.object_id%type,
+      in_object_id               in        object.object_id%type,
+      in_task_type_id              in      task_type.TASK_TYPE_ID%type
+
+)
+return number;
+-----------------------------------------------------------------------------------------------------------
+procedure sp_billingaccount_datamart_update
+(
+    in_session_id         in object.object_id%type,
+    in_transaction_id     in object.object_id%type,
+    in_billingaccount_object_id		      in object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------
+function fn_get_lobs_associated_with_claim
+(
+    in_session_id         in object.object_id%type,
+    in_transaction_id     in object.object_id%type,
+    in_object_id		  in object.object_id%type
+) return varchar2;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_check_duplicate_task
+(
+    in_object_id		  in object.object_id%type,
+    in_task_description   varchar2
+) return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+function fn_is_object_locked_tf
+(
+      in_session_id         in    object.object_id%type,
+      in_transaction_id    	in    object.object_id%type,
+      in_object_id          in    object.object_id%type
+)return char;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_process_custom_bor
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_claim_id                   in             object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------
+function fn_update_customeraddress
+(
+
+       in_session_id        in                object.object_id%type,
+       in_transaction_id    in                object.object_id%type,
+       in_incident_id       in                object.object_id%type,
+       in_submissionaddress in                object.object_id%type
+
+) return number;
+----------------------------------------------------------------------------------------------------
+procedure sp_claimtrx_bats_reversal
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_claimTrx_object_id  in          object.object_id%type,
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);
+
+----------------------------------------------------------------------------------------------------
+procedure sp_claim_process_reversal_BATS
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_bats_object_id      in          object.object_id%type,
+     io_action_outcome_id   in out      outcome.outcome_id%type
+);
+
+----------------------------------------------------------------------------------------------------
+
+function fn_get_constraint_grp_bind_tab
+(
+in_session_id			   	      in      object.object_id%type,
+in_transaction_id			      in      object.object_id%type,
+in_constraint_group_id            in      constraint_group.constraint_group_id%type,
+in_object_id                      in      object.object_id%type
+)
+return    pkg_os_reference_lookup.bind_variable_tab_type ;
+
+----------------------------------------------------------------------------------------------------
+
+function fn_calc_service_group_zipcode
+(
+     in_session_id          in          object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_service_group_id       in          object.object_id%type
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------
+procedure sp_incident_datamart_update
+(
+    in_session_id         in object.object_id%type,
+    in_transaction_id     in object.object_id%type,
+    in_object_id          in object.object_id%type
+);
+----------------------------------------------------------------------------------------------------
+procedure sp_QueueGrpAsgmtCri_DM_Update
+(
+    in_session_id              in object.object_id%type,
+    in_transaction_id          in object.object_id%type,
+    in_queue_definition_id     in object.object_id%type
+);
+----------------------------------------------------------------------------------------------------
+procedure sp_QueueGrpAsgmtCri_Refresh
+(
+    in_session_id              in object.object_id%type,
+    in_transaction_id          in object.object_id%type,
+    in_queue_definition_id     in object.object_id%type
+);
+----------------------------------------------------------------------------------------------------
+--OSPRODUCT-27921
+function fn_set_catastrophe_claim_vendor
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type
+)
+  return number;
+----------------------------------------------------------------------------------------------------
+--OSPRODUCT-33410
+function fn_set_catastrophe_claim_vendor_outcome
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_action_object_id  in         object.object_id%type
+)
+  return number;
+-------------------------------------------------------------------------------------------------------
+-- OSPRODUCT-33260
+procedure sp_set_iso_claim_search_request_bv
+(
+    in_session_id        in         object.object_id%type,
+    in_transaction_id    in         object.object_id%type,
+    in_object_id         in         object.object_id%type,
+    io_action_outcome_id in out     outcome.outcome_id%type
+);
+
+procedure sp_reset_bulk_vendor_assignment_flag
+(
+    in_session_id        in     object.object_id%type,
+    in_transaction_id    in     object.object_id%type,
+    in_action_object_id  in     object.object_id%type,
+    io_action_outcome_id in out outcome.outcome_id%type
+);
+
+function fn_get_claim_for_iso_claim_search
+(
+    in_session_id        in object.object_id%type,
+    in_transaction_id    in object.object_id%type,
+    in_action_object_id  in object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function is_incident_entity_belongs_to_claim
+(
+      in_session_id         in object.object_id%type,
+      in_transaction_id     in object.object_id%type,
+      in_incident_entity_id in object.object_id%type,
+      in_claim_id           in object.object_id%type,
+      in_incident_id        in object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------
+function get_verisk_party_role_cd
+(
+      in_session_id         in object.object_id%type,
+      in_transaction_id     in object.object_id%type,
+      in_incident_entity_id in object.object_id%type,
+      in_claim_id           in object.object_id%type,
+      in_incident_id        in object.object_id%type
+)
+return varchar2;
+----------------------------------------------------------------------------------------------------
+function get_ref_tpr_incident_entity
+(
+      in_session_id           in object.object_id%type,
+      in_transaction_id       in object.object_id%type,
+      in_tpr_incident_id      in object.object_id%type,
+      in_tpr_incident_loss_id in object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function get_ref_tpr_incident_loss_belongs_to_tpr_sub_claim
+(
+      in_session_id           in object.object_id%type,
+      in_transaction_id       in object.object_id%type,
+      in_tpr_incident_id      in object.object_id%type,
+      in_tpr_sub_claim_id     in object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_is_first_disbursed_payment
+(
+      in_claim_id               in object.object_id%type,
+      in_claim_trx_financial_id in object.object_id%type
+)
+return char;
+----------------------------------------------------------------------------------------------------
+function fn_get_probable_incurred_amt_for_tpr_incident_loss
+(
+      in_session_id             in object.object_id%type,
+      in_transaction_id         in object.object_id%type,
+      in_incident_loss_id      in object.object_id%type,
+      in_claim_id              in object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_numeric_limit_from_text
+(
+
+      in_session_id			 object.object_id%type,
+      in_transaction_id		 object.object_id%type,
+      in_limit_text          varchar2,
+      in_limit_type          numeric default 1
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_perOccurence_limit_from_text
+(
+
+      in_session_id			 object.object_id%type,
+      in_transaction_id		 object.object_id%type,
+      in_limit_text          varchar2
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_aggregate_limit_from_text
+(
+
+      in_session_id			 object.object_id%type,
+      in_transaction_id		 object.object_id%type,
+      in_limit_text          varchar2
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_cat_related_incident_id
+(
+      in_session_id           in    object.object_id%type,
+      in_transaction_id    	in    object.object_id%type,
+      in_cat_type_id          in    object.object_id%type
+)return varchar2;
+
+--------------------------------------------For ACORD Object Transformation--------------------------------------------------------
+function fn_get_parent_AdjusterParty_for_AdjusterPartyInfo
+(
+      in_session_id                 object.object_id%type,
+      in_transaction_id             object.object_id%type,
+      in_ClaimInvestigationAddRq_id object.object_id%type,
+      in_AdjusterPartyInfo_id       object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_parent_AdjusterParty_Communications_for_PhoneAndEmail
+(
+      in_session_id                 object.object_id%type,
+      in_transaction_id             object.object_id%type,
+      in_ClaimInvestigationAddRq_id object.object_id%type,
+      in_object_id                  object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_parent_ClaimsParty_for_ClaimsInjuredInfo
+(
+      in_session_id                 object.object_id%type,
+      in_transaction_id             object.object_id%type,
+      in_ClaimInvestigationAddRq_id object.object_id%type,
+      in_ClaimsInjuredInfo_id       object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_reference_ClaimsInjuredInfo
+(
+    in_session_id                   object.object_id%type,
+    in_transaction_id               object.object_id%type,
+    in_ClaimInvestigationAddRq_id   object.object_id%type,
+    in_IncidentLoss_id       object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_reference_PropertyLossInfo
+(
+    in_session_id                   object.object_id%type,
+    in_transaction_id               object.object_id%type,
+    in_ClaimInvestigationAddRq_id   object.object_id%type,
+    in_IncidentLoss_id              object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_reference_AutoLossInfo
+(
+    in_session_id                   object.object_id%type,
+    in_transaction_id               object.object_id%type,
+    in_ClaimInvestigationAddRq_id   object.object_id%type,
+    in_IncidentLoss_id              object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_reference_ClaimsParty
+(
+    in_session_id                   object.object_id%type,
+    in_transaction_id               object.object_id%type,
+    in_ClaimInvestigationAddRq_id   object.object_id%type,
+    in_IncidentLoss_id              object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_parent_For_ClaimsPaymentCovInfo
+(
+      in_session_id                                 object.object_id%type,
+      in_transaction_id                             object.object_id%type,
+      in_ClaimInvestigationAddRq_id                 object.object_id%type,
+      in_ACORD_Claim_Search_ClaimsPaymentCovInfo    object.object_id%type
+)
+return number;
+----------------------------------------------------------------------------------------------------
+function fn_get_parent_For_ClaimsPayment_totalPaymentAmount
+(
+      in_session_id                                 object.object_id%type,
+      in_transaction_id                             object.object_id%type,
+      in_ClaimInvestigationAddRq_id                 object.object_id%type,
+      in_ACORD_Claim_Search_TotalPaymentAmount    object.object_id%type
+)
+return number;
+
+end PKG_OC_FUNCTIONS;
+/

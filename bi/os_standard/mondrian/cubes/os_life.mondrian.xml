@@ -1,0 +1,773 @@
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 July 2020  $
+-->
+
+<Schema name="Life Cubes">
+
+	<!--
+	$Workfile:   oneshield_life_cubes.xml  $
+	$Revision:   1.3  $
+	$Author:   ssaraf  $
+	$Date:   02 Dec 2015 13:44:34  $
+-->
+
+	<Dimension visible="true" highCardinality="false" name="Address" caption="Address">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Countries" primaryKey="AD_ADDRESS_ID">
+			<Table name="BI_DIM_ADDRESS_DETAIL">
+			</Table>
+			<Level name="Country" visible="true" column="CL_COUNTRY_ID" nameColumn="AD_COUNTRY_NAME" ordinalColumn="AD_COUNTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Country" description="Name of the Country">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">country</Annotation>
+  </Annotations>
+			</Level>
+			<Level name="Jurisdiction" visible="true" column="AD_JURISDICTION_NAME" nameColumn="AD_JURISDICTION_NAME" ordinalColumn="AD_JURISDICTION_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Jurisdiction" description="Name of the Jurisdiction">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+			</Level>
+			<Level name="City" visible="true" column="AD_ADDRESS_CITY" nameColumn="AD_ADDRESS_CITY" ordinalColumn="AD_ADDRESS_CITY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="City" description="Name of the City">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">city</Annotation>
+  </Annotations>
+			</Level>
+			<Level name="ZipCode" visible="true" column="AD_ADDRESS_ZIP_CODE" ordinalColumn="AD_ADDRESS_ZIP_CODE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="ZipCode" description="Zip Code">
+			  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">zip</Annotation>
+  </Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Line of Business" caption="Line of Business">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+			<Table name="BI_DIM_PRODUCT_DETAIL">
+			</Table>
+			<Level name="Product" visible="true" column="PD_PRODUCT_NAME" nameColumn="PD_PRODUCT_NAME" ordinalColumn="PD_PRODUCT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Product" description="Product Name">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+	
+	<Dimension visible="true" highCardinality="false" name="Producer" caption="Business Introducer">>
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Producers" primaryKey="PP_PRODUCER_ID">
+			<Table name="BI_DIM_PRODUCER_PARTNER">
+			</Table>
+			<Level name="Business Introducer Firm" visible="true" ordinalColumn="PP_PARTNER_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" description="Business Introducer Firm">
+				<KeyExpression>
+					<SQL dialect="oracle">
+						<![CDATA[CASE WHEN BI_DIM_PRODUCER_PARTNER.PE_PARTNER_ID IS NULL THEN 'None' ELSE PP_PARTNER_NAME END]]>
+					</SQL>
+				</KeyExpression>
+			</Level>
+			<Level name="Business Introducer Individual" visible="true" column="PP_PRODUCER_NAME" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Business Introducer Individual">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Underwriter" caption="Advantage CSM Contact">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Underwriters" primaryKey="UD_USER_ID">
+			<Table name="BI_DIM_USER_DETAIL" alias="Advantage CSM Contact">
+			</Table>
+			<Level name="Advantage CSM Contact" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Advantage CSM Contact">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Creator" caption="Creator">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Creators" primaryKey="UD_USER_ID">
+			<Table name="BI_DIM_USER_DETAIL" alias="Creator">
+			</Table>
+			<Level name="Creator Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Creator Role" description="Creator role name">
+			</Level>
+			<Level name="Creator User" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Creator User" description="Name of the Creator">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Assigned User" caption="Assigned User">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Assigned Users" primaryKey="UD_USER_ID">
+			<Table name="BI_DIM_USER_DETAIL" alias="Assigned User">
+			</Table>
+			<Level name="Assigned Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Assigned Role">
+			</Level>
+			<Level name="Assigned User" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Assigned User" description="Name of the user task is assigned to">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Logged User">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Logged Users" primaryKey="UD_USER_ID">
+			<Table name="BI_DIM_USER_DETAIL" alias="Logged User">
+			</Table>
+			<Level name="Logged User Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+			</Level>
+			<Level name="Logged User Name" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the user">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Policy Holder">
+		<Hierarchy hasAll="true" allMemberName="All Customers" primaryKey="CD_CUSTOMER_ID">
+      <Table name="BI_DIM_CUSTOMER_DETAIL">
+      </Table>
+	  <Level name="Customer Type" column="CD_INSURED_TYPE" nameColumn="CD_INSURED_TYPE" ordinalColumn="CD_INSURED_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Type">
+      </Level>
+      <Level name="Customer Name" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+	   <Property name="Customer DBA" column="CD_CUSTOMER_DBA" type="String">
+        </Property>
+		 <Property name="Client Account Number" column="CD_CLIENT_ACCT_NUMBER" type="String">
+        </Property>
+      </Level>
+      </Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Carrier Branch" caption="Carrier Branch">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Carrier Branches" primaryKey="PE_PARTNER_ID">
+			<Table name="BI_DIM_PARTNER_ENTITY" alias="Carrier_Branch">
+			</Table>
+		 <Level name="Carrier Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Name">
+	<Property name="Carrier Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Carrier Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="Carrier Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Status">
+</Level>
+<Level name="Carrier Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Effective Date">
+</Level>
+<Level name="Carrier Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Expiry Date">
+</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Issuing Company">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Writing Companies" primaryKey="PE_PARTNER_ID">
+			<Table name="BI_DIM_PARTNER_ENTITY" alias="Writing_Company">
+			</Table>
+			 <Level name="Issuing Company Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Name">
+	<Property name="Issuing Company Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Issuing Company Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="Issuing Company Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Status">
+</Level>
+<Level name="Issuing Company Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Effective Date">
+</Level>
+<Level name="Issuing Company Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Carrier Expiry Date">
+</Level>
+		</Hierarchy>
+	</Dimension>
+
+
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Effective Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="EFF_TIME">
+			</Table>
+			<Level name="Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Proposed Policy Effective Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="PROP_TIME">
+			</Table>
+			<Level name="Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Effective Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Expiration Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="EXP_TIME">
+			</Table>
+			<Level name="Expiration Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Expiration Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Expiration Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Expiration Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Expiration Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Last Updated Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="LUD_TIME">
+			</Table>
+			<Level name="Last Updated Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Updated Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Updated Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Updated Day" visible="true" column="TD_DAY"  type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Creation Date)" caption="Time (Creation Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="CRE_TIME">
+			</Table>
+			<Level name="Creation Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Creation Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Creation Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Creation Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Bind Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="BID_TIME">
+			</Table>
+			<Level name="Bind Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Bind Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Bind Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Bind Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Completed Date)" caption="Time (Completed Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="CMP_TIME">
+			</Table>
+			<Level name="Completed Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Completed Year" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Completed Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Completed Quarter" description="Name or number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Completed Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Completed Month" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Completed Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Completed Date" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Due Date)" caption="Time (Due Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="DUE_DATE_TIME">
+			</Table>
+			<Level name="Due Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Due Date Year" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Due Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Due Date Quarter" description="Name or number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Due Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Due Date Month" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Due Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Due Day" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Last Logged in Date)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="DLL_DATE">
+			</Table>
+			<Level name="Last Logged Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Logged Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of the Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Logged Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Last Logged Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension visible="true" highCardinality="false" name="Segment">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Segments" primaryKey="IC_INDUSTRY_ID">
+			<Table name="BI_DIM_INDUSTRY_CLASS">
+			</Table>
+			<Level name="Industry" visible="true" column="IC_INDUSTRY_NAME" nameColumn="IC_INDUSTRY_NAME" ordinalColumn="IC_INDUSTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Industry">
+			</Level>
+			<Level name="Industry ID" visible="true" column="IC_INDUSTRY_ID" ordinalColumn="IC_INDUSTRY_ID" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Unique ID of the Industry">
+			</Level>
+		</Hierarchy>
+	</Dimension>
+	<Dimension visible="true" highCardinality="false" name="Policy Owner">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Customers" primaryKey="PIPELINE_CUSTOMER_ID">
+			<Table name="BI_DIM_CUSTOMER_DETAIL">
+			</Table>
+			<Level name="Policy Owner" visible="true" column="CD_CUSTOMER_NAME_FULL" nameColumn="CD_CUSTOMER_NAME_FULL" ordinalColumn="CD_CUSTOMER_NAME_FULL" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Policy Owner">
+			</Level>
+			<Level name="File #" visible="true" column="CD_PROSPECT_NUMBER" nameColumn="CD_PROSPECT_NUMBER" ordinalColumn="CD_PROSPECT_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Prospect File Number">
+			</Level>
+			<Level name="KYC Risk Rating" visible="true" column="CD_RISK_RATING" nameColumn="CD_RISK_RATING" ordinalColumn="CD_RISK_RATING" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="KYC Risk Rating">
+			</Level>
+
+
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension  visible="true" highCardinality="false" name="Sponsor" caption="Sponsor">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="PIPELINE_CUSTOMER_ID" primaryKeyTable="BI_DIM_CUSTOMER_DETAIL">
+			<Join leftKey="UD_UWMANAGER_ID" rightKey="UD_USER_ID">
+				<Table name="BI_DIM_CUSTOMER_DETAIL">
+				</Table>
+				<Table name="BI_DIM_USER_DETAIL" alias="DIM_USER_DTL">
+				</Table>
+			</Join>
+			<Level name="AIH Ops Sponsor" visible="true" table="DIM_USER_DTL" column="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Advantage Sponsor Contact" description="Advantage Sponsor Contact">
+			</Level>	 
+		</Hierarchy>
+	</Dimension>  
+
+	<Dimension  visible="true" highCardinality="false" name="Internal Responsibility" caption="Internal Responsibility">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="PIPELINE_CUSTOMER_ID" primaryKeyTable="BI_DIM_CUSTOMER_DETAIL">
+			<Join leftKey="UD_UNDERWRITER_ID" rightKey="UD_USER_ID">
+				<Table name="BI_DIM_CUSTOMER_DETAIL">
+				</Table>
+				<Table name="BI_DIM_USER_DETAIL" alias="DIM_USER_DTL">
+				</Table>
+			</Join>
+			<Level name="Internal Responsibility" visible="true" table="DIM_USER_DTL" column="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Advantage CSM Contact" description="Advantage CSM Contact">
+			</Level>	 
+		</Hierarchy>
+	</Dimension>  
+
+	<Dimension  visible="true" highCardinality="false" name="Prospect Status" caption="Prospect Status">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="PIPELINE_CUSTOMER_ID" primaryKeyTable="BI_DIM_CUSTOMER_DETAIL">
+			<Join leftKey="CD_PROSPECT_STATUS" rightKey="OS_OBJECT_STATE_ID">
+				<Table name="BI_DIM_CUSTOMER_DETAIL">
+				</Table>
+				<Table name="BI_DIM_OBJECT_STATE" alias="DIM_OBJ_STATE">
+				</Table>
+			</Join>
+
+			<Level name="Prospect Status" visible="true" table="DIM_OBJ_STATE" column="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Prospect Status" description="Prospect Status">
+			</Level>	 
+		</Hierarchy>
+	</Dimension>  
+
+	<Dimension  visible="true" highCardinality="false" name="Business Introducer" caption="Business Introducer">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="PIPELINE_CUSTOMER_ID" primaryKeyTable="BI_DIM_CUSTOMER_DETAIL">
+			<Join leftKey="PP_PRODUCER_ID" rightKey="PP_PRODUCER_ID">
+				<Table name="BI_DIM_CUSTOMER_DETAIL">
+				</Table>
+				<Table name="BI_DIM_PRODUCER_PARTNER" alias="DIM_PRODUCER_PARTNER">
+				</Table>
+			</Join>
+			<Level name="Group" visible="true" table="DIM_PRODUCER_PARTNER" column="PP_PARTNER_NAME" ordinalColumn="PP_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Group" description="Group">
+			</Level>	
+			<Level name="Advisor" visible="true" table="DIM_PRODUCER_PARTNER" column="PP_PRODUCER_NAME" nameColumn="PP_PRODUCER_NAME" ordinalColumn="PP_PRODUCER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Advisor">
+			</Level>	  
+		</Hierarchy>
+	</Dimension>  
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Prospect Start Date)" description = " Prospect Start Date - Default value (1900-01-01)">
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="PIPELINE_CUSTOMER_ID" primaryKeyTable="BI_DIM_CUSTOMER_DETAIL">
+			<Join leftKey="CD_PROSPECT_START_DT" rightKey="TD_DATE">
+				<Table name="BI_DIM_CUSTOMER_DETAIL">
+				</Table>
+				<Table name="BI_DIM_TIME_DETAIL" alias="PROP_TIME">
+				</Table>
+			</Join>
+			<Level name="Prospect Start Year" visible="true" table="PROP_TIME"  column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Prospect Start Quarter" visible="true" table="PROP_TIME"  column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Prospect Start Month" visible="true" table="PROP_TIME"  column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Prospect Start Day" visible="true" table="PROP_TIME"  column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+	<Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Target Closing Date)"  description ="Target Closing Date - Default value (1900-01-01)" >
+		<Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+			<Table name="BI_DIM_TIME_DETAIL" alias="PROP_TIME">
+			</Table>
+			<Level name="Target Closing Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Target Closing Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Target Closing Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+			</Level>
+			<Level name="Target Closing Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Day of the month">
+			<Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+			</Level>
+		</Hierarchy>
+	</Dimension>
+
+
+
+	<Cube name="CIF" caption="CIF Cube" visible="true" cache="true" enabled="true">
+		<Table name="BI_FACT_CIF_DETAIL">
+		</Table>
+		<DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Policy Holder" name="Policy Holder" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Time (Proposed Policy Effective Date)" name="Time (Proposed Policy Effective Date)" visible="true" foreignKey="CD_PROPOSED_POLICY_DT" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Time (Last Updated Date)" name="Time (Last Updated Date)" visible="true" foreignKey="CD_LAST_UPDATED_DT" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="CD_CREATE_DT" highCardinality="false">
+		</DimensionUsage>
+		<Dimension visible="true" highCardinality="false" name="CIF Name">
+			<Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+				<Level name="CIF Name" visible="true" column="CD_CIF_NAME" nameColumn="CD_CIF_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="CIF Name">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension visible="true" highCardinality="false" name="Policy Number">
+			<Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+				<Level name="Policy Number" visible="true" column="CD_POLICY_NUMBER" nameColumn="CD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POLICY NUMBER">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" foreignKey="OS_OBJECT_STATE_ID" highCardinality="false" name="Status">
+			<Hierarchy visible="true" hasAll="true">
+				<Table name="BI_DIM_OBJECT_STATE">
+				</Table>
+				<Level name="Current Stage" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current stage of CIF">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<DimensionUsage source="Issuing Company" name="Issuing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+		</DimensionUsage>
+
+
+		<Measure name="CIF_Count" column="CD_CIF_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="CIF Count" description="Total number of CIFs">
+		</Measure>
+
+	</Cube>
+	
+	<!-- Life Policy Cube : Start  -->
+	<Cube name="Life Policy Cube" caption="Life Policy Cube" visible="true" cache="true" enabled="true">
+		<Table name="BI_FACT_LIFE_POLICY_DETAIL">
+		</Table>
+		<DimensionUsage source="Address" name="Address" caption="Address" visible="true" foreignKey="AD_RISK_ADDRESS_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Producer" name="Producer" visible="true" foreignKey="PP_PRODUCER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Underwriter" name="Underwriter" visible="true" foreignKey="UD_UNDERWRITER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Policy Holder" name="Policy Holder" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Time (Last Updated Date)" name="Time (Last Updated Date)" visible="true" foreignKey="PD_LAST_UPDATED_DT" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Time (Creation Date)" name="Time (Creation Date)" visible="true" foreignKey="PD_CREATE_DT" highCardinality="false">
+		</DimensionUsage>
+		<Dimension visible="true" highCardinality="false" name="Policy Number">
+			<Hierarchy visible="true" hasAll="true" allMemberName="All Policies">
+				<Level name="Policy Number" visible="true" column="PD_POLICY_NUMBER" nameColumn="PD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POLICY NUMBER">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension visible="true" highCardinality="false" name="Policy Status">
+			<Hierarchy visible="true" hasAll="true" allMemberName="All Policies Status">
+				<Level name="Policy Status" visible="true" column="PD_POLICY_STATUS" nameColumn="PD_POLICY_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POLICY STATUS">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<Dimension type="StandardDimension" visible="true" foreignKey="OS_OBJECT_STATE_ID" highCardinality="false" name="Status">
+			<Hierarchy visible="true" hasAll="true">
+				<Table name="BI_DIM_OBJECT_STATE">
+				</Table>
+				<Level name="Current Stage" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current stage of CIF">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+		<DimensionUsage source="Issuing Company" name="Issuing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+		</DimensionUsage>
+
+
+		<Measure name="Policy_Count" column="PD_POLICY_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Policy Count" description="Total number of Policies">
+		</Measure>
+
+	</Cube>
+	<!-- Life Policy Cube : End -->
+
+
+	<Cube name="PipeLine" caption="PipeLine Cube" visible="true" cache="true" enabled="true">
+		<Table name="BI_FACT_PIPELINE_DETAIL">
+		</Table>
+
+		<!--   <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage> -->
+		<DimensionUsage source="Business Introducer" name="Business Introducer" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>	
+		<DimensionUsage source="Policy Owner" name="Policy Owner" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Sponsor" name="Sponsor" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+		<DimensionUsage source="Internal Responsibility" name="Internal Responsibility" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>		
+
+
+
+		<DimensionUsage source="Time (Prospect Start Date)" name="Time (Prospect Start Date)" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+
+		<DimensionUsage source="Issuing Company" name="Issuing Company" visible="true" foreignKey="PE_WRITING_COMPANY_ID" highCardinality="false">
+		</DimensionUsage>
+
+		<!-- <Dimension visible="true" highCardinality="false" name="Pipe Product">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+        <Level name="Product" visible="true" column="PIP_PRODUCT_SHORT_NAME" nameColumn="PIP_PRODUCT_SHORT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Pipe Product">
+        
+		</Level>
+		 <Level name="Sub Product" visible="true" column="PIP_SUBPRODUCT_SHORT_NAME" nameColumn="PIP_SUBPRODUCT_SHORT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Sub Product">
+        
+	    </Level>
+		<Level name="Company" visible="true" column="PIP_WRITING_COMP_NAME" nameColumn="PIP_WRITING_COMP_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Company">
+        
+	    </Level>
+	  </Hierarchy>
+    </Dimension> -->
+
+		<Dimension visible="true" highCardinality="false" name="CIF Details">
+			<Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+
+				<Level name="Product" visible="true" column="PIP_PRODUCT_SHORT_NAME" nameColumn="PIP_PRODUCT_SHORT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description=" Product">
+
+				</Level>
+				<Level name="Sub Product" visible="true" column="PIP_SUBPRODUCT_SHORT_NAME" nameColumn="PIP_SUBPRODUCT_SHORT_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Sub Product">
+
+				</Level>
+
+
+				<Level name="CIF Name" visible="true" column="CD_CIF_NAME" nameColumn="CD_CIF_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="CIF Name">
+					<!--  <Property name="CIF Name" column="CD_CIF_NAME" type="String">
+					</Property> --> 
+				</Level>
+				<Level name="Probability" visible="true" column="PIP_CIF_PROBABILITY" nameColumn="PIP_CIF_PROBABILITY" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Probability">
+
+				</Level>
+				<Level name="Death Benefit Option" visible="true" column="PIP_DEATH_OPTIONS" nameColumn="PIP_DEATH_OPTIONS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Death Options">
+
+				</Level>
+				<Level name="Insured age" visible="true" column="PIP_INSURED_AGE" nameColumn="PIP_INSURED_AGE" type="Numeric" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Insured Age">
+
+				</Level>
+				<Level name="Reinsurance Company" visible="true" column="PIP_REINSURERS" nameColumn="PIP_REINSURERS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Reinsurance Company">
+				</Level>
+
+				<Level name="Policy Number" visible="true" column="CD_POLICY_NUMBER" nameColumn="CD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POLICY NUMBER">
+
+				</Level>
+			</Hierarchy>
+		</Dimension> 
+
+		<DimensionUsage source="Time (Target Closing Date)" name="Time (Target Closing Date)" visible="true" foreignKey="PIP_TARGET_CLOSE_DATE" highCardinality="false">
+		</DimensionUsage>
+
+		<DimensionUsage source="Prospect Status" name="Prospect Status" caption="FDLI" visible="true" foreignKey="CD_CUSTOMER_ID" highCardinality="false">
+		</DimensionUsage>
+
+		<Dimension type="StandardDimension" visible="true" foreignKey="OS_OBJECT_STATE_ID" highCardinality="false" name="Status">
+			<Hierarchy visible="true" hasAll="true">
+				<Table name="BI_DIM_OBJECT_STATE">
+				</Table>
+				<!--    <Level name="Status" visible="true" column="OS_QUOTE_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="CIF status">
+        </Level>-->
+				<Level name="CIF Stage" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current stage of CIF">
+				</Level>
+			</Hierarchy>
+		</Dimension>
+
+		<!--<Dimension visible="true" highCardinality="false" name="Policy Number">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Quotes">
+		<Level name="Policy Number" visible="true" column="CD_POLICY_NUMBER" nameColumn="CD_POLICY_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POLICY NUMBER">
+          <Property name="Policy Number" column="CD_POLICY_NUMBER" type="String" description="Corresponding policy number of the CIF">
+          </Property> 
+        </Level>
+      </Hierarchy>
+    </Dimension> 	--> 
+
+		<DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+		</DimensionUsage>
+		<Measure name="PipeLine_Count" column="PIP_QUOTE_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="CIF Count" description="Total number of CIFs">
+		</Measure> 
+
+
+		<Measure name="Assets" column="PIP_ASSETS" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Assets" description="Sum of Assets">
+		</Measure>	
+		<Measure name="Face Value" column="PIP_FACE_VALUE" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Face Value" description="Sum of Face Value">
+		</Measure>
+
+		<Measure name="Net Annualized Revenue" column="PIP_NET_ANNUAL_PREMIUM" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Net Annualized Revenue" description="Sum of Net Annualize Revenue">
+		</Measure>
+
+		<Measure name="Net Fee" column="PIP_NET_FEE" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Net Fee" description="Net Fee">
+		</Measure>	
+		<Measure name="AIH Retention" column="PIP_AIH_RETENTION" datatype="Numeric" formatString="#,###" aggregator="sum" caption="AIH Retention" description="AIH Retention">
+		</Measure>		
+
+
+	</Cube> 
+</Schema>

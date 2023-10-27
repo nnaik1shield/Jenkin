@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-02-20T01:55:37.822+05:30" update="2023-06-15T05:42:55.760-04:00">
+        <path name="BIVendorSummarybyVendorName" folder="/home/OneShieldBI/analyzers/claims/BIVendorSummarybyVendorName.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="VENDOR_CLAIM_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" totalsOnTopLeft="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="14" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Incurred_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="true" measureTypeEnum="VALUE" sortOrderEnum="DESC" id="[MEASURE:1]"/>
+            <measure formula="[Measures].[Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Vendor Name].[Vendor Name]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters>
+            <filter formula="[Vendor Name].[Vendor Name]" viewFilterEnum="MULTIPLE">
+                <topBottom formula="[Measures].[Incurred_Amount]" type="TOP" count="10"/>
+            </filter>
+        </filters>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="250" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" multiChartRangeScope="GLOBAL" emptyCellMode="GAP" sizeByNegativesMode="NEG_LOWEST" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" excelMergePivotCells="true" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Claim_Jurisdiction].[State]</drillColumn>
+            <drillColumn>[Claim Number].[Claim Number]</drillColumn>
+            <drillColumn>[Claim Status].[Claim Status]</drillColumn>
+            <drillColumn>[Claim Status Reason].[Claim Status Reason]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Year]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Quarter]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Month]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Week]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Day]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Date]</drillColumn>
+            <drillColumn>[W9 Details].[W9 Details Flag]</drillColumn>
+            <drillColumn>[Measures].[Actual_Paid_Amount]</drillColumn>
+            <drillColumn>[Measures].[Open_Claim_Incurred_Amt]</drillColumn>
+            <drillColumn>[Measures].[Reserve_Amount]</drillColumn>
+            <drillColumn>[Measures].[Incurred_Amount]</drillColumn>
+            <drillColumn>[Measures].[Recovery_Amount]</drillColumn>
+            <drillColumn>[Measures].[Reserve_Historical_Amount]</drillColumn>
+            <drillColumn>[Vendor Address].[Country]</drillColumn>
+            <drillColumn>[Vendor Address].[Jurisdiction]</drillColumn>
+            <drillColumn>[Vendor Address].[City]</drillColumn>
+            <drillColumn>[Vendor Address].[ZipCode]</drillColumn>
+            <drillColumn>[Vendor Name].[Vendor Name]</drillColumn>
+            <drillColumn>[Vendor Type].[Vendor Type]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="132"/>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"labelsOption":"inside"}]</pluginData>
+    </uiAttributes>
+</reportRecord>

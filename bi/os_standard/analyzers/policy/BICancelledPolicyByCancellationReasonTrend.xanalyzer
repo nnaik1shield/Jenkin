@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-01-11T13:27:06.844+05:30" update="2023-04-26T16:45:21.731+05:30">
+        <path name="BICancelledPolicyByCancellationReasonTrend" folder="/home/OneShieldBI/analyzers/policy/BICancelledPolicyByCancellationReasonTrend.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="CANCELLED_POLICY_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Cancelled_Policies]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Total_Cancelled_Premium]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" hideInChart="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="measures" gembarOrdinal="1"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Cancellation Processed Date].[Year]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+            <attribute formula="[Cancellation Processed Date].[Month]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="1"/>
+            <attribute formula="[Cancellation Processed Date].[Week]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="2"/>
+            <attribute formula="[cancellation_reasons].[Cancellation Reason]" showSubtotal="false" sortOrderEnum="ASC" gembarId="columns" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Line" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Broker].[Broker Status]</drillColumn>
+            <drillColumn>[Broker].[Broker]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Year]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Quarter]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Month]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Week]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Day]</drillColumn>
+            <drillColumn>[Cancellation Processed Date].[Date]</drillColumn>
+            <drillColumn>[cancellation_reasons].[Cancellation Reason]</drillColumn>
+            <drillColumn>[Creation Date].[Year]</drillColumn>
+            <drillColumn>[Creation Date].[Quarter]</drillColumn>
+            <drillColumn>[Creation Date].[Month]</drillColumn>
+            <drillColumn>[Creation Date].[Week]</drillColumn>
+            <drillColumn>[Creation Date].[Day]</drillColumn>
+            <drillColumn>[Creation Date].[Date]</drillColumn>
+            <drillColumn>[Customer].[Customer]</drillColumn>
+            <drillColumn>[Line of Business].[Line of Business]</drillColumn>
+            <drillColumn>[Measures].[Total_Cancelled_Premium]</drillColumn>
+            <drillColumn>[Policy_Jurisdiction].[Jurisdiction]</drillColumn>
+            <drillColumn>[Policy_Number].[Policy Number]</drillColumn>
+            <drillColumn>[Status].[Application Status]</drillColumn>
+            <drillColumn>[Underwriter].[Underwriter]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="true" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="113,113,113,210"/>
+        <columnDataFieldWidths actualWidths="120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"trendType":"none","trendName":"","lineWidth":1}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

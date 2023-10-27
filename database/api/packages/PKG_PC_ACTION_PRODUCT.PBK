@@ -1,0 +1,3077 @@
+CREATE OR REPLACE PACKAGE BODY PKG_PC_ACTION_PRODUCT
+-------------
+-- $HeadURL: http://oscsvn01/svnrepos/OneShield/coresrc/branches/CORE_4.30.2.DEV9/_database/api/PKG_PC_ACTION_PRODUCT.PBK $
+-- $Revision: 711 $
+--   $Author: anverma $
+--     $Date: 2013-11-12 11:18:34 -0500 (Tue, 12 Nov 2013) $
+-------------
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ pkg_name       constant            system_log.program_name%type := 'pkg_pc_action_product.';
+
+---------------------------------------------------------------------------------------------------
+
+procedure show_version
+is
+begin
+
+     dbms_output.put_line('$HeadURL: http://oscsvn01/svnrepos/OneShield/coresrc/branches/CORE_4.30.2.DEV9/_database/api/PKG_PC_ACTION_PRODUCT.PBK $');
+     dbms_output.put_line('$Revision: 711 $');
+     dbms_output.put_line('$Author: anverma $');
+     dbms_output.put_line('$Date: 2013-11-12 11:18:34 -0500 (Tue, 12 Nov 2013) $');
+
+exception
+    when others then
+          dbms_output.put_line(sqlerrm(sqlcode));
+
+end show_version;
+
+--------------------------------------------------------------------------------
+--
+--  SP_EXECUTE_ACTION_BILLING
+--
+--  Based on the Dragon Billing native action name, call the specific procedure that the string represents ...
+--
+--------------------------------------------------------------------------------
+
+procedure sp_execute_action_product
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_object_cache               in out    pkg_os_object_cache.t_object_cache,
+     io_message_list               in out    pkg_os_message.t_message_list,
+     in_action_id                  in        action.action_id%type,
+     in_action_object_id           in        object.object_id%type,
+     in_action_object_type_id      in        object_type.object_type_id%type,
+     in_native_command_name        in        varchar2,
+     io_action_outcome_id          in out    outcome.outcome_id%type
+)
+as
+
+     v_procedure_name              system_log.program_name%type       := pkg_name||'sp_execute_action_billing';
+     v_session_control             pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_current_date_time      date                                  := pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,in_action_object_id);
+     v_sid number;
+begin
+     
+     if in_native_command_name = 'PCUnderwritingCorrectApplication'
+     then
+
+          pkg_pc_functions.sp_underwriting_correct_app
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+            elsif in_native_command_name = 'PCValidateProduct'
+     then
+          pkg_pc_validate_product.sp_validate_product
+          (
+
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+);
+
+	elsif in_native_command_name = 'PCAppTreeValidate'
+	then
+		declare
+            v_valid_tf  char := 'T';
+        begin
+               
+			   
+			    pkg_os_tree.sp_tree_create
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               1216748,
+               in_action_object_id,
+               2276904,
+               io_action_outcome_id
+          );
+			   
+			   pkg_os_tree_validation.sp_tree_validate_all
+
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    6048, -- @@@ Policy Quote Tree
+                    'T',
+                    io_message_list,
+                    v_valid_tf
+               );
+
+            if v_valid_tf = 'T' then
+                io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+            else
+                io_action_outcome_id := 23;
+            end if;
+      end;
+	elsif in_native_command_name = 'PCDoSearchAddress'
+     then
+          pkg_pc_address_verification.sp_create_dosearch_req
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+     elsif in_native_command_name = 'PCDoGetAddress'
+       then
+          pkg_pc_address_verification.sp_create_dogetaddress_req
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+                    
+     elsif in_native_command_name = 'PCRefineFinalAddress'
+       then
+          pkg_pc_address_verification.sp_refine_final_add
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+     elsif in_native_command_name = 'PCDoSearchAddressProcessResponse'
+       then
+          pkg_pc_address_verification.sp_process_address_resp
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ); 	
+	    --OSPRODUCT-1469
+    elsif in_native_command_name = 'PCDeletePolicyCustomerObjects'
+    then
+        PKG_PC_FUNCTIONS.sp_delete_policycust_objects
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+		  
+	 elsif in_native_command_name = 'PCSubmissionCreatePolicySubmissions'
+     then
+
+          pkg_pc_submission.sp_subm_create_policyquotes
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+	 
+	 elsif in_native_command_name = 'PCPolicyCleanseApp'
+     then
+
+          pkg_os_policy_cleanse.sp_policy_cleanse
+          
+          (
+               in_session_id => in_session_id,
+               in_transaction_id => in_transaction_id,
+               in_action_id => in_action_id,
+               in_action_object_id => in_action_object_id,
+               in_tree_definition1_id => 6048,
+               in_tree_definition2_id => null,
+               in_delete_tf => 'T'
+
+          );
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		  
+     ----------------------------UTPRODUCT-814----------------------------
+    elsif in_native_command_name = 'PCNumerateCustomerBuildingsBOP'
+     then
+         
+        declare
+        v_Location_id  object.object_id%type;
+        begin
+          
+          v_Location_id := pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, in_action_object_id, '21805901');
+          
+          pkg_pc_functions.sp_update_objects_numeration
+          (
+               in_session_id,in_transaction_id,
+               v_Location_id,
+               pkg_os_constant.gObjType_CustomerBuilding,
+               pkg_os_constant_bv.gbv_GenObjSequenceNumber
+          );
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+        end;
+----------------------------UTPRODUCT-814----------------------------
+    elsif in_native_command_name = 'PCNumerateCustomerBuildings'
+
+       then
+			
+
+          pkg_pc_functions.sp_update_objects_numeration
+          (
+               in_session_id,in_transaction_id,
+               in_action_object_id,
+               pkg_os_constant.gObjType_CustomerBuilding,
+               pkg_os_constant_bv.gbv_GenObjSequenceNumber
+          );
+
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;    
+		  
+   elsif in_native_command_name = 'CSCreateStagingTreePolicy'
+     then
+       --UTDEV-5479
+	    pkg_os_session.sp_session_log_level_update
+			(
+              in_session_id         => in_session_id,
+              in_transaction_id     => in_transaction_id,
+              in_target_session_id  => in_session_id,
+              in_logging_level      => pkg_os_logging.G_LOGGING_ERROR
+
+			);
+    declare
+            in_policy_number li_stg_entity_trx.et_policy_number%type := null ;
+            
+     begin
+	  
+	  select et_policy_number
+	    into in_policy_number
+	    from li_stg_entity_trx e
+	   where e.et_id = in_action_object_id;      
+	     
+       pkg_pc_data_conversion.sp_create_staging_object_tree
+      (
+          in_session_id,
+          in_transaction_id,
+          'POLICY',
+          'Legacy',
+           100,
+           1,
+          in_policy_number
+       );
+    end;
+ io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+elsif in_native_command_name = 'CSTransformObject'
+  then
+		   pkg_os_session.sp_session_log_level_update
+			(
+              in_session_id         => in_session_id,
+              in_transaction_id     => in_transaction_id,
+              in_target_session_id  => in_session_id,
+              in_logging_level      => pkg_os_logging.G_LOGGING_ERROR
+
+			);
+        
+          pkg_pc_data_conversion.sp_transform_object_batch(in_session_id,
+                                                           in_transaction_id,
+                                                           in_action_object_id,
+                                                           io_action_outcome_id);
+					 
+					 
+elsif in_native_command_name = 'CSPartnerLoad'
+  then
+        
+          pkg_pc_data_conversion.sp_partner_data_load(in_session_id,
+                                                           in_transaction_id,
+                                                           in_action_object_id,
+                                                           io_action_outcome_id);
+					 
+elsif in_native_command_name = 'CSPartnerTransform'
+  then
+        
+          pkg_pc_data_conversion.sp_partner_transform(in_session_id,
+                                                           in_transaction_id,
+                                                           in_action_object_id,
+                                                           io_action_outcome_id);					 					 
+
+elsif in_native_command_name = 'CSUpdateConvTables'
+  then
+		   pkg_os_session.sp_session_log_level_update
+			(
+              in_session_id         => in_session_id,
+              in_transaction_id     => in_transaction_id,
+              in_target_session_id  => in_session_id,
+              in_logging_level      => pkg_os_logging.G_LOGGING_ERROR
+
+			);
+          pkg_pc_data_conversion.sp_update_policystatus_table(in_session_id,
+                                                              in_transaction_id,
+                                                              in_action_object_id,
+                                                              io_action_outcome_id); 
+
+	 elsif in_native_command_name = 'PCSetPolicyTrxIVANSStatus'
+     then
+           pkg_pc_ivans_policy_ext.sp_set_ivans_policy_ext_status
+           (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+            );
+            io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+
+     elsif in_native_command_name = 'PCSetDMSSyncOutcome'
+     then
+           pkg_pc_document_render.sp_set_doc_sync_outcome
+            (
+             in_session_id,
+             in_transaction_id,
+             in_action_object_id,
+             io_action_outcome_id
+            );
+
+	elsif in_native_command_name = 'PCUpdateDocumentStatus'
+       then
+            pkg_pc_document_render.sp_set_doc_generation_status
+            (
+                in_session_id ,
+                in_transaction_id,
+                in_action_object_id,
+                in_action_object_id,
+                in_action_id
+            );
+
+
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+	elsif in_native_command_name = 'PCCreateDocGenerationReq'
+       then  
+             
+            pkg_pc_document_render.create_doc_gen_request
+            (
+                in_session_id ,
+                in_transaction_id,
+                in_action_object_id,
+                io_action_outcome_id
+            ); 
+	
+-- UTPRODUCT-994          
+   elsif in_native_command_name = 'PCQueueUpdateForTask'
+         then
+	
+           PKG_PC_FUNCTIONS.sp_update_queue_object_detail
+           (
+                 in_session_id,
+                 in_transaction_id,
+                 in_action_object_id
+           );
+           io_action_outcome_id := pkg_os_constant.goutcome_ok;  
+-----------UTPRODUCT-108   
+    elsif in_native_command_name = 'PCCustomerEntityTextSearch'
+     then
+
+          pkg_pc_text_search.sp_customer_entity_search
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id,
+               in_object_cache,
+               'T'
+          );
+     --OSPRODUCT-2882 Begin
+     elsif in_native_command_name = 'PCBORCreateIncludedObjects'
+     then
+
+          pkg_pc_bor_transfer.sp_group_bor_included_objects
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+               in_action_id               => in_action_id,
+               in_action_object_id        => in_action_object_id,
+               in_action_object_type_id   => in_action_object_type_id,
+               io_action_outcome_id       => io_action_outcome_id
+          );
+
+     elsif in_native_command_name = 'PCBORUpdateJobStatus'
+     then
+
+          pkg_pc_bor_action.sp_update_job_status_common
+           (
+              in_session_id           ,
+              in_transaction_id       ,
+              in_action_object_id     ,
+              io_action_outcome_id    
+            );
+
+
+     elsif in_native_command_name = 'PCBORScheduleTransfer'
+     then
+
+          pkg_pc_bor_transfer.sp_schedule_bor_transfer( in_session_id            =>  NVL(pkg_os_object_io.fn_object_bv_path_get(in_session_id,
+                                                                                                                         in_transaction_id,
+                                                                                                                         in_session_id,
+                                                                                                                         '30253401.30253301'),in_session_id),
+                                                     in_transaction_id        => in_transaction_id,
+                                                     in_action_id             => in_action_id,
+                                                     in_action_object_id      => in_action_object_id,
+                                                     in_action_object_type_id => in_action_object_type_id,
+                                                     io_action_outcome_id     => io_action_outcome_id);
+
+
+
+     elsif in_native_command_name = 'PCBORProcessTransfer'
+     then
+
+          pkg_pc_bor_transfer.sp_process_bor_transfer
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+               io_object_cache            => in_object_cache,
+               io_message_list            => io_message_list,
+               in_action_id               => in_action_id,
+               in_action_object_id        => in_action_object_id,
+               in_action_object_type_id   => in_action_object_type_id,
+               io_action_outcome_id       => io_action_outcome_id
+          );
+
+     elsif in_native_command_name = 'PCBORProcessTransferWF'
+     then
+
+      pkg_pc_bor_transfer.sp_wf_process_bor_transfer(in_session_id            => in_session_id,
+                                                       in_transaction_id        => in_transaction_id,
+                                                       io_object_cache          => in_object_cache,
+                                                       io_message_list          => io_message_list,
+                                                       in_action_id             => in_action_id,
+                                                       in_action_object_id      => in_action_object_id,
+                                                       in_action_object_type_id => in_action_object_type_id,
+                                                       io_action_outcome_id     => io_action_outcome_id);
+
+     elsif in_native_command_name = 'PCDeleteIndPolicyBOR' then
+
+                         pkg_pc_bor_transfer.sp_delete_transfer_policies(in_session_id,
+                                                      in_transaction_id,
+                                                      in_action_object_id,
+													  io_message_list,
+                                                      io_action_outcome_id);
+
+     elsif in_native_command_name = 'PCDeleteBORTransfer' then
+
+                          pkg_pc_bor_transfer.sp_delete_full_transfer(in_session_id,
+                                                  in_transaction_id,
+                                                  in_action_id,
+                                                  in_action_object_id,
+												  io_message_list,
+                                                  io_action_outcome_id);
+
+
+     elsif in_native_command_name = 'PCPostBORUpdateJob' then
+
+                       pkg_pc_bor_transfer.sp_updt_job_batch_status(in_session_id            => in_session_id,
+                                                                      in_transaction_id        => in_transaction_id,
+                                                                      io_object_cache          => in_object_cache,
+                                                                      io_message_list          => io_message_list,
+                                                                      in_action_object_id      => in_action_object_id,
+                                                                      io_action_outcome_id     => io_action_outcome_id);
+
+
+     elsif in_native_command_name = 'PCBORPurgeObjects' then
+
+                        pkg_pc_bor_transfer.sp_purge_children_of_type(
+                                                                       in_session_id                 =>  in_session_id,
+                                                                       in_transaction_id             =>  in_transaction_id,
+                                                                       in_action_id                  =>  in_action_id,
+                                                                       in_action_object_id           =>  in_action_object_id, -- in_BorTransferReq_object_id,
+                                                                       in_delete_object_type_id      =>  pkg_pc_bor_transfer.gObjType_BORIncludedObject,--gObjType_BORIncludedObject,
+                                                                       io_action_outcome_id          =>  io_action_outcome_id
+                                                                    );
+     --OSPRODUCT-2882 End
+	  ---------------------------------UTPRODUCT-1186 start---------------------------
+     elsif in_native_command_name = 'CSAssetPayerEntity'
+
+         then
+
+
+            pkg_pc_functions.sp_update_AssetPayerEntity
+            (
+                 in_session_id,
+                 in_transaction_id,
+                 in_action_object_id
+                   
+            );
+
+
+            io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+       ---------------------------------UTPRODUCT-1186 end--------------------------- 
+	   ---------------------------------UTPRODUCT-1262---------------------------
+	elsif in_native_command_name = 'CSAdditionalInsuredInterest'
+
+       then
+
+
+          pkg_pc_functions.sp_add_insuredinterest
+          (
+               in_session_id,
+			         in_transaction_id,
+               in_action_object_id
+               
+          );
+
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          
+          
+              
+     ---------------------------------UTPRODUCT-1262---------------------------
+	 ---------------------------------UTPRODUCT-1415-START---------------------------
+      elsif in_native_command_name = 'CEPlaceholdercreateandAssociateNamedInsured'
+         then
+         declare
+              v_policy_id             object.object_id%type :=  pkg_os_object_search.fn_object_get_parent_of_type
+                                  (
+                                    in_session_id,
+                                    in_transaction_id,
+                                    in_action_object_id,
+                                    pkg_os_constant.gObjType_Policy
+                                  );
+              v_covered_account_id    object.object_id%type := pkg_os_object_io.fn_object_bv_get
+                                  ( 
+                                  in_session_id, 
+                                  in_transaction_id, 
+                                  v_policy_id, 
+                                  27360105    -- account information
+                                  );                          
+         begin
+              -- create a customer entity placeholder object for the new named insured
+              pkg_base_placeholder.sp_placeholder_create
+              (
+                   in_session_id,
+                   in_transaction_id,
+                   in_object_cache,
+                   v_covered_account_id,
+                   pkg_base_customer.gObjTypeCustomerEntity, -- 205 - Customer Entity
+                   io_action_outcome_id
+              );
+             -- if the placeholder is created successfully, then associate it with the named insured
+            if io_action_outcome_id = pkg_os_constant.gOutcome_OK
+              then
+                   pkg_pc_functions.sp_associate_named_cust_entity
+                   (
+                        in_session_id,
+                        in_transaction_id,
+                        in_action_object_id,
+                        io_action_outcome_id
+                   );
+              end if;
+         end;             
+     ---------------------------------UTPRODUCT-1415-END---------------------------
+	 
+	 elsif in_native_command_name = 'PCReassignTasks'
+     then
+
+          pkg_pc_task.sp_tasks_reassign_selected
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+               in_action_object_id        => in_action_object_id,
+               io_object_cache            => in_object_cache,
+               io_action_outcome_id       => io_action_outcome_id
+          );
+	
+     elsif in_native_command_name = 'PCTerminateAciveSessions'
+     then
+
+          pkg_op_utilities.sp_terminate_active_sessions
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+               io_action_outcome_id       => io_action_outcome_id
+          );
+		
+		io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		
+     elsif in_native_command_name = 'ResetSessionSearchCriteria'
+     then
+
+          pkg_op_utilities.sp_reset_session_search_criteria
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+               io_action_outcome_id       => io_action_outcome_id
+          );
+		
+		io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		
+     elsif in_native_command_name = 'PCDeleteUnprocessedTxn'
+     then
+
+          pkg_op_utilities.sp_delete_unprocessed_txn
+          (
+               in_session_id              => in_session_id,
+               in_transaction_id          => in_transaction_id,
+	       in_policy_id               => in_action_object_id
+          );
+		
+		io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+	 elsif in_native_command_name = 'PCActorAssignment'
+     then
+                   begin
+               pkg_pc_partner.sp_actor_assignment
+               (
+                    in_session_id              => in_session_id,
+                    in_transaction_id          => in_transaction_id,
+                    in_action_id               => in_action_id,
+                    in_action_object_id        => in_action_object_id,
+                    in_action_object_type_id   => in_action_object_type_id,
+                    in_object_cache            => in_object_cache,
+	               io_action_outcome_id       => io_action_outcome_id
+
+               );
+               
+             
+               
+               
+   
+          end;
+      elsif in_native_command_name = 'PCSubmissionPartnerAgreement'
+     then
+        
+
+          begin
+              pkg_pc_partner.sp_validate_partner_agreement
+                            (
+                                 in_session_id ,
+                                 in_transaction_id ,
+                                 in_action_id ,
+                                 in_action_object_id ,
+                                 io_action_outcome_id 
+                            ) ;  
+                   
+                   
+                                          
+
+end;
+    elsif in_native_command_name = 'PCPartnerTransferBook'
+     then
+
+          declare
+
+               v_target_partner_id object.object_id%type := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_session_id, pkg_os_constant_bv.gbv_SessionCurrentObject );
+
+          begin
+
+               pkg_pc_partner.sp_partner_transfer_book
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    v_target_partner_id
+               );
+
+               io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+          end;
+     elsif in_native_command_name = 'PCPartnerAcquire'
+     then
+
+          pkg_pc_partner.sp_partner_acquire
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+	elsif in_native_command_name = 'PCEntityRoleUpdate'
+     then
+
+          pkg_pc_functions.sp_update_entityrole
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id
+          );     
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;	
+	 
+	elsif in_native_command_name = 'PCPolicySuspensionCheck'
+    then
+	
+		declare 
+		v_suspension_object_id                    object.object_id%type;
+		genum_ApplicableToPolicyDomain            constant number(12) :=2;
+		v_policy_transaction_type                 number := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_action_object_id, 212030 );
+		
+	   
+		begin 
+			 
+		 pkg_pc_suspension.sp_object_suspension_check  
+			(
+				   in_session_id ,
+				   in_transaction_id,
+				   in_action_id,
+				   in_action_object_id,
+				   nvl(v_policy_transaction_type,9),
+				   genum_ApplicableToPolicyDomain,
+				   NULL,
+				   v_suspension_object_id,         
+				   io_action_outcome_id
+			);
+
+		 end; 
+	elsif in_native_command_name = 'CreateUpdateUserIdentity'
+    then
+        pkg_pc_functions.SP_CREATE_UPDATE_USERIDENTITY
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+          
+    elsif in_native_command_name = 'FindReportType'
+    then
+        PKG_PC_PROCEDURES.SP_TPR_Job_Report_Type
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+
+	 
+     elsif in_native_command_name = 'MasterCustomerSearch'
+     then
+
+          pkg_pc_procedures.sp_MasterCustomerSearch
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id
+          );     
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+        elsif in_native_command_name = 'MasterCustomerSwitch'
+     then
+
+          pkg_pc_procedures.sp_MasterCustomerSwitch
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id
+          );     
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+      -------------------------------------------------------------------------
+     --LIOPRODUCT-324 start 
+     elsif in_native_command_name = 'PCTriggerActionUnderwrite'
+     then
+          pkg_os_underwrite.sp_underwrite_boolean_plan
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               pkg_os_underwrite.gUWRuleType_Underwriting,
+               in_action_id,
+               io_action_outcome_id
+          );
+     
+     -------------------------------------------------------------------------
+     --UTPRODUCT-2161 start
+       elsif in_native_command_name = 'PC_CreateAAISRecord'
+     then
+
+          PKG_PC_AAIS_EXTRACT.sp_create_extract
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+        
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          --UTPRODUCT-2161 end
+     -------------------------------------------------------------------------
+	  --UTPRODUCT-3769 start
+      elsif in_native_command_name = 'PCDelEmptyCustAddress'
+      then
+
+          pkg_pc_functions.sp_del_empty_customer_address
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+          
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          --UTPRODUCT-3769 end 
+     -------------------------------------------------------------------------
+     --OSPRODUCT-4729 start
+     elsif in_native_command_name = 'ALCreateCustomer'
+     then
+          pkg_pc_procedures.sp_create_customer
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+		  
+		 io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+      --OSPRODUCT-4729 end
+     -------------------------------------------------------------------------
+	 elsif in_native_command_name = 'PCCreateAddrVerfBatchObjs'
+     then
+        
+    
+        pkg_pc_address_verification.sp_create_addr_verf_batch
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+
+          );
+		  
+    elsif in_native_command_name = 'PCGenerateCustomDeepLink'
+       then
+          pkg_pc_link_create.sp_generate_custom_link
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+          
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		  
+		  
+		  -- Create ERP offer objects under ptp and rate the same 
+     elsif in_native_command_name = 'PCCreateERPOffer'
+     then
+		pkg_pc_erp.sp_create_erpquote_offer
+		(
+			 in_session_id  ,
+			 in_transaction_id ,
+			 in_action_object_id, --PT
+			 io_action_outcome_id         
+		);
+         
+		 io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		 
+		  --OSPRODUCT-9206
+    elsif in_native_command_name = 'PCUpdateOCIProcessDate'
+     then
+
+         PKG_PC_PROCEDURES.sp_update_oci_process_date 
+		(
+			in_session_id ,
+			in_transaction_id ,
+			in_action_object_id  ,
+			io_action_outcome_id    
+		);
+ io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+	 --Comprater starts
+    elsif in_native_command_name = 'CompraterPostImportActivity'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_initiateQuote_post_actions
+        (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              in_object_cache,
+              io_action_outcome_id
+        );
+          
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+    
+    elsif in_native_command_name = 'CompraterPostValidationTreeRules'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_executeTreeRules_post_actions
+        (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              in_object_cache,
+              io_action_outcome_id
+        );
+          
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+	
+	elsif in_native_command_name = 'CompraterPostImportValidation'
+    then
+      declare
+        io_validation_passed_tf  char := 'T';
+        begin
+          PKG_PC_SYSTEM_IDENTIFIER.sp_validate_comprater_request
+          (
+                in_session_id,
+                in_transaction_id,
+                in_action_id,
+                in_action_object_id,
+                io_message_list,
+                in_object_cache,
+                io_action_outcome_id,
+                io_validation_passed_tf
+          );
+
+          if 	io_validation_passed_tf ='T' then
+            io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          else
+            io_action_outcome_id := pkg_os_constant.gOutcome_UserInputIncomplete;
+            
+          end if;
+        end;     
+    
+    elsif in_native_command_name = 'CompraterUpdateExistingCustomer'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_update_Existing_Customer
+        (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id,
+            in_object_cache,
+            io_action_outcome_id
+        );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+    
+	elsif in_native_command_name = 'CompraterUpdateExistingQuoteIfFound'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_update_Existing_Quote_If_Found
+        (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id,
+            in_object_cache,
+            io_action_outcome_id
+        );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+	
+    elsif in_native_command_name = 'PCUpdatePolicyBVs'
+    then
+        pkg_pc_xml_import.sp_xml_skip_cnstrctr_dflt
+        (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id,
+            in_object_cache,
+            io_action_outcome_id
+        );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+	elsif in_native_command_name = 'CompraterSaveIOMessage'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_save_io_message
+        (
+             in_session_id,
+             in_transaction_id,
+             in_action_object_id,
+             io_message_list 
+        );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+          
+    elsif in_native_command_name = 'CompraterAddIOMessage'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_add_io_message
+        (
+             in_session_id,
+             in_transaction_id,
+             in_action_object_id,
+             io_message_list
+        );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+	elsif in_native_command_name = 'PCServicePostImportUpdateDocDelPref'
+     then
+
+        PKG_PC_SYSTEM_IDENTIFIER.sp_update_default_delivery_preference
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id, --PTP ID
+		      in_object_cache,
+          io_action_outcome_id
+        );
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;		
+     --Comprater ends
+	 
+	 elsif in_native_command_name = 'PCBetterviewCallback'
+     then
+          PKG_PC_SYSTEM_IDENTIFIER.sp_create_betterview_callback_objects
+          (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id, --BetterviewCallbackRequest
+            io_action_outcome_id
+          );
+
+	--registerNewBusiness starts
+     
+    elsif in_native_command_name = 'RegisterNBCreateObjects'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_registerNB_post_import_activity
+        (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              in_object_cache,
+              io_action_outcome_id
+        );
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+        
+     elsif in_native_command_name = 'PCCreateUpdateDocDelPref'
+     then
+
+        PKG_PC_SYSTEM_IDENTIFIER.sp_create_update_delivery_preference
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id, --Customer Entity ID
+          io_action_outcome_id
+        );
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+
+     --registerNewBusiness ends 
+
+    --LXPRODUCT-97 Start      
+    elsif in_native_command_name = 'PCProductObjectCopy'
+    then
+    declare
+           out_object_id      object.object_id%type;
+    begin
+        pkg_os_product_object_copy.sp_pd_object_copy
+        (
+           in_session_id,
+           in_transaction_id,
+           in_action_object_id,
+           in_action_id,
+           in_action_object_id,
+           out_object_id
+        );
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK ;
+    end;
+    --LXPRODUCT-97 End
+	
+	elsif in_native_command_name = 'PCPostEtlComplete'
+    then
+        pkg_pc_procedures.sp_post_etl_complete
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+			io_action_outcome_id
+          );
+          
+    elsif in_native_command_name = 'PCPostBIEtlComplete' then
+    
+      pkg_pc_procedures.sp_post_bi_etl_complete
+	 (
+		in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          io_action_outcome_id
+	 ); 
+  ----
+  ---- Start OSPRODUCT-26437
+  ----
+  elsif in_native_command_name = 'PCETLInsertEarningStats'
+  then
+    
+        pkg_bi_util.sp_proc_insert_plcy_earning_stats
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+  ----
+  ---- End OSPRODUCT-26437
+  ----      
+	
+	-- Create Address , Delivery preference, Object Usage for Entity Created 
+     elsif in_native_command_name = 'PCCreateEntityEliments'
+     then
+     pkg_pc_procedures.sp_add_address_delpref
+      (
+         in_session_id  ,
+         in_transaction_id ,
+         in_action_object_id --Entity Id        
+      );
+         
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;	  
+	 
+ 
+	 elsif in_native_command_name = 'SyncUserIdentityRoles'
+    then
+        pkg_pc_functions.sp_sync_useridentity_roles
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+----------------------------------------------------------------------------------------------------------------------------------
+ elsif in_native_command_name = 'PCObjectExpire'
+    then
+        pkg_pc_procedures.sp_single_object_expire
+        (
+               in_session_id,
+                in_transaction_id,
+                in_action_id,
+                in_action_object_id,
+                io_action_outcome_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+------------------------------------------------------------------------------------
+-- LXPRODUCT-238 -- To be removed after OSPRODUCT-13375
+
+    elsif in_native_command_name = 'CSCreateServicePartnerUsages'
+    then
+        PKG_PC_SYSTEM_IDENTIFIER.sp_create_partner_usages
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+        );
+
+         io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+	 elsif in_native_command_name = 'PCOrderRiskMeterReport'
+		then
+			pkg_pc_address_verification.sp_order_riskmeterReport
+			(
+				   in_session_id,
+				   in_transaction_id,
+				   in_action_object_id,
+				   in_object_cache,
+				   io_message_list,
+				   io_action_outcome_id
+			  );  
+
+	 elsif in_native_command_name = 'PCRiskMeterReportCheckComplete'
+		then
+			pkg_pc_address_verification.sp_chk_riskmeterRep_complete
+			(
+				   in_session_id,
+				   in_transaction_id,
+				   in_action_object_id,
+				   io_action_outcome_id
+			  );
+
+	 elsif in_native_command_name = 'PCOrderRiskMeterReportAll'
+		then
+			pkg_pc_address_verification.sp_order_riskmeterReportAll
+			(
+				   in_session_id,
+				   in_transaction_id,
+				   in_action_object_id,
+				   in_object_cache,
+				   io_message_list,
+				   io_action_outcome_id
+			  );
+		------------------------------UTPRODUCT-1764----------------------------  
+ elsif in_native_command_name = 'PCNumerateBOPBuildingLocation'
+  
+       then
+           pkg_pc_procedures.sp_object_get_sequence
+           (   in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+           );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+		  
+	 elsif in_native_command_name = 'PCOrderRiskMeterReportTF'
+		then
+			pkg_pc_address_verification.sp_riskmeterRep_order_tf
+			(
+				   in_session_id,
+				   in_transaction_id,
+				   in_action_object_id,
+				   in_object_cache,
+				   io_message_list,
+				   io_action_outcome_id
+			  );   
+----------------------------------------------------------------------------------------------------------------------------------
+	--- OSPRODUCT-6746
+	elsif in_native_command_name = 'PCPolicyTransactionCreateDocumentObjects'
+     then
+
+          
+		  PKG_PC_PROCEDURES.sp_create_doc_with_del_instr
+		  (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_id,
+                    in_action_object_id,
+                    io_action_outcome_id
+		  );
+		  
+					  
+----------------------------------------------------------------------------------------------------------------------------------		  
+	elsif in_native_command_name = 'PCQuoteVersioning'
+    then
+        pkg_pc_procedures.sp_quote_letter_versioning
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+----------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------
+	elsif in_native_command_name = 'PCMarkedFailedJobsRetry'
+    then
+        pkg_pc_procedures.sp_mark_all_job_resolved
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );    
+          
+----------------------------------------------------------------------------------------------------------------------------------	
+ /*elsif in_native_command_name = 'PCMarkedFailedTasksComplete'
+    then
+        pkg_pc_procedures.sp_mark_all_failed_tasks_complete
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               in_outcome_id,
+               io_action_outcome_id
+          ); */             
+          
+---------------------------------------------------------------------------------------------------------------------------------
+elsif in_native_command_name = 'PCMarkSelectedJobResolve'
+     then
+       
+        pkg_pc_procedures.sp_mark_selected_job_resolve
+        (
+               in_session_id,           
+               in_transaction_id, 
+               in_action_id, 
+               in_action_object_id,
+               in_object_cache,
+               io_action_outcome_id        
+        );
+----------------------------------------------------------------------------------------------------------------------------------
+--OSPRODUCT-5461
+ elsif in_native_command_name = 'PCContactPersonCreate'
+    then
+        pkg_pc_procedures.sp_create_contact_person
+        (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               in_action_object_id,
+               io_action_outcome_id
+          );   
+          
+    elsif in_native_command_name = 'PCSolePropCreate'
+    then
+        pkg_pc_procedures.sp_create_solep
+        (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               in_action_object_id,
+               io_action_outcome_id
+          ); 
+ ----------------------------------------------------------------------------------------------------------------------------------
+ --UTPRODUCT-3582
+    elsif in_native_command_name = 'PCAddTaskNote'
+     then
+
+          declare
+               v_new_note_id            object.object_id%type;
+               v_dm char(1);
+
+          begin
+            pkg_os_object.sp_object_create
+                    (
+                        in_session_id,
+                        in_transaction_id,
+                        pkg_os_wf_task.gobjType_Task,
+                        null,
+                        v_new_note_id
+                );
+    
+    
+            pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    v_new_note_id,
+                    pkg_os_wf_task.gbv_TaskContentType,
+                    pkg_os_wf_task.gTaskContent_Note
+                );
+    
+            pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    gbv_RefCurrentNote,
+                    v_new_note_id
+                );
+                
+            pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    v_new_note_id,
+                    pkg_os_wf_task.gbv_TaskAssociatedObject,
+                    in_action_object_id
+                );
+
+            pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    v_new_note_id,
+                    pkg_os_wf_task.gbv_TaskDescription,
+                    pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, in_action_object_id, pkg_os_wf_task.gbv_TaskDescription)
+                );
+			
+		  pkg_os_object_io.sp_object_bv_set
+		      ( 
+		          in_session_id, 
+		          in_transaction_id, 
+		          v_new_note_id, 
+		          pkg_os_constant_bv.gbv_GenObjObjectState,     
+		          pkg_os_constant.gObjState_Alive
+		      ); 
+			 
+            pkg_os_datamart.sp_datamart_update_row (in_session_id, in_transaction_id, v_new_note_id, v_dm);
+          end;
+
+      io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+ 
+ elsif in_native_command_name = 'PCOrmCreateNotifySubscriberTask' 
+ then
+	
+		pkg_pc_task.sp_orm_notify_entity_task
+		(
+			in_session_id,
+			in_transaction_id
+		);	
+	    
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+  ----------------------------------------------------------------------------------------------------------------------------------
+ --Tree cleanse for the new employee portal
+ elsif in_native_command_name = 'ALPWPolicyCleanse'
+     then
+          pkg_os_policy_cleanse.sp_policy_cleanse
+          (
+               in_session_id => in_session_id,
+               in_transaction_id => in_transaction_id,
+               in_action_id => in_action_id,
+               in_action_object_id => in_action_object_id,
+               in_tree_definition1_id => 5448,
+               in_tree_definition2_id => null,
+               in_delete_tf => 'T'
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+ --Tree cleanse for the customer portal	
+ elsif in_native_command_name = 'ALCustPolicyCleanse'
+     then
+          pkg_os_policy_cleanse.sp_policy_cleanse
+          (
+               in_session_id => in_session_id,
+               in_transaction_id => in_transaction_id,
+               in_action_id => in_action_id,
+               in_action_object_id => in_action_object_id,
+               in_tree_definition1_id => 5648,
+               in_tree_definition2_id => null,
+               in_delete_tf => 'T'
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+  --UTPRODUCT-4031
+ elsif in_native_command_name = 'PCUpdatePartnerHrchy'
+     then
+          pkg_os_partner.sp_partner_hrchy_update
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+ --UTPRODUCT-4200
+ elsif in_native_command_name = 'PCPartnerAssignmentInit'
+     then
+          PKG_PC_FUNCTIONS.sp_partner_assignment_init
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+ 
+  elsif in_native_command_name = 'PCPolicyTreeCreateDriven'
+     then
+
+      declare
+          v_product_id                   pd_product.pd_product_id%type;
+          v_policy_tree_id               object.object_id%type;
+          out_tree_object_id             object.object_id%type;
+         
+      begin
+                
+        if v_session_control.gLogging_Full then
+           pkg_os_logging.sp_log
+           (
+             in_session_id,in_transaction_id,
+             v_procedure_name,
+            '||| Generating Driven Nodes for  '||
+            in_action_object_id
+           );
+        end if;
+                  
+        v_product_id := pkg_os_object_io.fn_object_bv_get
+                        (
+                            in_session_id,
+                            in_transaction_id,
+                            in_action_object_id,
+                            pkg_os_constant_bv.gbv_PolicyProductDefinitionID
+                         );
+                
+        --
+        --   Get the Policy Tree ID.
+        --
+        select pd_policy_tree_id
+        into v_policy_tree_id
+        from pd_product
+        where pd_product_id = v_product_id;
+                  
+        pkg_os_tree.sp_tree_create_raw
+        (
+          in_session_id,
+          in_transaction_id,
+          io_message_list,
+          null,
+          in_action_object_id,
+          v_policy_tree_id,
+          out_tree_object_id,
+          null
+        );
+        
+        if out_tree_object_id is null
+        then
+
+           pkg_os_logging.sp_log_error
+           ( 
+             in_session_id, 
+             in_transaction_id, 
+             v_procedure_name, '... Unable to create tree to validate ...' 
+            );
+
+        end if;
+          
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+      end;
+      ----------------------------------------------------------------------------------------------------------------------------------
+       --LIOPRODUCT-200
+       elsif in_native_command_name = 'PCPolicyTreeValidate'
+      	then
+      		declare
+                  v_valid_tf  char := 'T';
+              begin
+                     pkg_os_tree_validation.sp_tree_validate_all
+      
+                     (
+                          in_session_id,
+                          in_transaction_id,
+                          in_action_object_id,
+                          201, -- @@@ Policy Quote Tree
+                          'T',
+                          io_message_list,
+                          v_valid_tf
+                     );
+      
+                  if v_valid_tf = 'T' then
+                      io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+                  else
+                      io_action_outcome_id := 8301;
+                  end if;
+            end;
+      
+ ----------------------------------------------------------------------------------------------------------------------------------
+ --OSPRODUCT-5361
+ elsif in_native_command_name = 'PCClaimCalendarUpdateRecurringEvents'
+     then
+       declare
+           v_calendar_id        object.object_id%type;
+       begin
+           v_calendar_id    := pkg_os_object.fn_object_parent_get(in_session_id, in_transaction_id, in_action_object_id);
+           pkg_pc_calendar.sp_update_recurring_events
+           (
+                in_session_id,
+                in_transaction_id,
+                v_calendar_id,
+                in_action_object_id
+           );
+       end;
+       io_action_outcome_id := pkg_os_constant.goutcome_ok;
+ ----------------------------------------------------------------------------------------------------------------------------------
+    -- LIOPRODUCT-146
+elsif in_native_command_name = 'ALGenDocumentCheckList' then
+		pkg_base_document_checklist.sp_gen_doc_checklist
+		(
+			in_session_id,
+			in_transaction_id,
+			in_action_object_id,
+			io_action_outcome_id
+		);
+		
+----------------------------------------------------------------------------------------------------------------------------------
+	elsif in_native_command_name = 'PCPostSnapshotFeeder'
+    then
+        pkg_pc_procedures.sp_post_snapshot_feeder
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+
+-----------------------------------------------------------------------------------------------------------------------------------        
+    ----
+	---- Introduced for testing the new callable Rate Workflow 
+	---  a) Logic to save old Premium record prior to triggering the new workflow
+	----       
+     elsif in_native_command_name = 'PCRateTestBegin' 
+	then
+    
+		declare
+				 
+		         v_rate_test_tf_flag        char(1);
+			    v_pr_coverage_premium_tt   pr_coverage_premium_tt;
+		   
+		begin
+			      
+		         v_rate_test_tf_flag :=     pkg_os_product.fn_product_property_get
+									 (
+										in_session_id,
+										in_transaction_id,
+										pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id,in_action_object_id),
+										pkg_pc_rating.g_ratetestflagpropertyid
+									  );
+		      
+				----
+				---- Check Rate Test Flag   
+				---- 		
+		
+				if  nvl(v_rate_test_tf_flag,'F') = 'T' 
+				then
+					   
+				
+					pkg_pc_rating.sp_get_pr_coverage_premium_data
+					(
+						in_session_id,
+						in_transaction_id,
+						in_action_object_id,
+						v_pr_coverage_premium_tt   
+					 )  ;
+					 
+					pkg_pc_rating.sp_save_premium_coverage_data
+					(     
+						in_session_id,
+						in_transaction_id,
+						in_action_object_id,
+						pkg_pc_rating.g_old_record_type,
+						v_pr_coverage_premium_tt
+					);
+					
+					pkg_os_object_io.sp_object_bv_set
+					(
+						in_session_id,
+						in_transaction_id,
+						in_session_id,
+						pkg_pc_rating.gbv_Session_Rate_Wrflw_indc ,
+						pkg_pc_rating.g_enum_rate_daptest_wrflw
+					 );					
+							
+				else
+					
+					----
+					---- When Rate Test Flag  = False 
+					--- Exit withoug doing anything
+					----
+					null;
+					
+				end if; --- Check Rate Test Flag  
+				
+		end;
+    
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		
+	----
+	---- Introduced for testing the new callable Rate Workflow 
+	---  a) Logic to compare old Premium record and new Premium Records
+	----    
+	
+      elsif in_native_command_name = 'PCRateTestEnd' 
+	 then
+	  
+		declare
+						 
+		         v_rate_test_tf_flag        char(1);
+			    v_pr_coverage_premium_tt   pr_coverage_premium_tt;
+						
+		begin
+									 
+				v_rate_test_tf_flag :=    pkg_os_product.fn_product_property_get
+									 (
+										in_session_id,
+										in_transaction_id,
+										pkg_os_object.fn_object_parent_get( in_session_id, in_transaction_id, in_action_object_id ),
+										pkg_pc_rating.g_ratetestflagpropertyid
+									  );
+									      	 
+				----
+				---- Check Rate Test Flag   
+				---- 								      
+				if nvl(v_rate_test_tf_flag, 'F') = 'T' 
+				then
+					
+				    pkg_os_object_io.sp_object_bv_set
+					(
+						in_session_id,
+						in_transaction_id,
+						in_session_id,
+						pkg_pc_rating.gbv_Session_Rate_Wrflw_indc ,
+						null
+					 );	
+						
+					pkg_pc_rating.sp_get_pr_coverage_premium_data
+					(
+						in_session_id,
+						in_transaction_id,
+						in_action_object_id,
+						v_pr_coverage_premium_tt   
+					)  ;
+														 
+					pkg_pc_rating.sp_save_premium_coverage_data
+					(     
+						in_session_id,
+						in_transaction_id,
+						in_action_object_id,
+						pkg_pc_rating.g_new_record_type,
+						v_pr_coverage_premium_tt
+					);							        
+					pkg_pc_rating.sp_compare_new_premium_coverage
+					( 
+						in_session_id,
+						in_transaction_id,
+						in_action_object_id
+					);
+									 
+					raise no_data_found;
+				
+				else
+						
+						----
+						---- When Rate Test Flag  = False 
+						--- Exit withoug doing anything
+						----
+						null;	
+														   
+				end if; --- Check Rate Test Flag
+				      
+		end;
+		          
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------   
+   elsif in_native_command_name = 'PCRatingAdapterLogic'
+           then
+
+           declare
+
+                 v_policy_id         object.object_id%type := in_action_object_id ;
+                 v_product_id        pd_product.pd_product_id%type := pkg_os_product.fn_object_product_get( in_session_id, in_transaction_id, in_action_object_id );
+                 v_policy_premium    number := null;
+
+            begin
+
+
+               If v_product_id = 202 -- Worker's Compensation
+
+               then
+                  
+
+                  pkg_cs_rating_adaptor.sp_set_premium_for_discount
+                     (
+                         in_session_id,
+                         in_transaction_id,
+                         v_policy_id
+
+                      );
+
+               end if;  -- End Worker's Compensation
+
+            end;
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+ ----------------------------------------------------------------------------------------------------------------------------------
+     elsif in_native_command_name = 'RateUpdtDatamart'
+	  then
+
+		    pkg_pc_rating.sp_updt_datamart
+			(
+				in_session_id,
+				in_transaction_id,
+				in_action_object_id
+			) ;
+
+			io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+
+    elsif in_native_command_name = 'PCPolicyTrxnCalcCurrentPremium'
+       then
+          declare
+
+               v_policy_transaction_id       object.object_id%type    := in_action_object_id;
+           
+          begin
+
+              pkg_pc_rating.sp_trx_premium
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_policy_transaction_id,
+                    io_action_outcome_id
+               );
+
+          end;
+	------------------------------------------------------------------------------------------------------------------------------------
+ elsif in_native_command_name = 'PCPartnerActorAssociation' then
+          pkg_pc_partner.sp_partner_actor_association
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;
+ --OSPRODUCT-10678 start
+    elsif in_native_command_name = 'PCRetailAgentSearchNormal'
+    then
+
+        pkg_pc_retail_agency.sp_retail_agent_search
+        (
+               in_session_id ,
+               in_transaction_id,
+               1,
+               io_action_outcome_id
+        );
+
+    elsif in_native_command_name = 'PCRetailAgentSearchRelation'
+    then
+
+        pkg_pc_retail_agency.sp_retail_agent_search
+        (
+               in_session_id ,
+               in_transaction_id,
+               2,
+               io_action_outcome_id
+        );
+
+    elsif in_native_command_name = 'PCRetailAgentSearchClear'
+    then
+
+        pkg_pc_retail_agency.sp_clear_search_results
+        (
+               in_session_id ,
+               in_transaction_id,
+               in_action_object_id
+        );
+
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     --OSPRODUCT-10678 end		  
+
+ ----------------------------------------------------------------------------------------------------------------------------------
+ -- LIOPRODUCT-354
+    elsif in_native_command_name = 'PCExecutePolicyTreeInitRules'
+    then
+      pkg_pc_xml_export.sp_exec_policy_tree_rules
+      (
+           in_session_id            =>          in_session_id,
+           in_transaction_id        =>          in_transaction_id,
+           in_object_cache          =>          in_object_cache,
+           in_action_object_id      =>          in_action_object_id,
+           in_tree_definition_id    =>          201
+      );
+
+      io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ----------------------------------------------------------------------------------------------------------------------------------
+
+  --LIOPRODUCT-266 Start
+  elsif in_native_command_name = 'PCSetQuoteFiling'
+    then
+      
+             
+        if v_session_control.gLogging_Full then
+           pkg_os_logging.sp_log
+           (
+             in_session_id,in_transaction_id,
+             v_procedure_name,
+            '||| in_action_object_id  '||
+            in_action_object_id
+           );
+        end if;
+        
+      pkg_pc_procedures.sp_set_quote_filing
+      (
+           in_session_id            =>          in_session_id,
+           in_transaction_id        =>          in_transaction_id,
+           in_quote_trx_id      =>          in_action_object_id
+      );
+
+      io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+  --LIOPRODUCT-266 end   
+------------------------------------------------------------------------------------------------------
+ --LIOPRODUCT-308
+
+elsif in_native_command_name = 'PCServiceObjCreate'
+     then
+       declare
+           v_product_id        object.object_id%type;
+       begin
+          v_product_id        := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, in_action_object_id, pkg_os_constant_bv.gbv_PolicyProductDefinitionID );
+    
+             pkg_pc_submission.sp_policy_tree_create
+              (
+                in_session_id,           
+                 in_transaction_id,  
+                 in_action_object_id,
+                  v_product_id,
+                  True        
+                );
+       end;
+        io_action_outcome_id := pkg_os_constant.goutcome_ok;
+  
+---------------------------------------------------------------------------------------------------------      
+
+--OSPRODUCT-10448
+     
+    elsif in_native_command_name = 'PCCopyPartnerAgreement' then
+ --- OSPRODUCT-28376 Start ----
+     declare
+       v_action_object_type object_type.object_type_id%type;
+     begin
+     
+       v_action_object_type := pkg_os_object.fn_object_type_get(in_session_id,
+                                                                in_transaction_id,
+                                                                in_action_object_id);
+     
+       if v_action_object_type = 3715548 then  
+       
+         pkg_pc_partner.sp_broker_commission_agreement_edit(in_session_id,
+                                                            in_transaction_id,
+                                                            in_action_object_id,
+                                                            io_action_outcome_id);
+       
+       else
+ --- OSPRODUCT-28376 End ----	   
+ 
+         pkg_pc_partner.sp_partner_agreement_edit(in_session_id,
+                                                  in_transaction_id,
+                                                  in_action_object_id,
+                                                  io_action_outcome_id);
+       
+       end if;
+     end;
+    
+---------------------------------------------------------------------------------------------------------     
+	---------------------------------------------------------------------------------------------------------     
+ 
+--LXPRODUCT-247
+     
+   elsif in_native_command_name = 'PCCopyActiveEvent'
+     then
+
+          pkg_pc_suspension.sp_event_copy
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+ io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ---------------------------------------------------------------------------------------------------------     
+  --LXPRODUCT-247
+  elsif in_native_command_name = 'PCCopySuspension'
+     then
+
+          pkg_pc_suspension.sp_suspension_copy
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ ---------------------------------------------------------------------------------------------------------     
+  --LXPRODUCT-247
+ elsif in_native_command_name = 'PCActivateSuspensions'
+     then
+
+          pkg_pc_suspension.sp_activate_suspensions
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+ --------------------------------------------------------------------------------------------------------- 
+	elsif in_native_command_name = 'PCCreateCustEligUploadQuote'
+		then
+			pkg_pc_procedures.sp_subm_create_customereligibility
+			(
+				 in_session_id,
+				   in_transaction_id,
+				   in_action_id,
+				   in_action_object_id,
+				   io_action_outcome_id
+			);
+			  io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+			  
+ --------------------------------------------------------------------------------------------------------- 
+	-- OSPRODUCT-17667
+	elsif in_native_command_name = 'PCResetPolicyCustomerUTemplate'
+		then
+			pkg_pc_procedures.sp_reset_policy_customer_utemplate
+			(
+				in_session_id,
+				in_transaction_id,
+				in_action_object_id, 
+				io_action_outcome_id
+			);
+			
+--------------------------------------------------------------------------------------------------------- 
+
+  elsif in_native_command_name = 'UpdateOCIForService'
+    then
+    
+    declare
+
+         v_policy_image_id       object.object_id%type := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_action_object_id,212318);
+         v_basis_trx_id          object.object_id%type := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id,in_action_object_id,22605205 );
+         v_master_policy_id      object.object_id%type := pkg_os_object.fn_object_parent_get(in_session_id,in_transaction_id,in_action_object_id);
+         
+          begin
+
+            
+            pkg_base_policy.sp_resolve_ptrx_ref_after_copy
+            (
+                in_session_id,
+                in_transaction_id,
+                v_policy_image_id,
+                in_action_object_id,
+                v_basis_trx_id,
+                v_master_policy_id
+            );
+          
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+      end;
+---------------------------------------------------------------------------------------------------------
+
+	elsif in_native_command_name = 'CSDoTaskNavigation'
+    then
+       pkg_pc_procedures.sp_task_navigation
+        (
+             in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+        );
+	-------------LIOPRODUCT-551---------------  
+
+	elsif in_native_command_name = 'CSPolicyDailyEarnedPremium'
+	then
+
+		pkg_pc_procedures.sp_policy_earned_prem_asofdt
+		(
+			in_session_id,
+			in_transaction_id,
+			in_action_object_id,          -- Policy ID
+			sysdate,
+			io_action_outcome_id
+		);
+    
+	
+ elsif in_native_command_name = 'PCPolicyTransactionEndorsementImageCompare'
+     then
+ declare
+   v_old_policy_id object.object_id%type := null;
+ begin
+   select template_object_id
+     into v_old_policy_id
+     from object
+    where object_id = in_action_object_id;
+    pkg_os_tree.sp_tree_create
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               120302,
+               in_action_object_id,
+               2276904,
+               io_action_outcome_id
+          );
+          
+ 				pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,gbv_TreeNodeVisibility,1);
+
+   pkg_os_object_compare.sp_object_compare(
+                                           in_session_id => in_session_id,
+                                           in_transaction_id  => in_transaction_id,
+                                           in_old_policy_id  => v_old_policy_id,
+                                           in_new_policy_id => in_action_object_id,
+                                           in_compare_tree_id_1 => 201                                           
+                                           );
+  				pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,gbv_TreeNodeVisibility,2);
+                                           
+                                           
+ end;
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;    
+
+elsif in_native_command_name = 'PCCyberCreateLocation'
+  then
+  
+    pkg_pc_procedures.sp_create_cyber_location
+    (
+      in_session_id,
+      in_transaction_id,
+      in_action_object_id,          -- Policy Cyber ID
+      io_action_outcome_id
+    ); 
+    
+    io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+	
+	elsif in_native_command_name = 'PCCreateAuditClass'
+  then
+  
+    pkg_pc_procedures.sp_create_audit_class_gl
+    (
+      in_session_id,
+      in_transaction_id,
+      in_action_object_id
+    ); 
+    
+    io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+	
+	
+	---------OSPRODUCT-11742-------
+     elsif in_native_command_name = 'PCWritingCompanySync' then
+          pkg_pc_admin.sp_writing_company_sync
+          (
+               in_session_id,
+               in_transaction_id
+          ) ;
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+          
+          
+          
+----------OSPRODUCT-11742 end--------- 
+-----------OSPRODUCT-29500 Start----------------
+     elsif in_native_command_name = 'PCWritingCompanyNewSetup' then
+          pkg_pc_admin.sp_new_writing_company_setup
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+          ) ;
+     
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     
+     elsif in_native_command_name = 'PCWritingComDisbProfSetup' then 
+          pkg_db_profiles.sp_writing_comp_disb_prf_setup
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id 
+          );
+          
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+-----------OSPRODUCT-29500 End----------------
+	----------UTPRODUCT-4903 start----------
+      elsif in_native_command_name = 'PCExistingpolicyCheck' then
+         pkg_pc_procedures.sp_check_duplicate_policy
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;                    
+    ----------UTPRODUCT-4903 start----------
+ ----------OSPRODUCT-13827 start----------
+      elsif in_native_command_name = 'HC_ChangeSummary' then
+         PKG_HC_CHANGE_SUMMARY.sp_insert_chng_smmry_delta
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+          ) ;             
+                    io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+       
+      
+            elsif in_native_command_name = 'HC_UpdateJobTime' then
+         PKG_HC_CHANGE_SUMMARY.SP_UPDATE_RUN_DTLS
+          (
+               in_session_id,
+               in_transaction_id
+          ) ;             
+                    io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+       
+       ----------OSPRODUCT-13827 end----------
+	 
+       --------------------UTXPRODUCT-157------------------------------------
+       
+       elsif in_native_command_name = 'PCUpdateExprDate' then
+         pkg_pc_procedures.sp_update_expiration_date
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+          ) ;
+                    io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+       ---------------------UTXPRODUCT-157-----------------------------------
+	   
+	   elsif in_native_command_name = 'PCRenewExternalRatingFailed' then
+         pkg_pc_rating.sp_renewal_external_rating_failure
+          (
+               in_session_id,
+               in_transaction_id,
+               io_action_outcome_id
+          ) ;
+                    io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+                    
+                    
+        elsif in_native_command_name = 'PCUpdateReinsurance'
+           then
+			pkg_pc_procedures.sp_update_reinsurance
+			(
+				in_session_id,
+				in_transaction_id,
+				in_action_object_id
+			);
+			io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+					
+	elsif in_native_command_name = 'PCCheckERPEligibility' then
+         pkg_pc_erp.sp_check_ERP_eligibility
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;			
+
+
+  elsif in_native_command_name = 'PCRenewalBORCustomerSplit' then
+        
+        pkg_pc_bor_action.sp_renewal_bor_customer_split
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ; 
+                                        
+       elsif in_native_command_name = 'PCCreateERP' then
+         pkg_pc_erp.sp_create_erp
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;  
+          io_action_outcome_id := 22; 	
+     
+	   elsif in_native_command_name = 'PCRenewalProspectHandle' then
+        
+        pkg_pc_bor_action.sp_handle_bor_renewal_prospect
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+			   io_message_list,
+               io_action_outcome_id
+          ) ;
+          
+       elsif in_native_command_name = 'PCRenewalReferralReject' then
+        
+        pkg_pc_bor_action.sp_renewal_reject_referal
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               1,
+               io_action_outcome_id
+          ) ; 
+		  
+		  elsif in_native_command_name = 'PCUpdateBORRequestStatus' then
+        
+        pkg_pc_bor_action.sp_updt_bor_rqust_status_renewal
+           (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id         
+           ) ;
+           
+       elsif in_native_command_name = 'PCPreRenewalNotices' then
+        
+        pkg_pc_pre_renewal.sp_pre_renewal_notices
+           (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id         
+           ) ;
+		   
+		elsif in_native_command_name = 'PCSetRejectedQuote'
+       then
+        pkg_pc_procedures.sp_set_rejected_quote
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+        
+---------------------19046----------
+  elsif in_native_command_name = 'PCUpdateLoggingLevel'
+       then
+        pkg_pc_procedures.sp_update_logging_lvl
+
+        (
+               in_session_id,
+               in_transaction_id,
+               io_action_outcome_id   
+          );
+-----------------19046		
+----- UTXPRODUCT-398 Start -----
+      elsif in_native_command_name = 'PCValidateObjectReferences'
+       then
+        pkg_pc_procedures.sp_check_any_referencer_obj
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_message_list,
+               io_action_outcome_id   
+          );
+          
+      elsif in_native_command_name = 'PCDeleteTreeNode'
+       then
+       
+     pkg_pc_procedures.sp_delete_tree_node(in_session_id ,
+                              in_transaction_id,
+                              in_action_object_id,
+                              in_object_cache,
+                              io_action_outcome_id
+                           );  
+						   
+----- UTXPRODUCT-398 End -----
+
+------------------------------------------- OSPRODUCT-19981 Start --------------------------------------------------
+
+      elsif in_native_command_name = 'PCCreateCustomerEmailPlaceholder'
+       then
+       
+       pkg_pc_procedures.sp_create_email_placeholder
+        (
+                in_session_id,
+                in_transaction_id,
+                in_action_object_id,
+                io_action_outcome_id 					  
+        );
+------------------------------------------- OSPRODUCT-19981 End ----------------------------------------------------
+------------------------------------------- OSPRODUCT-18756 Start ----------------------------------------------------
+	   elsif in_native_command_name = 'PCStoreCurrentRate'
+           then
+        pkg_pc_procedures.sp_store_current_rate
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          io_action_outcome_id
+        );
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+        
+       elsif in_native_command_name = 'PCCompareOldNewRate'
+           then
+        pkg_pc_procedures.sp_compare_old_new_rate
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          io_action_outcome_id
+        ); 
+------------------------------------------- OSPRODUCT-18756 End ----------------------------------------------------
+
+------------------------------------------- OSPRODUCT-16991 Start ----------------------------------------------------
+
+      elsif in_native_command_name = 'PCCloseTask'
+       then
+        pkg_pc_procedures.sp_job_task_close
+        (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               null,
+               null,
+               in_action_object_id
+          );          
+        io_action_outcome_id := pkg_os_constant.gOutcome_OK;  
+		
+	  elsif in_native_command_name = 'PCCreateIntegrationObject' 
+	   then
+        PKG_PC_INTEGRATION.sp_create_integ_object
+        (
+              in_session_id,
+              in_transaction_id,
+              in_action_id,
+              in_action_object_id,
+              io_action_outcome_id
+        ); 		
+		
+------------------------------------------- OSPRODUCT-16991 End ----------------------------------------------------
+
+------------------------------------------- OSPRODUCT-24128 Start --------------------------------------------------
+
+      elsif in_native_command_name = 'PCRollfwdConflictCleanup' then
+      
+         pkg_pc_procedures.sp_rollfwd_conflict_cleanup
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;   
+		  
+------------------------------------------- OSPRODUCT-24128 End -----------------------------------------------------
+------------------------------------------- OSPRODUCT-24671 Start -----------------------------------------------------
+		
+		elsif in_native_command_name = 'PCPolicyBindUnderwritingRules'
+			   then
+
+					pkg_os_underwrite.sp_underwrite_boolean_plan
+					(
+					   in_session_id,
+					   in_transaction_id,
+					   in_action_id,
+					   in_action_object_id,
+					   pkg_os_underwrite.gUWRuleType_Underwriting,
+					   501006,            --trigger action id
+					   io_action_outcome_id
+					);
+------------------------------------------- OSPRODUCT-24671 End -----------------------------------------------------	
+
+------------------------------------------- LXPRODUCT-622 Start -----------------------------------------------------
+
+    elsif in_native_command_name = 'PCUpdateWritingCompany'
+       then
+   
+          pkg_pc_submission.sp_update_writing_company
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id, --- ptp_id
+               io_action_outcome_id
+          ) ;	
+------------------------------------------- LXPRODUCT-622 End -----------------------------------------------------
+-----------------------------------------------------------------------------------------------
+	elsif in_native_command_name = 'PCUpdateTPRReportStatus'
+       then
+   
+          PKG_PC_PROCEDURES.sp_update_tpr_report_status
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id, --- tpr_object_id
+               io_action_outcome_id
+          ) ;
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+-----------------------------------------------------------------------------------------------		 
+elsif in_native_command_name = 'PCCRAPartnerCreate'
+       then
+   
+          pkg_pc_procedures.sp_create_cra_partner
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id, 
+               in_action_object_type_id,
+               io_action_outcome_id
+          ) ;
+elsif in_native_command_name = 'E2ValueFindRequest'
+        then
+          pkg_pc_procedures.sp_tpr_report_ev_estimator_invoke(
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+ 
+elsif in_native_command_name = 'PCE2VSessionBVSet'
+        then
+          pkg_pc_procedures.sp_reset_ev_usersession_bv(
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+ 
+---
+--- OSPRODUCT-28767: Add a new native command for Data Science workflow 
+---
+elsif in_native_command_name = 'DSModelWrkflowInit'
+then   
+  
+		pkg_pc_procedures.sp_ds_model_exec_wrkflw_init
+		(
+		  in_session_id,
+		  in_transaction_id,
+		  in_action_object_id,
+		  io_action_outcome_id 
+		);
+
+		io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+-----------------------------------------------------------------------------------------------		
+elsif in_native_command_name = 'PCPolicyTPRReportsRetrieve'
+       then
+   
+          pkg_pc_procedures.sp_tpr_retrieve_vend_to_pol
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ) ;
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+-----------------------------------------------------------------------------------------------	
+-----------------------------OSPRODUCT-27676---------------------------------------------	
+
+elsif in_native_command_name = 'PCUpdateEffExpFiling'
+        then
+          pkg_pc_procedures.sp_update_eff_exp_filing(
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              io_action_outcome_id
+          );
+
+-----------------------------------------------------------------------------------------------	
+-----------------OSPRODUCT-26484------------
+elsif in_native_command_name = 'PCCAUVehicleClone' then
+      pkg_pc_procedures.sp_clone_commercial_auto(in_session_id        => in_session_id,
+                                                       in_transaction_id    => in_transaction_id,
+                                                       in_action_object_id  => in_action_object_id,
+                                                       io_action_outcome_id => io_action_outcome_id);
+    
+ -----------------------------
+  elsif in_native_command_name = 'PCLSUpdateCustomerDM'
+     then
+
+          PKG_PC_LARGE_SCHEDULE.sp_update_ls_customer_dm(in_session_id        =>in_session_id ,
+                                                         in_transaction_id    => in_transaction_id,
+                                                         in_object_id         => in_action_object_id,
+                                                         io_action_outcome_id => io_action_outcome_id);
+          
+
+ ---OSPRODUCT-29818---start---
+elsif in_native_command_name = 'PCGeneratePTDXFExoskeleton'
+then
+
+     pkg_pc_procedures.sp_generate_pt_exoskeleton
+     (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          io_action_outcome_id
+     );
+---OSPRODUCT-29818---end---
+    elsif in_native_command_name = 'CSAddJurisdLoc'
+     then
+       pkg_pc_large_schedule.sp_add_customer_jurisdiction(
+             in_session_id => in_session_id,
+             in_transaction_id => in_transaction_id,
+             in_action_object_id => in_action_object_id , 
+             in_object_cache => in_object_cache,
+             io_message_list => io_message_list,
+             in_action_id => in_action_id,
+             io_action_outcome_id =>io_action_outcome_id) ;                  
+
+     elsif in_native_command_name = 'CreateLocations1'
+     then
+		 declare
+               
+              v_ptp_object_id    object.object_id%type := pkg_os_object_search.fn_object_get_parent_of_type(in_session_id,in_transaction_id,in_action_object_id,2276904 );
+               v_transaction_type number                := pkg_os_policy_transaction_type.fn_object_transaction_get( in_session_id, in_transaction_id, in_action_object_id );
+               v_action_id        number ;
+               gObjType_ptp       number(12) := 2276904;
+               v_loc_create  number := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                   in_transaction_id,
+                                                   v_ptp_object_id,
+                                                   33564148);
+           begin
+		              v_action_id := case
+                  pkg_os_object.fn_object_type_get(in_session_id,
+                                                   in_transaction_id,
+                                                   pkg_os_object.fn_object_parent_get(in_session_id,
+                                                                                      in_transaction_id,
+                                                                                      v_ptp_object_id))
+                   when 2356809 then
+                    306005
+                   else
+                    120302
+                    end;
+                    
+                    if v_session_control.gLogging_Full then
+              pkg_os_logging.sp_log
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  '... v_loc_create:'||v_loc_create
+                  ||'... v_action_id:'|| v_action_id
+                  ||' ..product'||pkg_os_product.fn_object_product_get( in_session_id, in_transaction_id, in_action_object_id )
+                );
+            end if;
+            if pkg_os_product.fn_object_product_get( in_session_id, in_transaction_id, in_action_object_id ) =2805  then
+               pkg_os_logging.sp_log
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  '... Product:'||2805
+                  
+                ); 
+                pkg_pc_large_schedule.sp_add_customer_jurisdiction(
+                   in_session_id => in_session_id,
+                   in_transaction_id => in_transaction_id,
+                   in_action_object_id => in_action_object_id , 
+                   in_object_cache => in_object_cache,
+                   io_message_list => io_message_list,
+                   in_action_id => in_action_id,
+                   io_action_outcome_id =>io_action_outcome_id) ;       
+                       
+             elsif pkg_os_product.fn_object_product_get( in_session_id, in_transaction_id, in_action_object_id ) in ( 102, 57005) then
+              if v_loc_create = 1 then
+              pkg_os_tree_driven.sp_juris_create_locations
+              (
+                   in_session_id,
+                   in_transaction_id,
+                   in_object_cache,
+                   in_action_object_id,
+                   io_action_outcome_id
+              );
+              if v_ptp_object_id is not null then
+                   pkg_os_tree.sp_tree_create
+                    (
+                        in_session_id,
+                        in_transaction_id,
+                        in_object_cache,
+                        io_message_list,
+                        v_action_id,
+                        v_ptp_object_id,--in_action_object_id,
+                        gObjType_ptp,
+                        io_action_outcome_id
+                    );
+              end if;
+              end if;
+              pkg_os_tree_driven.sp_location_create_buildings
+              (
+                   in_session_id,
+                   in_transaction_id,
+                   in_object_cache,
+                   in_action_object_id,
+                   io_action_outcome_id
+              );
+              else
+                io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+             end if;
+          end;
+
+     elsif in_native_command_name = 'CSPropertyScheduleAddLocationShell'
+     then
+
+          pkg_pc_large_schedule.sp_property_add_location
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+          );
+		  
+	 elsif in_native_command_name = 'CSGLPropertyScheduleClonePeer'
+     then
+        
+          PKG_PC_LARGE_SCHEDULE.sp_GL_Build_create_clone
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+		  
+	 elsif in_native_command_name = 'CSCreateGLChildBuildingWithRef'
+     then
+
+          pkg_pc_large_schedule.sp_object_child_GL_Building
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+          );
+		  
+	  elsif in_native_command_name = 'CSGLPropertyScheduleAddLoc'
+     then
+
+          pkg_pc_large_schedule.sp_GL_property_add_location
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+          );
+		  
+		  
+	 elsif in_native_command_name = 'CSGLPropertyScheduleAddPeer'
+     then
+       
+          pkg_pc_large_schedule.sp_GL_property_add_peer
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+          );
+		  
+	 elsif in_native_command_name = 'PCInitializeObjectofInterest' then
+
+      pkg_pc_functions.sp_get_executor_session_id
+      (
+        in_session_id,                   
+        in_transaction_id ,              
+        in_action_object_id );
+       io_action_outcome_id := pkg_os_constant.gOutcome_OK; 
+     elsif in_native_command_name = 'CACreateChildVehicleWithRef'
+     then
+
+          pkg_pc_large_schedule.sp_object_child_ca_vehicle(in_session_id            => in_session_id ,
+                                                           in_transaction_id        => in_transaction_id,
+                                                           in_action_object_id      => in_action_object_id,
+                                                           in_action_object_type_id => in_action_object_type_id,
+                                                           io_action_outcome_id     => io_action_outcome_id);
+     elsif in_native_command_name = 'CADeleteGlobalUpdateVehicle' then 
+        pkg_pc_large_schedule.sp_delete_global_udate_veh(in_session_id            => in_session_id,
+                                                         in_transaction_id        => in_transaction_id,
+                                                         in_action_object_id      => in_action_object_id,
+                                                         in_action_object_type_id => in_action_object_type_id,
+                                                         io_action_outcome_id     => io_action_outcome_id);
+     elsif in_native_command_name = 'CSPropertyScheduleGlobalUpdateSelected'
+     then
+
+          pkg_pc_large_schedule.sp_global_update_selected
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               in_action_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+          );
+     elsif in_native_command_name = 'CSPropertyScheduleGlobalUpdateAll'
+     then
+
+          pkg_pc_large_schedule.sp_building_global_update
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               in_action_id,
+               io_action_outcome_id
+          );
+     elsif in_native_command_name = 'CSPropertyScheduleSelectedListDelete'
+     then
+          pkg_pc_large_schedule.sp_multiplicity_list_command
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               in_action_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id,
+               2          -- Delete Selected Object
+
+          );          
+    elsif in_native_command_name = 'CreateLargeSchedueControlObj' then
+      pkg_pc_large_schedule.sp_policy_ls_controller_create(in_session_id       => in_session_id,
+                                                    in_transaction_id   => in_transaction_id,
+                                                    in_action_object_id => in_action_object_id,
+                                                    io_action_outcome_id  =>io_action_outcome_id);
+     elsif in_native_command_name = 'CSUpdateIncidentDatamart'
+     then
+          pkg_oc_functions.sp_incident_datamart_update
+          (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id
+          );
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;	
+		  
+     -- Native Command added to set 35951248 BV on claim as per OSPRODUCT-33260
+    elsif in_native_command_name = 'CSClaimSetISOClaimSearchRequestBV'
+    then
+       pkg_oc_functions.sp_set_iso_claim_search_request_bv
+                       (
+                            in_session_id,
+                            in_transaction_id,
+                            in_action_object_id,
+                            io_action_outcome_id
+                       );
+       io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+	   
+     elsif in_native_command_name = 'CSClaimReSetBulkVendorAssignmentBV'
+     then
+
+               pkg_oc_functions.sp_reset_bulk_vendor_assignment_flag
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    io_action_outcome_id
+               );
+
+               io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+	elsif in_native_command_name = 'CSPropertyScheduleImportTransform'
+		then
+
+          pkg_pc_large_schedule.sp_property_schedule_import
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_session_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+
+    elsif in_native_command_name = 'CSPPropertyScheduleValidateTrees'
+     then
+
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+          pkg_pc_large_schedule.sp_schedule_tree_validate
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               in_action_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id
+               
+          );		  
+    elsif in_native_command_name = 'CSPropertyScheduleAddMember'
+    then
+          pkg_pc_large_schedule.sp_multiplicity_list_command
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               in_action_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id,
+               4          -- ADD Object
+
+          );
+	--OSPRODUCT-33434	  
+    elsif in_native_command_name = 'CSAddListAndRefObject'
+    then
+          pkg_pc_large_schedule.sp_list_refer_obj_creation
+
+          (
+               in_session_id,
+               in_transaction_id,
+               in_object_cache,
+               io_message_list,
+               in_action_id,
+               in_action_object_id,
+               in_action_object_type_id,
+               io_action_outcome_id 
+           );
+		  
+	elsif in_native_command_name = 'PCTreeRulesAndAuxCommands' then
+       
+            pkg_pc_procedures.sp_exec_tree_rules_and_aux (             
+                                                               in_session_id,
+                                                               in_transaction_id,
+                                                               in_action_id,
+                                                               in_action_object_id,
+                                                               in_object_cache,
+                                                               io_message_list,
+                                                               io_action_outcome_id
+                                                          );	  
+
+     
+     elsif in_native_command_name = 'PCDeleteAllMiniTrees' then
+         pkg_pc_large_schedule.sp_delete_mini_trees(in_session_id        => in_session_id,
+                                                    in_transaction_id    => in_transaction_id,
+                                                    in_action_id         => in_action_id,
+                                                    in_action_object_id  => in_action_object_id,
+                                                    io_action_outcome_id => io_action_outcome_id );
+     elsif in_native_command_name = 'PCLSValidaionInit' then
+       pkg_pc_large_schedule.sp_validation_start_init_db(in_session_id        => in_session_id,
+                                                         in_transaction_id    => in_transaction_id,
+                                                         in_action_id         => in_action_id,
+                                                         in_action_object_id  => in_action_object_id,
+                                                         io_action_outcome_id => io_action_outcome_id);
+     elsif in_native_command_name = 'PCLSLoadMiniTree' then
+       pkg_pc_large_schedule.sp_load_min_tree( in_session_id => in_session_id,
+                               in_transaction_id     => in_transaction_id,
+                               io_object_cache       => in_object_cache,
+                               io_message_list       => io_message_list,
+                               in_action_id         => in_action_id,
+                               in_action_object_id   => in_action_object_id,
+                               io_action_outcome_id  => io_action_outcome_id);
+     elsif in_native_command_name = 'PCDeleteMiniTree' then
+         pkg_pc_large_schedule.sp_delete_mini_tree(in_session_id        => in_session_id,
+                                                    in_transaction_id    => in_transaction_id,
+                                                    in_action_id         => in_action_id,
+                                                    in_action_object_id  => in_action_object_id,
+                                                    io_action_outcome_id => io_action_outcome_id );
+     elsif in_native_command_name = 'PCLSValidationAssemblyInit' then
+       pkg_pc_large_schedule.sp_validation_assembly_start ( in_session_id => in_session_id,
+                               in_transaction_id     => in_transaction_id,
+                               io_object_cache       => in_object_cache,
+                               io_message_list       => io_message_list,
+                               in_action_id         => in_action_id,
+                               in_action_object_id   => in_action_object_id,
+                               io_action_outcome_id  => io_action_outcome_id);
+     elsif in_native_command_name = 'PCLSValidationAssemblyTree' then
+       pkg_pc_large_schedule.sp_validation_assembly_tree ( in_session_id => in_session_id,
+                               in_transaction_id     => in_transaction_id,
+                               io_object_cache       => in_object_cache,
+                               io_message_list       => io_message_list,
+                               in_action_id         => in_action_id,
+                               in_action_object_id   => in_action_object_id,
+                               io_action_outcome_id  => io_action_outcome_id);
+
+     elsif   in_native_command_name = 'PCLSScheduleImportInit' then
+       pkg_pc_large_schedule.sp_schedule_import_init(in_session_id            => in_session_id,
+                                                     in_transaction_id        => in_transaction_id,
+                                                     in_action_id             => in_action_id,
+                                                     in_action_object_id      => in_action_object_id,
+                                                     in_action_object_type_id => in_action_object_type_id,
+                                                     io_action_outcome_id     => io_action_outcome_id) ;
+                               
+      elsif in_native_command_name = 'PCCreateObjectCreateValidate'
+     then
+
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+          pkg_pc_large_schedule.sp_object_create_validate(in_session_id,            
+                               in_transaction_id,     
+                               in_object_cache,
+                               io_message_list,
+                               in_action_id,
+                               in_action_object_id,
+                               in_action_object_type_id,
+                               io_action_outcome_id);
+
+     elsif in_native_command_name =  'PCMiniTreeCleanse' then
+       pkg_pc_large_schedule.sp_cleanse_mini_tree(in_session_id => in_session_id,
+                                                  in_transaction_id => in_transaction_id,
+                                                  io_object_cache => in_object_cache,
+                                                  io_message_list => io_message_list,
+                                                  in_action_id => in_action_id,
+                                                 in_action_object_id => in_action_object_id,
+                                                  io_action_outcome_id => io_action_outcome_id);
+
+     elsif in_native_command_name = 'CSLargeScheduleInitJob'
+     then
+
+          pkg_pc_large_schedule.sp_job_initialization_routines
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               io_action_outcome_id
+          ); 
+     elsif in_native_command_name='PCLSLoadMainTree' then 
+
+       pkg_pc_large_schedule.sp_create_main_tree(in_session_id => in_session_id,
+                                                  in_transaction_id => in_transaction_id,
+                                                  io_object_cache => in_object_cache,
+                                                  io_message_list => io_message_list,
+                                                  in_action_id => in_action_id,
+                                                  in_action_object_id => in_action_object_id,
+                                                  in_action_object_type_id => in_action_object_type_id,
+                                                  io_action_outcome_id => io_action_outcome_id);
+     elsif in_native_command_name='PCLSPrepareDapJobSubmission' then
+         pkg_pc_large_schedule.sp_submit_ls_job(in_session_id => in_session_id,
+                           in_transaction_id => in_transaction_id,
+                           in_object_cache  =>  in_object_cache,
+                           io_message_list => io_message_list,
+                           in_action_id => in_action_id,
+                           in_action_object_id  => in_action_object_id,
+                           io_action_outcome_id  =>  io_action_outcome_id); 
+                         
+     elsif in_native_command_name = 'CSPropertyScheduleExportTransform'
+     then
+
+          pkg_pc_large_schedule.sp_property_schedule_export
+          (
+               in_session_id,
+               in_transaction_id,
+               in_session_id,
+               in_action_id,
+               in_action_object_id,
+               io_action_outcome_id
+          );
+     elsif in_native_command_name ='PCExportScheduleChangeParent' then 
+       pkg_pc_large_schedule.sp_set_export_doc_parent(in_session_id        => in_session_id,
+                                                      in_transaction_id    => in_transaction_id,
+                                                      in_action_object_id  => in_action_object_id,
+                                                      io_action_outcome_id => io_action_outcome_id);
+     elsif in_native_command_name ='PCAdditionalInsuredUpdateDM' then 
+         pkg_pc_large_schedule.sp_update_obj_insured_dm(in_session_id        => in_session_id,
+                                                        in_transaction_id    => in_transaction_id,
+                                                        in_action_object_id  => in_action_object_id,
+                                                        io_action_outcome_id => io_action_outcome_id);
+    ---- 
+    ----  REINSURANCE : Native Commands
+    ---- 
+         
+    elsif in_native_command_name = 'PCCreateReinsuranceObjects'
+    then 
+                   
+          pkg_or_procedures.sp_create_iteration1_Objts 
+          (
+                     in_session_id,
+                     in_transaction_id,
+                     in_action_object_id,
+                     in_object_cache 
+           ) ;         
+                
+           
+           io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+                    
+    elsif in_native_command_name = 'PCCreateLOBCvrObjects'
+    then 
+      
+           pkg_or_procedures.sp_create_coverage_objects
+           (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+           ); 
+
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+                    
+                    
+    elsif in_native_command_name = 'PCCreateStackedCvrObjects'
+    then           
+              
+    
+     pkg_or_procedures.sp_create_placement_objects
+           (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id
+           );              
+ 
+          io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+     elsif in_native_command_name ='PCUpdateAssetPayerDM' then 
+         PKG_PC_FUNCTIONS.SP_UPDATE_aSSET_PAYER_DM(in_session_id        => in_session_id,
+                                                        in_transaction_id    => in_transaction_id,
+                                                        in_action_object_id  => in_action_object_id,
+                                                        io_action_outcome_id => io_action_outcome_id); 		  
+		  
+	elsif in_native_command_name = 'PCReinsurerDelete' then
+		 pkg_or_procedures.sp_delete_reinsurer_participant	
+     (
+       in_session_id,        
+       in_transaction_id ,    
+       in_action_object_id  
+      ) ;
+      io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+		  
+    ---- 
+    ----  REINSURANCE : Native Commands
+    ---- 
+
+ else
+ 
+    io_action_outcome_id := pkg_os_constant.gOutcome_ActionNotImplemented;
+     
+ end if;
+
+end sp_execute_action_product;
+
+end pkg_pc_action_product;
+/
+
+

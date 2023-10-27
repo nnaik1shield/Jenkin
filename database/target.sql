@@ -1,0 +1,16 @@
+--
+-- Target file for Dragon install/update/migrate/uninstall
+--
+DEFINE DB_NAME = 'DBNAME'
+DEFINE MD_USER = 'MDUSER'
+DEFINE MD_PASS = 'MDPASS'
+DEFINE ST_USER = 'STUSER'
+DEFINE ST_PASS = 'STPASS'
+DEFINE API_USER = 'APIUSER'
+DEFINE API_PASS = 'APIPASS'
+DEFINE DBA_USER = 'DBAUSER'
+DEFINE DBA_PASS = 'DBAPASS'
+DEFINE LOGDIR = 'LOGDIR'
+--
+-- end of target file
+--

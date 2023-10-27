@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2012-01-31T10:52:29" created="2012-01-31T10:44:24" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Surety/Bonds - Detail.xanalyzer" name="Bonds - Detail"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="true" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="SURETY_BOND_CUBE" catalog="Surety Financial Statement Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Liability_Amount]">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Total Bond Liability" locale=""/>
+                </displayLabels>
+                <numberFormat formatShortcut="NONE" formatScale="0" formatCategory="Currency ($)">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Premium]">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Total Open Premium" locale=""/>
+                </displayLabels>
+                <numberFormat formatShortcut="NONE" formatScale="0" formatCategory="Currency ($)">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Bond_Category].[Bond_Type]">
+                <link fileLabel="Bonds - Summary" fileName="Bonds - Summary.xanalyzer" filePath="/Cubes/Surety" fileSolution="OneShield" target="CURRENT" toolTip="" type="FILE"/>
+            </attribute>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Bond_Category].[Bond_SubType]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Bond_Category].[Bond_Type]">
+                <predicates>
+                    <predicate parameterName="Bond_Type" operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Contract" formula="[Bond_Category].[Contract].[Contract]"/>
+                        <member pos="0" caption="Fidelity" formula="[Bond_Category].[Fidelity].[Fidelity]"/>
+                        <member pos="0" caption="Fiduciary" formula="[Bond_Category].[Commercial].[Fiduciary]"/>
+                        <member pos="0" caption="Judicial" formula="[Bond_Category].[Commercial].[Judicial]"/>
+                        <member pos="0" caption="License and Permit" formula="[Bond_Category].[Commercial].[License and Permit]"/>
+                        <member pos="0" caption="Miscellaneous" formula="[Bond_Category].[Commercial].[Miscellaneous]"/>
+                        <member pos="0" caption="Public" formula="[Bond_Category].[Commercial].[Public]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

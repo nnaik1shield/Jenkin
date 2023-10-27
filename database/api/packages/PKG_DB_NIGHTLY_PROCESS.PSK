@@ -1,0 +1,449 @@
+create or replace package PKG_DB_NIGHTLY_PROCESS
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_NIGHTLY_PROCESS.PSK  $
+-- $Revision:   1.21  $
+--   $Author:   krani  $
+--     $Date:   04 Feb 2013 11:10:24  $
+-------------
+AS
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gObjType_BillingAccount            constant object_type.object_type_id%type               :=   2365346;
+gObjType_FITransaction             constant object_type.object_type_id%type               :=   2365046;
+gObjType_FItem                     constant object_type.object_type_id%type               :=   2365246;
+gObjType_FIChange                  constant object_type.object_type_id%type               :=   2365146;
+-- 2016-04-12 Cheryl  osbilling-906
+gObjType_BillingAccountTrxSet         constant     object_type.object_type_id%type               :=   2365946;
+
+gbv_UserSessionRefConnectedTO      constant business_variable.business_variable_id%type   :=   210090;
+gbv_ExchangeRefSponsorPartner      constant business_variable.business_variable_id%type   :=   21814301;
+gbv_PolicyBillingMethod            constant business_variable.business_variable_id%type   :=   27372305;
+gbv_PolicyTrxRefCoverages          constant business_variable.business_variable_id%type   :=   212318;
+gbv_PolicyAdvanceToDate            constant business_variable.business_variable_id%type   :=   31532146;
+gbv_carrier_branch_id              constant business_variable.business_variable_id%type   :=   29795201;
+gbv_PolicyNumber                   constant business_variable.business_variable_id%type   := 231;
+
+gbv_BillAccountAdvanceToDate       constant business_variable.business_variable_id%type   :=   31812046;
+gbv_ExchangeAdvanceToDate          constant business_variable.business_variable_id%type   :=   31812846;
+gbv_ExchangeTimezone               constant business_variable.business_variable_id%type   :=   31812546;
+PolicyBillingMethodList            constant lookup_list.lookup_list_id%type               :=   5298605;
+gbv_Policy_PrefPayPlan_Pth         varchar2(100)                                          :=   '31844846.32251146.30013046.30010546';
+gPaymentMode_EFT                   lookup_list_value.lookup_enum%type                     := 3;
+gPaymentMode_CC                    lookup_list_value.lookup_enum%type                     := 2;
+gPaymentMode_CashCheck             lookup_list_value.lookup_enum%type                     := 1;
+gSchWithdrwlEFTAdvanceDays         lookup_list_value.lookup_enum%type                     := 13340;
+gSchWithdrwlCCAdvanceDays          lookup_list_value.lookup_enum%type                     := 31440;
+gAgeingBasedOnInvoice              lookup_list_value.lookup_enum%type                     := 15246;
+gAgtbilladvancedays                lookup_list_value.lookup_enum%type                     := 21846;  --20190124 OSBILLING-6617 Cheryl
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     Fitem Category ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gFitemCategory_Cash                constant object.object_id%type                         :=   646;
+gFitemCategory_WriteOff            constant object.object_id%type                         :=   1546;
+gFitemCategory_Disbursement        constant object.object_id%type                         :=   5046;  --OSBILLING-6052
+gFitemCategory_Commission          constant object.object_id%type                         :=   946;
+gFItem_Cat_DeferredPrem            constant object.object_id%type                         :=   5446;
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     Fitem  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_fitem_debit_credit             constant business_variable.business_variable_id%type   :=   29710046;
+gbv_fitem_effective_date           constant business_variable.business_variable_id%type   :=   29710446;
+gbv_fitem_billing_status           constant business_variable.business_variable_id%type   :=   29710946;
+gbv_fitem_processing_status        constant business_variable.business_variable_id%type   :=   29711146;
+gbv_FItem_RefPolicy                constant business_variable.business_variable_id%type   :=   29721246;
+gbv_FItem_RefPolicyTxn             constant business_variable.business_variable_id%type   :=   29748446;
+gbv_FItem_RefEntityBelongsTo       constant business_variable.business_variable_id%type   :=   29748546;
+gbv_FItem_Aging_Status             constant business_variable.business_variable_id%type   :=   30750546;
+gbv_FItem_AgingStatusChangeDt      constant business_variable.business_variable_id%type   :=   30750646;
+gbv_FItem_RefAssociatePolTrans     constant business_variable.business_variable_id%type   :=   29748446;
+gbv_Fitem_category                 constant business_variable.business_variable_id%type   :=   29710146;
+gbv_Fitem_subcategory              constant business_variable.business_variable_id%type   :=   29710246;
+gbv_Fitem_LateFeeDueDate           constant business_variable.business_variable_id%type   :=   30792746;
+gbv_FItem_Aging_Status_Days        constant business_variable.business_variable_id%type   :=   32572240;
+gAgingStatus_Past30                constant lookup_list_value.lookup_enum%type            :=   30;
+gAgingStatus_Past60                constant lookup_list_value.lookup_enum%type            :=   60;
+gAgingStatus_Past90                constant lookup_list_value.lookup_enum%type            :=   90;
+gAgingStatus_Past90plus            constant lookup_list_value.lookup_enum%type            :=   99;
+--OSBILLING-1397 Added new constants for PD Property Type
+gAdvancedays_EFT                   constant pd_property_type.pd_property_type_id%type     :=   13340;
+gAdvancedays_CC                    constant pd_property_type.pd_property_type_id%type     :=   13440;
+gAging_In_Invoice                  constant pd_property_type.pd_property_type_id%type     :=   15246;
+gUse_Accounting_Period             constant pd_property_type.pd_property_type_id%type     :=   15048;  --osproduct-3494 20200916 Cheryl
+
+gbv_FItem_Stat_Aging_Status        constant business_variable.business_variable_id%type   :=   33892046;
+gbv_FItem_Stat_Aging_Days          constant business_variable.business_variable_id%type   :=   33891846;
+gbv_FItem_Stat_Aging_Buckt         constant business_variable.business_variable_id%type   :=   33891646;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     FITransaction  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FITransactionType              constant business_variable.business_variable_id%type   :=   29708346;
+gbv_FITrx_RefPolicy                constant business_variable.business_variable_id%type   :=   29721146;
+gbv_FITrx_RefPolicyTxn             constant business_variable.business_variable_id%type   :=   29744046;
+gbv_FITransaction_EffDate          constant business_variable.business_variable_id%type   :=   29709246;
+gbv_FITransaction_RefBillAcc       constant business_variable.business_variable_id%type   :=   29745946;
+gbv_FITransaction_Amount           constant business_variable.business_variable_id%type   :=   29708946;
+gbv_FITransaction_GLDate           constant business_variable.business_variable_id%type   :=   29755046;
+gbv_FITrx_ProcessDate              constant business_variable.business_variable_id%type   :=   29708446;
+gbv_FITrx_RefActionPolicy          constant business_variable.business_variable_id%type   :=   29974046;
+gbv_FITrx_RefActionPolicyTxn       constant business_variable.business_variable_id%type   :=   29974146;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     FIChange  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_FIChange_ProcessDate           constant business_variable.business_variable_id%type   :=   29719346;
+gbv_FIChange_RefFItem              constant business_variable.business_variable_id%type   :=   29704046;
+gbv_fichange_action                constant business_variable.business_variable_id%type   :=   29709546;
+gbv_fichange_action_delta          constant business_variable.business_variable_id%type   :=   29709646;
+gbv_fichange_sum_include           constant business_variable.business_variable_id%type   :=   29709846;
+gbv_FIchange_RefPolicy             constant business_variable.business_variable_id%type   :=   29748246;
+gbv_FIchange_RefPolicyTxn          constant business_variable.business_variable_id%type   :=   29748346;
+gbv_FIchange_RefBelongsTo          constant business_variable.business_variable_id%type   :=   29748646;
+--OSBILLING-1340 Defined new constant for Cash Apply Transaction Type
+FITrxType_Cash_Apply               constant number(12) := 101;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     Policy Transaction  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyTrans_RefBelongsTo       constant business_variable.business_variable_id%type   :=   29728801;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     Policy Term  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyTerm_BillingStatus       constant business_variable.business_variable_id%type   :=   29706146;
+gbv_PolicyTermBillingMethod        constant business_variable.business_variable_id%type        :=   33820346;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--     Outcomes  ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+g_outcome_TransPendCancel          constant outcome.outcome_id%type                       :=   29812;
+g_outcome_TransCancellation        constant outcome.outcome_id%type                       :=   8802;
+g_outcome_TransReinstatement       constant outcome.outcome_id%type                       :=   9105;
+g_outcome_TransactionRescind       constant outcome.outcome_id%type                       :=   37546;
+g_outcome_TransactionLate          constant outcome.outcome_id%type                       :=   37646;
+g_outcome_AgingNotUpdated          constant outcome.outcome_id%type                       :=   83148;    --OSPRODUCT-13562
+
+gbv_GenObj_RefWritingComp          constant business_variable.business_variable_id%type   :=   29789401;
+gbv_GenObj_ChildBillAcc            constant business_variable.business_variable_id%type   :=   29704646;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Enums and List
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+gBillingMethod_Direct              constant lookup_list_value.lookup_enum%type            :=   1;
+gBillingMethod_Agency              constant lookup_list_value.lookup_enum%type            :=   2;
+gAgingStatus_Future                constant lookup_list_value.lookup_enum%type            :=   1;
+gAgingStatus_Current               constant lookup_list_value.lookup_enum%type            :=   2;
+gAgingStatus_Past                  constant lookup_list_value.lookup_enum%type            :=   3;
+gFITrxType_Dr_Generate             constant lookup_list_value.lookup_enum%type            :=   601;
+gFITrxType_AgingUpdate             constant lookup_list_value.lookup_enum%type            :=   1602;
+gFITrxStatus_Processed             constant lookup_list_value.lookup_enum%type            :=   37646;
+gFItem_Debit                       constant lookup_list_value.lookup_enum%type            :=   146;
+gFItem_Credit                      constant lookup_list_value.lookup_enum%type            :=   246;
+gFItem_Cat_Fee                     constant lookup_list_value.lookup_enum%type            :=   546;
+gFItem_SubCat_LateFee              constant lookup_list_value.lookup_enum%type            :=   47746;
+gFItemBillStatus_Active            constant lookup_list_value.lookup_enum%type            :=   38246;
+gFItemProcStatus_Created           constant lookup_list_value.lookup_enum%type            :=   39246;
+gFIChange_Create                   constant lookup_list_value.lookup_enum%type            :=   101;
+gFIChange_Yes                      constant lookup_list_value.lookup_enum%type            :=   1;
+gFitemTypeList                     constant lookup_list.lookup_list_id%type               :=   5366746;
+gSetType_AgingUpdate               constant lookup_list_value.lookup_enum%type            :=   6007;
+
+
+gBatch_PCAS_Policy                 constant lookup_list_value.lookup_enum%type            :=   401;
+gBatch_PCAS_PolicyTrx              constant lookup_list_value.lookup_enum%type            :=   1201;
+gBatch_PCAS_DueMonth               constant lookup_list_value.lookup_enum%type            :=   2001;
+g_SetType_Statement            constant object_bv_value.business_variable_value%type  := 801;
+
+gbv_BillAcctTrxSet_AssocPolicy     constant business_variable.business_variable_id%type   :=   32180046;  --OSBILLING-7696
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   Package Type Defintions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type t_policy_term                 is table of number(38)    index by varchar2(50);       --OSPRODUCT-1446,modified size
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   Package Cursors ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+-- 2017-09-12 Remove Billing account from cursors osbilling-4497
+--
+
+cursor c_ba_fitems (in_billingaccountrxset_id   object.object_id%type, in_fitransaction_id   object.object_id%type)
+     is
+     select
+        distinct(fi.fitem_id),fic.policy_id,
+        fi.fitem_billed_tf,
+        fi.agency_due_date,
+        fi.due_date,
+        fi.aging_status_id,
+        fi.aging_status_days_id,
+        fi.fitem_category_id,
+        fi.withdrawal_date,
+        fi.billing_account_id,
+        fi.policy_term_id
+        from dragon_fichange fic, dragon_fitem fi
+        --where fic.billing_account_id = in_billing_account_id
+        where fic.billingaccounttrxset_id = in_billingaccountrxset_id
+        and fic.fitem_type_id = gFItem_Debit
+        and fic.fitem_category_id not in   (gFitemCategory_Cash,gFitemCategory_Commission,gFitemCategory_WriteOff,gFitemCategory_Disbursement) --OSBILLING-6052
+        and fic.fitem_id= fi.fitem_id
+        and (in_fitransaction_id is null or fic.fitransaction = in_fitransaction_id )
+        and fic.processing_status= 'Processed'  --@Deepika: Can do BV get for this. @@@VG: Not acceptable.  @@HC: Will handle in next sprint
+        and fic.fitem_id= fi.fitem_id
+        and fic.billing_account_id=fi.billing_account_id--OSPRODUCT -1372
+        and fi.balance <> 0
+        order by
+        fic.policy_id,
+        fi.fitem_id;
+
+        type t_batrxset_fitem_tbl is table of c_ba_fitems%rowtype index by pls_integer;
+
+
+     cursor c_policy_fitems (v_policy_id   object.object_id%type)
+     is
+          select
+               fi.fitem_id,
+               fi.policy_id,
+               fi.fitem_billed_tf,
+               fi.agency_due_date,
+               fi.due_date,
+               fi.aging_status_id,
+               fi.aging_status_days_id,
+               fi.fitem_category_id,
+               fi.withdrawal_date,
+               fi.billing_account_id,
+               fi.policy_term_id,
+               fi.fitem_business_relationship --OSPRODUCT-29773
+          from  dragon_fitem fi
+          --where fi.billing_account_id = in_billing_account_id
+          where  fi.fitem_type_id = gFItem_Debit
+          and fi.balance <> 0
+          and fi.policy_id = v_policy_id
+          and fi.fitem_category_id not in  (gFitemCategory_Cash,gFitemCategory_Commission,gFitemCategory_WriteOff,gFitemCategory_Disbursement) --- @@VG: Please create a ticket where whether a category is to be aged or not becomes a column in the DB_FITEM_CATEGORY metadata table.    --OSBILLING-6052
+          order by
+          fi.billing_account_id, -- #MP
+          fi.fitem_id;
+
+        type t_policy_fitem_tbl is table of c_policy_fitems%rowtype index by pls_integer;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--  Package Types
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+type r_policy_term          is record
+(
+     date_eff       varchar2(100),
+     object_id      object.object_id%type
+);
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   Function & Procedure Definitions ...
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_timezone_date_map
+(
+     in_session_id                 in        object.object_id%type,
+     in_transaction_id             in        object.object_id%type,
+     in_timezone_id                in        timezone.timezone_id%type, -- TimeZone id for which date roll should happen
+     io_action_outcome_id          in out    outcome.outcome_id%type
+
+
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_calculate_equity_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     out_equity_date               out            object_bv_value.business_variable_value%type,
+     in_current_date_time          in             date default sysdate
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_get_term_equity_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_term_id             in             object.object_id%type,
+     out_equity_date               out            object_bv_value.business_variable_value%type,
+     in_current_date_time          in             date default sysdate
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billacc_update_aging_status
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+) ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_update_aging_status
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type default null,
+     in_current_date_time          in             date default null  --OSBILLING-7829
+) ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_nightly_process
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_id                  in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_current_date_time          in             date default null
+) ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_policy_date_advance
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_id                  in             object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+     in_current_date_time          in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_billaccount_date_advance
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_billing_account_id         in             object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+     in_current_date_time          in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_exchange_date_advance
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_exchange_id                in             object.object_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+     in_current_date_time          in             date default null
+);
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_term_equity_date
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_policy_term_id             in             object.object_id%type
+)
+return date;
+
+----------------------------------------------------------------------------------------------
+function fn_get_fulfilment_days
+(
+
+      in_session_id                 in          object.object_id%type,
+      in_transaction_id             in          object.object_id%type,
+      in_policy_id                  in          object.object_id%type
+)
+return number;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+function fn_get_aging_bucket_id
+(
+      in_past_days                  in          number
+)
+return number;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+procedure sp_fitem_aging_status_update
+(
+      in_session_id                 in         object.object_id%type,
+      in_transaction_id             in         object.object_id%type,
+      in_fitem_id                   in         object.object_id%type,
+      in_fitem_billed_tf            in         number,
+      in_withdrawal_date            in         date,
+      in_due_date                 in         date,
+      in_current_date             in         timezone_date_map.rolled_date%type,
+      in_aging_on_invoice           in         pd_property.pd_property_value%type,
+      in_old_aging_status_id        in         object.object_id%type,
+      in_billingaccounttrxset_id    in out     object.object_id%type,
+      in_cust_billing_acc_id        in         object.object_id%type,
+      in_policy_id                  in         object.object_id%type,
+      in_total_items                in out     number
+
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_agent_update_aging_status
+(
+      in_session_id                 in         object.object_id%type,
+      in_transaction_id             in         object.object_id%type,
+      in_billing_account_id         in         object.object_id%type,
+      io_action_outcome_id         in out      outcome.outcome_id%type
+);
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+function fn_get_aging_status_days_id
+(
+      in_past_days                  in          number
+)
+return number;
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_update_aging_status
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_object_id                  in             object.object_id%type,
+     in_fitransaction_id           in             object.object_id%type default null, 
+     in_current_date_time          in             date default null, --OSBILLING-7829  
+     io_action_outcome_id          in out         outcome.outcome_id%type
+) ;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+end PKG_DB_NIGHTLY_PROCESS;
+/
+

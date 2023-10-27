@@ -1,0 +1,760 @@
+CREATE OR REPLACE PACKAGE BODY PKG_DB_SECURITY_TRIGGER
+
+-------------
+-- $Workfile:   BASE_API.PKG_DB_SECURITY_TRIGGER.PBK  $
+-- $Revision:   1.3  $
+--   $Author:   dugupta  $
+--     $Date:   11 Jan 2012 18:46:30  $
+-------------
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+pkg_name                 constant  system_log.program_name%type                 :=   'pkg_db_security_trigger.';
+
+v_current_date                     object_bv_value.business_variable_value%type;
+
+procedure show_version
+is
+begin
+     dbms_output.put_line ('$Workfile:   BASE_API.PKG_DB_SECURITY_TRIGGER.PBK  $');
+     dbms_output.put_line ('$Revision:   1.3  $');
+     dbms_output.put_line ('$Author:   dugupta  $');
+     dbms_output.put_line ('$Date:   11 Jan 2012 18:46:30  $');
+exception
+     when others
+     then
+          dbms_output.put_line (sqlerrm (sqlcode));
+end show_version;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_process_security_triggers
+--
+--   %USAGE
+--        This procedure validates the billing transactions against the security rules
+--        and creates the security trigger children against each rule evaluates to true
+--
+--   %ALGORITHM
+--        1.   Get the Parent Billing Account Id of BillingAccountTransactionSet
+--        2.   Get the Primary Billing CSR and Primary Billing CSR Manager of the billing account
+--        3.   Get all the existing Security Triggers children of the Batch
+--        4.   Loop through each child and set the relevant flag to False for all kids
+--        5.        Get the index key to make the code re-entrant (Trxsetid||security_trigger_id)
+--        6.   Set the flag to process the Billing Transaction( Write Off/Disbursement) to true
+--        7.   Get the batch type
+--        8.   Loop through each security trigger defined for the batch type
+--        9.   Validate the task creation rule from the security trigger details
+--        10.  Process further if creation rule evaluates to true
+--        11.       Set the flag to process the Billing Transaction( Write Off/Disbursement) to false
+--        12.       Validate if same security trigger has already been evaluated for the batch
+--        13.       If Yes,
+--        14.            Get the task description message from the security trigger definition
+--        15.            Set triggerconditionmessage BV for Security Trigger Object
+--        16.            Set the relevant flag to true for Security Trigger Object
+--        17.       If No,
+--        18.            Create new BillingSecurityTriggerDetails Object
+--        19.            Get the task description message from the security trigger definition
+--        20.            Set the business variables for Security Trigger Object
+--        21.  Create Task object for the assigned actor
+--        22.  Set the business variables for Task object
+--        23.  Update the Task Datamart
+--
+--
+--
+--   %CAUTION
+--
+--   %PARAM             in_session_id                 Session Id
+--   %PARAM             in_transaction_id             Transaction Id
+--   %PARAM             in_object_cache               Object Cache
+--   %PARAM             in_billacc_trx_set_id         Billing Account Transaction Set Id
+--   %PARAM             io_action_outcome_id          Outcome Id
+--   %PARAM             in_current_date_time          Current Date Time
+--   %PARAM             io_process_billing_trx_tf     Process Billing Transaction (T/F)
+--
+--  2015-06-03   Cheryl Dextradeur   OSBILLING-1072
+--               1. change gbv_Task_TaskTitle from 'Security Queue Task - Please review the security trigger batch' to 'Security Queue Task - ' || v_task_desc_message;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_process_security_triggers
+(
+     in_session_id                      in             object.object_id%type,
+     in_transaction_id                  in             object.object_id%type,
+     in_object_cache                    in out         pkg_os_object_cache.t_object_cache,
+     in_billacc_trx_set_id              in             object.object_id%type,
+     io_action_outcome_id               in out nocopy  outcome.outcome_id%type,
+     in_current_date_time              in             date default null,
+     io_process_billing_trx_tf          out            char
+)
+as
+     v_session_control        pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id);
+     v_procedure_name                   constant system_log.program_name%type   :=   pkg_name||'sp_process_security_triggers';
+
+     v_batch_type                       object_bv_value.business_variable_value%type;
+     v_new_task_id                      object.object_id%type    := null;
+     v_bv_table                         pkg_os_object_io.t_bv_table;
+
+     v_task_assignedTo_list             pkg_os_lookup.t_enum_list;
+     v_bv_value_list                    pkg_os_object_io.t_bv_table;
+     v_object_type_id                   object_type.object_type_id%type;
+     v_task_assignedTo                  object_bv_lookup_tt := object_bv_lookup_tt();
+     v_current_user_object_id           object.object_id%type;
+     v_actor_type_id                    actor_type.actor_type_id%type;
+     v_security_trigger_object_id       object.object_id%type;
+     v_task_desc_message                varchar2(500);
+     v_rule_result                      char(1);
+     v_datamart_tf                      char(1) := 'T';
+     v_batch_parent_billing_acc_id      object.object_id%type;
+     v_primary_billing_csr_id           object.object_id%type;
+     v_primary_billing_csr_mgr_id       object.object_id%type;
+     v_security_triggers_list           pkg_os_object.t_object_list;
+     v_security_triggers_index          number;
+     v_master_key                       varchar2(500);
+     v_security_trigger_rule_id         object.object_id%type;
+     v_task_description_id              long_string.long_string_id%type              := null;
+     v_task_assg_to_actor_type_id       object_bv_value.business_variable_value%type;
+     v_task_assignee_id                 object.object_id%type;
+     v_to_email_address                 object_bv_value.business_variable_value%type;
+     v_task_assignee_bv_id              business_variable.business_variable_id%type;
+     v_action_id                        action.action_id%type;
+     v_out_action_id                    action.action_id%type;
+     v_out_action_object_id             object.object_id%type;
+     
+     
+     cursor
+          c_security_trigger_rules
+          (
+               v_batch_type number
+          )
+     is
+          select
+               *
+          from
+               db_actor_securty_trigger
+          where
+               batch_type_id = v_batch_type
+          and
+               active_tf = 'T'
+          ;
+
+begin
+
+     if v_session_control.gLogging_Full
+     then
+
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Entering into the processing of Security Triggers'
+          );
+
+     end if;
+
+     -- Get the Parent Billing Account Id of BillingAccountTransactionSet
+     v_batch_parent_billing_acc_id      :=   pkg_os_object_io.fn_object_bv_get
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  in_billacc_trx_set_id,
+                                                  gbv_BillAccTrxSet_ParentAcc
+                                             );
+
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+     -- Get the Primary Billing CSR of the billing account
+     v_primary_billing_csr_id      :=   pkg_os_object_io.fn_object_bv_get
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_batch_parent_billing_acc_id,
+                                                  gbv_BillingAcc_RefPrimaryCSR
+                                             );
+
+     -- Get the Primary Billing CSR Manager of the billing account
+     v_primary_billing_csr_mgr_id      :=   pkg_os_object_io.fn_object_bv_get
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_batch_parent_billing_acc_id,
+                                                  gbv_BillAcc_RefPrimaryCSRMgr
+                                             );
+
+     if v_session_control.gLogging_Full
+     then
+
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '... For the billing account : '||v_batch_parent_billing_acc_id||
+               ' Primary Billing Csr is : '||v_primary_billing_csr_id||
+               ' and Primary Billing Csr Manager is : '||v_primary_billing_csr_mgr_id
+           );
+
+     end if;
+  --OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+     -- Get all the existing Security Triggers children of the Batch
+     pkg_os_object_search.sp_object_children_of_type_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_billacc_trx_set_id,
+          gObjType_BillSecTriggerDetail,
+          v_security_triggers_list
+     );
+
+     v_security_triggers_index := v_security_triggers_list.first;
+
+     -- Loop through each child and set the relevant flag to False for all kids
+     while  v_security_triggers_index is not null
+     loop
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_security_triggers_list(v_security_triggers_index),
+               gbv_BillSecTrgrDtl_Relevant,
+               gsectrgr_relevant_false
+          );
+
+          v_security_trigger_rule_id    :=   pkg_os_object_io.fn_object_bv_get
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_security_triggers_list(v_security_triggers_index),
+                                                  gbv_BillSecTrgrDtl_MD_ID
+                                             );
+
+          -- Get the index key to make the code re-entrant (Trxsetid||security_trigger_id)
+          v_master_key     :=      in_billacc_trx_set_id||','||v_security_trigger_rule_id;
+
+
+          g_security_triggers_cache(v_master_key)     :=     v_security_triggers_list(v_security_triggers_index);
+
+
+          v_security_triggers_index     :=   v_security_triggers_list.next(v_security_triggers_index);
+
+     end loop;
+
+     -- Set the flag to process the Billing Transaction( Write Off/Disbursement) to true
+
+     io_process_billing_trx_tf     :=   'T';
+
+     -- Get the batch type
+     v_batch_type   :=   pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_billacc_trx_set_id,
+                              gbv_FITrxSetBatchType
+                         );
+
+     -- Loop through each security trigger defined for the batch type
+     for r_security_trigger_rules in c_security_trigger_rules(v_batch_type)
+     loop
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '... Validate the rule: '||r_security_trigger_rules.task_creation_rule_id ||
+                    ', Against the Batch: '||in_billacc_trx_set_id
+                );
+
+          end if;
+
+          -- Validate the task creation rule from the security trigger details
+          v_rule_result  :=   pkg_os_exp.fn_evaluate_expression
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   in_billacc_trx_set_id,
+                                   r_security_trigger_rules.task_creation_rule_id
+                              );
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '... Rule Result: '||v_rule_result
+                );
+
+          end if;
+
+          -- Process further if creation rule evaluates to true
+          if  v_rule_result = 'T'
+          then
+
+               v_bv_table.delete;
+
+               -- Set the flag to process the Billing Transaction( Write Off/Disbursement) to false
+               io_process_billing_trx_tf     :=   'F';
+
+
+               v_master_key   := in_billacc_trx_set_id||','||r_security_trigger_rules.db_actor_security_trigger_id;
+
+               -- Validate if same security trigger already evaluated for the batch
+               if g_security_triggers_cache.exists(v_master_key) = TRUE
+               then
+
+                    v_security_trigger_object_id  :=   g_security_triggers_cache(v_master_key);
+
+                    -- Get the task description message from the security trigger definition
+                    v_task_desc_message :=   pkg_os_exp.fn_evaluate_expression
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_security_trigger_object_id,
+                                                  r_security_trigger_rules.task_description_rule_id
+                                             );
+
+
+                    -- Set triggerconditionmessage BV
+                    v_bv_table (gbv_BillSecTrgrDtl_TrigMsg       ).business_variable_value := v_task_desc_message;
+
+                    -- Set the relevant flag to true
+                    v_bv_table (gbv_BillSecTrgrDtl_Relevant      ).business_variable_value := gSectrgr_relevant_true;
+                    v_task_assg_to_actor_type_id := r_security_trigger_rules.assigned_task_actor_type_id;
+                    v_action_id := r_security_trigger_rules.task_creation_workflow; --UTPRODUCT-4601
+
+            else
+
+                    if v_session_control.gLogging_Full
+                    then
+
+                         pkg_os_logging.sp_log
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              '... Create the new security object'
+                          );
+
+                    end if;
+
+                    -- Create BillingSecurityTriggerDetails Object
+                    pkg_os_object.sp_object_create
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         gObjType_BillSecTriggerDetail,
+                         in_billacc_trx_set_id,
+                         v_security_trigger_object_id
+                    );
+
+                    -- Get the task description message from the security trigger definition
+                    v_task_desc_message :=   pkg_os_exp.fn_evaluate_expression
+                                             (
+                                                  in_session_id,
+                                                  in_transaction_id,
+                                                  v_security_trigger_object_id,
+                                                  r_security_trigger_rules.task_description_rule_id
+                                             );
+
+                    -- Set Release Actor Type Set ID
+                    v_bv_table (gbv_BillSecTrgrDtl_RELATSet       ).business_variable_value := r_security_trigger_rules.release_actor_type_set;
+
+
+                    -- Set Review Actor Type Set ID - added 20170801 Cheryl osbilling-4308
+                    v_bv_table (gbv_BillSecTrgrDtl_REVATSet      ).business_variable_value := r_security_trigger_rules.review_actor_type_set;
+
+                    -- Set MD row ID
+                    v_bv_table (gbv_BillSecTrgrDtl_MD_ID         ).business_variable_value := r_security_trigger_rules.db_actor_security_trigger_id;
+
+                    -- Set triggerconditionmessage BV
+                    v_bv_table (gbv_BillSecTrgrDtl_TrigMsg       ).business_variable_value := v_task_desc_message;
+
+                    -- Set the relevant flag to true
+                    v_bv_table (gbv_BillSecTrgrDtl_Relevant      ).business_variable_value := gSectrgr_relevant_true;
+
+                    -- Set the assigned actor type
+                    v_bv_table (gbv_BillSecTrgrDtl_AssActrTyp    ).business_variable_value := r_security_trigger_rules.assigned_task_actor_type_id;
+
+                    -- Set the creation rule --2017-07-20 Cheryl osbilling-4308
+                    v_bv_table (gbv_BillSecTrgrDtl_Rule_ID       ).business_variable_value := r_security_trigger_rules.task_creation_rule_id;
+
+                    -- Set the action id -2019-04-19 MMajeed osbilling-6707
+                    v_action_id := r_security_trigger_rules.task_creation_workflow;
+
+                    v_task_assg_to_actor_type_id := r_security_trigger_rules.assigned_task_actor_type_id;
+
+                    --UTPRODUCT-2878
+                    if pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, in_billacc_trx_set_id,g_proptype_Read_ActionResult) = 'F'
+                    then 
+                    if v_task_assg_to_actor_type_id is null
+                    then
+
+                         pkg_os_logging.sp_log_error
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              '... Missing Configuration: Please set Assigned Task Actor Type in DB_ACTOR_SECURITY_TRIGGER table for MD ID:'||r_security_trigger_rules.db_actor_security_trigger_id
+                          );
+
+                         raise no_data_found;
+
+                    end if;
+                    end if;
+
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. Start
+                    -----------------AB testing ALDEV-2165 starts-------------------
+                    v_actor_type_id := pkg_os_wf_session.fn_actor_type_get
+                              (
+                                   in_session_id ,
+                                   in_transaction_id
+                              );
+
+                    if v_session_control.gLogging_Full
+                    then
+
+                         pkg_os_logging.sp_log
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              '... Actor type id is: ' || v_actor_type_id
+                          );
+
+                    end if;
+
+                    if (v_actor_type_id = gActor_type_lifebillcsr OR v_actor_type_id = gActor_type_lifebillcsrmgr)
+                    then
+
+                         v_bv_table (gbv_BillSecTrgrDtl_AssActrTyp    ).business_variable_value := gActor_type_lifebillcsrmgr;
+
+                    end if;
+
+                    -----------------AB testing ALDEV-2165 ends-----------------------
+
+--OSBILLING-3833 - Merged GCNA code in BaseDEV. End
+
+               end if; -- if g_allfitransaction_cache.exists(v_master_key) = TRUE
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_security_trigger_object_id,
+                    v_bv_table
+               );
+
+          end if; -- if  v_rule_result = 'T'
+
+     end loop;  -- for v_security_trigger in c_security_triggers_def(v_batch_type)
+
+     if v_session_control.gLogging_Full
+     then
+
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '... Completed triggers rules evaluations error Free'
+           );
+
+     end if;
+
+     if v_session_control.gLogging_Full
+     then
+
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '... Process Billing Transaction Flag '||io_process_billing_trx_tf
+           );
+
+     end if;
+
+      --If property is set to 'True' Delegate Task Creation to ACTION_RESULT_TASK -2019-04-18 MMajeed osbilling-6707
+     if io_process_billing_trx_tf = 'F' 
+     then
+        if pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, in_billacc_trx_set_id,g_proptype_Read_ActionResult) = 'T'
+        then 
+           if v_action_id is null
+           then
+              pkg_os_logging.sp_log_error
+              (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '... Missing Configuration: Please set Action in DB_ACTOR_SECURITY_TRIGGER table for task:'||v_task_desc_message
+                );
+
+           raise no_data_found;
+           end if;  
+     
+           if v_session_control.gLogging_Full
+             then
+              pkg_os_logging.sp_log
+              (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  '... Calling pkg_db_object.sp_process_action_mini for action id : '||v_action_id||
+                  ' action object id : '||in_billacc_trx_set_id||
+                  ' io_action_outcome_id : '||io_action_outcome_id
+             );
+           end if;   
+     
+           pkg_db_object.sp_process_action_mini
+           (
+               in_session_id                   =>        in_session_id,
+               in_transaction_id               =>        in_transaction_id,
+               in_action_id                    =>        v_action_id,
+               in_action_object_id             =>        in_billacc_trx_set_id,
+               io_object_cache                 =>        in_object_cache,
+               io_action_outcome_id            =>        io_action_outcome_id,
+               out_action_id                   =>        v_out_action_id,
+               out_action_object_id            =>        v_out_action_object_id
+            );
+
+            if v_session_control.gLogging_Full
+            then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '... After executing pkg_db_object.sp_process_action_mini for action id : '||v_action_id||
+                    ' out action id : '||v_out_action_id||
+                    'out action object id : '||v_out_action_object_id||
+                    ' io_action_outcome_id : '||io_action_outcome_id
+               );
+
+               end if;
+       
+              -- Create Task object for the assigned actor
+        else 
+          --   Create object of Type TASK ...
+          pkg_os_object.sp_object_create
+          (
+               in_session_id,
+               in_transaction_id,
+               pkg_os_wf_task.gobjtype_task,
+               null,
+               v_new_task_id
+          );
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... New Task object Id '||v_new_task_id
+                );
+
+          end if;
+
+          --   Tell the session that a new object has been created
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_session_id,
+               pkg_os_constant_bv.gbv_SessionNewObject,
+               v_new_task_id
+          );
+
+          --   Get the Current User Actor Type
+          v_actor_type_id := pkg_os_wf_session.fn_actor_type_get
+                              (
+                                   in_session_id ,
+                                   in_transaction_id
+                              );
+
+          --   Get the Current User
+          v_current_user_object_id :=   pkg_os_wf_session.fn_user_get
+                                        (
+                                             in_session_id,
+                                             in_transaction_id
+                                         );
+
+         
+
+
+          -- Set the business variables for Task object
+          v_bv_table.delete;
+
+          v_bv_table (pkg_os_wf_task.gbv_taskassociatedobject    ).business_variable_value :=  in_billacc_trx_set_id;
+          v_bv_table (pkg_os_constant_bv.gbv_genobjcreator       ).business_variable_value :=  v_current_user_object_id;
+          v_bv_table (pkg_os_constant_bv.gbv_genobjcreationdate  ).business_variable_value :=  to_char(sysdate,'yyyymmddhh24miss');
+          v_bv_table (gbv_Task_TaskContentType                   ).business_variable_value :=  gTask_content_type_task ;
+          v_bv_table (gbv_Task_TaskStatus                        ).business_variable_value :=  gTask_status_incomplete;
+          v_bv_table (gbv_Task_TaskTitle                         ).business_variable_value :=  'Security Queue Task - ' || v_task_desc_message; --'Security Queue Task - Please review the security trigger batch';
+          v_bv_table (gbv_Task_TaskType                          ).business_variable_value :=  gTask_type_billsectrgr;
+          v_bv_table (gbv_Task_TaskDueDate                       ).business_variable_value :=  to_char( sysdate , 'yyyymmddhh24miss');
+
+          --
+          --  Get the BV Path from ACTOR_OBJECT_ATTRIBUTES for the Assigned Actor Type and BillingAccount Object Type
+          --
+
+          select
+               business_variable_id
+          into
+               v_task_assignee_bv_id
+          from
+               actor_object_attributes aoa
+          where
+               object_type_id = pkg_db_object.gObjType_BillingAccount
+          and
+               actor_type_id = v_task_assg_to_actor_type_id;
+
+
+          v_task_assignee_id       :=   pkg_os_object_io.fn_object_bv_get
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_batch_parent_billing_acc_id,
+                                             v_task_assignee_bv_id
+                                        );
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '... For the Billing Account ID : '||v_batch_parent_billing_acc_id
+                    ||', based on ACTOR_OBJECT_ATTRIBUTES configuration, identified Task Assignee: '||v_task_assignee_id
+                );
+
+          end if;
+
+          v_bv_table (gbv_Task_Ref_Assigned_To                   ).business_variable_value :=  v_task_assignee_id;
+          v_bv_table (pkg_os_constant_bv.gbv_GenObjObjectState   ).business_variable_value :=  pkg_os_constant.gObjState_Alive;
+          v_bv_table (pkg_os_wf_task.gbv_TaskDescrCompositeClob  ).business_variable_value :=  v_task_description_id;
+
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_new_task_id,
+               v_bv_table
+          );
+
+          --
+          --   Set Task Description as a Long String as this Memo 4000 Variable...
+          --
+
+          pkg_os_long_string.set_long_string
+          (
+                in_session_id,
+                in_transaction_id,
+                v_new_task_id,
+                to_char(pkg_os_wf_task.gbv_TaskDescrCompositeClob),
+                nvl(v_task_desc_message,' '),
+                v_task_description_id
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_new_task_id,
+               pkg_os_wf_task.gbv_TaskDescrCompositeClob,
+               v_task_description_id
+          );
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... New Task objects BVs are Set '
+                );
+
+          end if;
+
+          -- Update the Task Datamart
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               v_new_task_id,
+               v_datamart_tf
+          );
+
+             if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'Task Datamart updated '
+                );
+
+          end if;
+          end if;
+     end if;
+
+     if (pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_task_assignee_id, pkg_os_wf_task.gbv_PersonTaskAsEmail ) = pkg_os_constant.gBoolean_True)
+       and pkg_os_product.fn_product_property_get( in_session_id, in_transaction_id, in_billacc_trx_set_id,g_proptype_Read_ActionResult) = 'F'
+     then
+
+          v_to_email_address := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_task_assignee_id, 211461 ); -- @@@ Person Email Address ...
+
+          if v_to_email_address is not null then
+
+               pkg_os_notification.sp_email_send    
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    'Security Queue Task - ' || v_task_desc_message,
+                    v_task_desc_message,
+                    v_to_email_address,
+                    null,
+                    null,
+                    null,
+                    null,
+                    v_new_task_id
+               );
+
+          end if;
+
+     end if;
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+end sp_process_security_triggers;
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+begin
+
+     --  Clear object equivalence metadata cache ...
+
+     g_security_triggers_cache.delete;
+
+end PKG_DB_SECURITY_TRIGGER;
+/
+

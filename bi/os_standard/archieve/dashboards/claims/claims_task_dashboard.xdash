@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dashboard>
+<title>ClaimTaskDashboard</title>
+<heading>Claim Task</heading>
+<enableWidgetPrinting>false</enableWidgetPrinting>
+<documentation>
+<author>admin</author>
+<description/>
+<icon/>
+</documentation>
+<template-ref>xul/11-1-by-1.xul</template-ref>
+<theme-ref>60-subtle</theme-ref>
+<layout>
+<overlay xmlns:pho="http://www.pentaho.com" pho:fixie="withme">
+<box id="Panel_1" pho:title="Claim Task" flex="1" collapsed="false" type="titled-panel"/>
+<box id="Panel_2" pho:title="Untitled 2"/>
+<box id="Panel_3" pho:title="Untitled 3"/>
+<box id="Panel_4" pho:title="Untitled 4"/>
+<box id="Panel_5" pho:title="Untitled 5"/>
+<box id="Panel_6" pho:title="Untitled 6"/>
+<box id="Panel_7" pho:title="Untitled 7"/>
+<box id="Panel_8" pho:title="Untitled 8"/>
+<box id="Panel_9" pho:title="Untitled 9"/>
+<box id="Panel_10" pho:title="Untitled 10"/>
+<box id="Label_1" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_2" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_3" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_4" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_5" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_6" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_7" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_8" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_9" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="Label_10" pho:value="!DashboardRenderer.DEFAULT_LABEL_TEXT!"/>
+<box id="titlebar" hidden="false" collapsed="false" width="0" type="pagetitle" title="" height="23"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="FilterPanel" hidden="true" collapsed="false" width="0" type="povpanel" title="" height="100"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/></overlay>
+</layout>
+<parameters>
+</parameters>
+
+<widgetJavascript><![CDATA[%5B%7B%22localizedName%22%3A%22Task%20Count%20by%20Role.xanalyzer%22%2C%22GUID%22%3A%2278967%22%2C%22type%22%3A%22AnalyzerComponent%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5D%2C%22outputParameters%22%3A%5B%5B%22Assigned%20Role%22%2Cfalse%2C%2278967%24%5BAssigned%20User%5D.%5BAssigned%20Role%5D%22%5D%5D%2C%22name%22%3A%22widget1%22%2C%22htmlObject%22%3A%22content-area-Panel_1%22%2C%22xactionPath%22%3A%22%2Fhome%2FOneShield%2FCubes%2FTask%2FTask%20Count%20by%20Role.xanalyzer%22%2C%22solution%22%3A%22%22%2C%22path%22%3A%22%2Fhome%2FOneShield%2FCubes%2FTask%2FTask%20Count%20by%20Role.xanalyzer%22%2C%22action%22%3A%22Task%20Count%20by%20Role.xanalyzer%22%2C%22staticParameters%22%3Atrue%2C%22isDirty%22%3Afalse%2C%22listeners%22%3A%5B%5D%2C%22refreshPeriod%22%3A0%2C%22cl%22%3A%22%22%7D%5D]]></widgetJavascript>
+<widgets><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Cubes/Task/Task Count by Role.xanalyzer</xactionPath><localizedName jsonType="string">Task Count by Role.xanalyzer</localizedName><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">78967</GUID><cl jsonType="string"/><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><path jsonType="string">/home/OneShield/Cubes/Task/Task Count by Role.xanalyzer</path><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_1</htmlObject><solution jsonType="string"/><name jsonType="string">widget1</name><action jsonType="string">Task Count by Role.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"/><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Assigned Role</name><id jsonType="string">78967__dollar_[Assigned User].[Assigned Role]</id><enabled jsonType="string">false</enabled></parameter0></outputParameters></widget></widgets></dashboard>

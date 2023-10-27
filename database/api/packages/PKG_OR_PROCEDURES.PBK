@@ -1,0 +1,1283 @@
+create or replace package body pkg_or_procedures
+as
+-------------
+-- $workfile:   pkg_or_procedures.PBK  $
+-- $revision:   1.0  $
+--   $author:   srkamath  $
+--     $date:   Aug 21 2023 20:16:00  $
+-------------
+
+
+pkg_name constant system_log.program_name%type := 'pkg_or_procedures.';
+-----------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        sp_list_driven_create_objt
+--
+-- %USAGE
+--  This logic will be used to create PRM - Reinsurance Object hierarchy for the following Objects
+--  a) ReinsuranceApplicableJurisdiction
+--  b) ReinsuranceApplicableLOB
+--  c) StackedReinsuranceLayer
+--  d) ReinsuranceApplicableLOBCoverage
+
+--
+-- %ALGORITHM
+--        User will select multiple values on UI e.g Jurisdiction = MA and FL
+--        For each selected value we need to create a new instance of the Object
+--        This is re-entrant code, if a previously selected value is de-selected 
+--        1) Delete the Object instance associated with the deselected value
+--        2) Delete any referencer pointing to the deleted instance on step 1 
+--        3) Step 2 is achieved via delete configuration in the OBJECT_RELEATIONSHIP table 
+--
+-- %PARAMS
+--        in_session_id                     : Session ID
+--        in_transaction_id                 : Transaction ID
+--        in_reinsurancearrangement_id      : ReinsuranceArrangement Object ID
+--        in_comma_separated_value_list     : The values seperated by comma , each value will drive the ObjectCreation
+--        in_create_object_type             : The ObjectType that should be created
+--        in_create_objt_init_bv_id         : The BV on which the value for which the Object instance got created will get saved
+--
+-----------------------------------------------------------------------------------------------------------
+
+procedure sp_list_driven_create_objt 
+(
+       in_session_id                   in    object.object_id%type,
+       in_transaction_id               in    object.object_id%type,
+       in_reinsurancearrangement_id    in    object.object_id%type,
+       in_comma_separated_value_str    in    varchar2,  
+       in_create_object_type           in    object.object_id%type,
+       in_create_objt_init_bv_id       in    object.object_id%type
+) 
+is
+  
+    v_procedure_name constant system_log.program_name%type := pkg_name || 'sp_list_driven_create_objt';
+    v_session_control         pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    
+    v_child_object_list       pkg_os_object.t_object_list;    
+    v_key_item                pkg_os_token.t_string_table;
+
+    v_key_value               varchar2(50);
+    v_key_value_str           varchar2(500);
+    
+            
+    v_child_out_object_id     object.object_id%type;
+    v_child_object_list_index object.object_id%type;
+    v_child_object_id         object.object_id%type;
+    v_key_item_index          object.object_id%type;   
+    
+begin
+    
+    if v_session_control.glogging_full 
+    then
+      
+    
+        pkg_os_logging.sp_log
+        (
+           in_session_id,
+           in_transaction_id,
+           v_procedure_name,
+           'Action Object ID : '                             || in_reinsurancearrangement_id   ||
+           'Values to drive Objt Creation: '                 || in_comma_separated_value_str   ||
+           'ObjectType associated with List : '              || in_create_object_type          ||
+           'BV ID on which the List value will be saved  : ' || in_create_objt_init_bv_id
+        );
+        
+    end if;
+    
+    
+    ----
+    ---- Initialization 
+    ---- 
+    
+    v_key_value_str := in_comma_separated_value_str;
+    
+    ----
+    ---- Part 1 : Delete existing Object Instances corresponding to values not present within in_comma_separated_value_str
+    ----     
+    
+    ----
+    ---- Get the existing instances of in_create_object_type under ReinsuranceArrangement
+    ---- 
+    pkg_os_object_search.sp_object_children_of_type_get
+    (
+      in_session_id,
+      in_transaction_id,
+      in_reinsurancearrangement_id,
+      in_create_object_type, 
+      v_child_object_list
+    );
+    
+    
+    if v_session_control.glogging_full 
+    then
+      
+        pkg_os_logging.sp_log
+        (
+          in_session_id,
+          in_transaction_id,
+          v_procedure_name,
+          'Child Object Count  : ' || v_child_object_list.count
+        );
+      
+    end if;
+
+    v_child_object_list_index := v_child_object_list.first;
+    
+    while v_child_object_list_index is not null 
+    loop
+          
+      ---- On each child instance
+      ---- Get the BV value associated with in_create_objt_init_bv_id 
+      ---- a) Check if the value is present in the comma seperated list
+      ---- b) Match Found    = Do nothing
+      ---- c) No Match found = Delete the existing instance        
+      ----                
+      v_key_value := pkg_os_object_io.fn_object_bv_get
+                     (
+                       in_session_id,
+                       in_transaction_id,
+                       v_child_object_list(v_child_object_list_index),
+                       in_create_objt_init_bv_id
+                     );
+   
+       ----              
+       ---- Check if the  BV value is present in the comma seperated list
+       ----       
+       if pkg_os_token.fn_find_in_set(v_key_value,v_key_value_str) = 'F' 
+       then
+    
+        ----        
+        ---- Delete the object as the bv value in not found in the comma seperated list
+        ----
+        if v_session_control.glogging_full
+        then
+          
+          pkg_os_logging.sp_log
+          (
+            in_session_id,
+            in_transaction_id,
+            v_procedure_name,
+            'Value to search: ' || v_key_value
+          );
+          
+        end if;
+    
+        pkg_os_object.sp_object_delete
+        (
+          in_session_id,
+          in_transaction_id,
+          in_reinsurancearrangement_id,
+          v_child_object_list(v_child_object_list_index),
+          in_create_object_type
+        );
+    
+        if v_session_control.glogging_full 
+        then
+      
+           pkg_os_logging.sp_log
+           (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Deleted Object ID  : ' ||v_child_object_list(v_child_object_list_index)
+           );
+           
+        end if;
+    
+       end if; ---Check if the  BV value is present in the comma seperated list 
+       
+       v_child_object_list_index := v_child_object_list.next(v_child_object_list_index);
+    
+    end loop; 
+
+    ----
+    ---- Part 2 : Create new Object Instances when no match found for a given value within in_comma_separated_value_str
+    ----           
+
+    if v_key_value_str is not null
+    then
+      
+        ---
+        --- Convert the Comma seperated list into table structure so we can loop over them.
+        ---    
+        pkg_os_token.sp_tokenize_string(v_key_value_str,pkg_os_constant.gmt_comma_separator,v_key_item);
+          
+        v_key_item_index := v_key_item.first;
+        
+        ---
+        --- Loop over each Comma seperated value
+        ---        
+        while v_key_item_index is not null 
+        loop
+
+            ---
+            --- Search for a child instance under ReinsuranceArrangement a given key value
+            ---            
+            v_child_object_id := pkg_os_object_search.fn_object_with_attribute_get
+                                 (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   in_reinsurancearrangement_id, 
+                                   in_create_object_type, 
+                                   in_create_objt_init_bv_id,
+                                   v_key_item(v_key_item_index)
+                                 );
+            ---
+            --- Search Result  = No Match Found 
+            ---        
+            if v_child_object_id is null 
+            then
+              
+                ---
+                --- Create a new instance 
+                ---
+                pkg_os_object.sp_object_create
+                (
+                   in_session_id,
+                   in_transaction_id,
+                   in_create_object_type, 
+                   in_reinsurancearrangement_id,
+                   v_child_out_object_id
+                );
+             
+                ---
+                --- Initialize the key value on  in_create_objt_init_bv_id
+                --- 
+                pkg_os_object_io.sp_object_bv_set
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_child_out_object_id,
+                  in_create_objt_init_bv_id,
+                  v_key_item(v_key_item_index)
+                );
+                
+                if v_session_control.gLogging_Full 
+                then
+
+                   pkg_os_logging.sp_log
+                   (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'Created Object ID  : ' || v_child_object_id
+                   );
+
+                end if;
+              
+              
+            else
+              
+                if v_session_control.gLogging_Full 
+                then
+
+                   pkg_os_logging.sp_log
+                   (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'Match Found Object ID  : ' || v_child_object_id
+                   );
+
+                end if;      
+              
+            end if; --- Search Result  = No Match Found 
+            
+            v_key_item_index := v_key_item.next(v_key_item_index);
+        
+        end loop;--- Loop over each Comma seperated value
+        
+    end if; --- End Part 2 
+    
+end sp_list_driven_create_objt;
+  
+-----------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        fn_get_StackedReinsuranceLayer_str
+--
+-- %USAGE
+--  This logic will create the comma seperated string used as input by the ObjectCreation logic
+--
+-- %ALGORITHM
+--        When value selected for cesssion type include 
+---       a) 'Quota share' , the list will contain the value '100.1
+---       b) 'Surplus'     , the list will contain the value '103.1
+---       a) 'XOL'         , the list will contain the value '101.1
+--       
+--        When there are more than one layers selected for XOL , then the list will contain one value each layer 
+--        i.e for 2nd , the list will contain the value '101.2
+--
+-- %PARAMS
+--        in_session_id                     : Session ID
+--        in_transaction_id                 : Transaction ID
+--        in_cession_method_bv_value        : Cession Method selected
+-----------------------------------------------------------------------------------------------------------
+
+function fn_stacklayer_input_str
+(
+      in_session_id               in object.object_id%type,
+      in_transaction_id           in object.object_id%type,
+      in_cession_method_bv_value  in varchar2,
+      in_xol_layer_nmber          in number
+)
+return char
+as
+ 
+ 
+    v_session_control         pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    v_procedure_name          constant system_log.program_name%type := pkg_name ||'fn_stacklayer_input_str';
+
+
+    v_xol_str                  varchar2(500) := '';
+    v_cession_method_bv_value  varchar2(500) := in_cession_method_bv_value;
+
+
+begin
+ 
+      ---
+      --- Special handling for XOL
+      ---          
+      if nvl(in_xol_layer_nmber, 0) > 0 
+      then
+        
+          ---
+          --- Construct a new list that will concatenate cession type || '.' ||layer #
+          ---
+          for i in 1 .. in_xol_layer_nmber 
+          loop
+               
+               if v_xol_str is null
+               then
+                 
+                   v_xol_str := v_xol_str || g_enum_xol || '.' || i ;  
+                  
+               else
+                  
+                   v_xol_str := v_xol_str || ',' || g_enum_xol || '.' || i ;
+                  
+               end if;
+                 
+          end loop;
+          
+      end if;  --- Special handling for XOL       
+      
+      ---        
+      --- Construct a new list with XOL and other values
+      ---
+            
+      v_cession_method_bv_value := replace(v_cession_method_bv_value,g_enum_quota,'100.1'); 
+      v_cession_method_bv_value := replace(v_cession_method_bv_value,g_enum_surplus,'103.1'); 
+      v_cession_method_bv_value := replace(v_cession_method_bv_value,g_enum_xol,v_xol_str);
+      
+      if v_session_control.gLogging_Full 
+      then
+              
+          pkg_os_logging.sp_log
+          (
+             in_session_id,
+             in_transaction_id,
+             v_procedure_name,
+             'Final String Value  : ' || v_cession_method_bv_value ||
+             'xol_str : '             || v_xol_str
+             
+           );
+                                
+      end if;  
+      
+      return v_cession_method_bv_value;     
+ 
+end fn_stacklayer_input_str;
+-----------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        sp_src_objt_driven_create_objt
+--
+-- %USAGE
+--  This logic will be used to create PRM - Reinsurance Object hierarchy for the following Objects
+--  a) StackedReinsuranceLayerPlacement
+--  b) ReinsuranceApplicableJurisdictionCvrg
+--  c) StackedReinsuranceLayerLOBCoverage
+--  d) StackedReinsuranceLayerLOBCvrgCommission
+--
+-- %ALGORITHM
+--        This logic will be used when we need to create new instances of ObjectType 'A' for each existing instances ObjectType 'B'  
+--
+-- %PARAMS
+--        in_session_id                     : Session ID
+--        in_transaction_id                 : Transaction ID
+--        in_src_srch_parent_objt_id        : Search for Source ObjectType instances under Parent Object ID
+--        in_src_objt_type_id               : ObjectType of the Source Object.
+--        in_trgt_srch_parent_objt_id       : Search for Target ObjectType instances under Parent Object ID
+--        in_trgt_srch_objt_type_id         : The BV value which will be used to determine if an instance already exist.
+--        in_create_object_type             : The BV value which will be used to determine if an instance already exist.
+--        in_create_objt_key_bv_id          : The BV value which will be used to determine if an instance already exist.
+
+-----------------------------------------------------------------------------------------------------------
+
+procedure sp_src_objt_driven_create_objt 
+(
+       in_session_id                     in    object.object_id%type,
+       in_transaction_id                 in    object.object_id%type,
+       in_src_srch_parent_objt_id        in    object.object_id%type,
+       in_src_objt_type_id               in    object.object_id%type,
+       in_trgt_srch_parent_objt_id       in    object.object_id%type,
+       in_trgt_srch_objt_type_id         in    object.object_id%type,
+       in_create_object_type             in    object.object_id%type,
+       in_create_objt_key_bv_id          in    object.object_id%type
+) 
+is
+  
+    v_procedure_name constant system_log.program_name%type := pkg_name || 'sp_src_objt_driven_create_objt';
+    v_session_control         pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    
+    v_src_child_object_list      pkg_os_object.t_object_list;
+    v_trgt_child_object_list     pkg_os_object.t_object_list;
+    
+            
+    v_child_out_object_id     object.object_id%type;
+    v_src_child_list_index    object.object_id%type;
+    v_trgt_child_list_index   object.object_id%type;
+    v_child_object_id         object.object_id%type; 
+    
+begin
+    
+    if v_session_control.glogging_full 
+    then
+      
+    
+        pkg_os_logging.sp_log
+        (
+           in_session_id,
+           in_transaction_id,
+           v_procedure_name,
+           ' Source Parent Object ID  : ' || in_src_srch_parent_objt_id        ||
+           ' Source Object Type ID : '    || in_src_objt_type_id          ||
+           ' Target Parent Object ID : '  || in_trgt_srch_parent_objt_id  ||
+           ' Target Object Type ID : '    || in_trgt_srch_objt_type_id    ||
+           ' Target Search Key BV ID  : ' || in_create_objt_key_bv_id
+        );
+        
+    end if;
+ 
+    
+    ----
+    ---- Part 1 :Get the existing instances  Source ObjectType 
+    ---- 
+    pkg_os_object_search.sp_object_children_of_type_get
+    (
+      in_session_id,
+      in_transaction_id,
+      in_src_srch_parent_objt_id,
+      in_src_objt_type_id, 
+      v_src_child_object_list
+    );
+    
+    
+    if v_session_control.glogging_full 
+    then
+      
+        pkg_os_logging.sp_log
+        (
+          in_session_id,
+          in_transaction_id,
+          v_procedure_name,
+          'Source Instance Count  : ' || v_src_child_object_list.count
+        );
+      
+    end if;
+    
+    
+    
+    ----
+    ---- Part 2 :Get the existing instances  Target ObjectType 
+    ---- 
+    pkg_os_object_search.sp_object_children_of_type_get
+    (
+      in_session_id,
+      in_transaction_id,
+      in_trgt_srch_parent_objt_id,
+      in_trgt_srch_objt_type_id, 
+      v_trgt_child_object_list
+    );
+    
+    
+    if v_session_control.glogging_full 
+    then
+      
+        pkg_os_logging.sp_log
+        (
+          in_session_id,
+          in_transaction_id,
+          v_procedure_name,
+          'Target Instance Count  : ' || v_trgt_child_object_list.count
+        );
+      
+    end if;    
+    
+    ----
+    ---- Part 3 :Looping Logic 
+    ---- 
+    
+    v_trgt_child_list_index := v_trgt_child_object_list.first;
+    
+    
+    ---
+    --- When Target Parent Instances exist.
+    --- 
+    while v_trgt_child_list_index is not null 
+    loop
+          
+      ---- Under each target parent instance
+      ---- Loop over the Source Child Instance
+      ---- Search for a Target.child instance corresponding to the Source Object Instance
+      ---- b) Match Found    = Do nothing
+      ---- c) No Match found = Create a new  instance        
+      ----      
+
+      v_src_child_list_index := v_src_child_object_list.first;
+
+        ---
+        --- Check if the Target Parent Instances exist.
+        --- 
+        while v_src_child_list_index is not null 
+        loop
+        
+          ---
+          --- Search for a child instance under TargetObject with the key value
+          ---            
+          v_child_object_id :=   pkg_os_object_search.fn_object_with_attribute_get
+                                 (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_trgt_child_object_list(v_trgt_child_list_index), 
+                                   in_create_object_type, 
+                                   in_create_objt_key_bv_id,
+                                   v_src_child_object_list(v_src_child_list_index)
+                                 );
+
+          ---
+          --- Search Result  = No Match Found 
+          ---        
+          if v_child_object_id is null 
+          then
+          
+                ---
+                --- Create a new instance 
+                ---
+                pkg_os_object.sp_object_create
+                (
+                   in_session_id,
+                   in_transaction_id,
+                   in_create_object_type, 
+                   v_trgt_child_object_list(v_trgt_child_list_index),
+                   v_child_out_object_id
+                );
+           
+                ---
+                --- Initialize the key value on  in_create_objt_init_bv_id
+                --- 
+                pkg_os_object_io.sp_object_bv_set
+                (
+                  in_session_id,
+                  in_transaction_id,
+                  v_child_out_object_id,
+                  in_create_objt_key_bv_id,
+                  v_src_child_object_list(v_src_child_list_index)
+                );
+              
+                if v_session_control.gLogging_Full 
+                then
+
+                   pkg_os_logging.sp_log
+                   (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'Created Object ID  : ' || v_child_out_object_id
+                   );
+
+                end if;
+      
+      
+          else
+          
+                if v_session_control.gLogging_Full 
+                then
+
+                   pkg_os_logging.sp_log
+                   (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    'Match Found Object ID  : ' || v_child_object_id
+                   );
+
+                end if;      
+          
+          end if; --- Search Result  = No Match Found 
+    
+          v_src_child_list_index := v_src_child_object_list.next(v_src_child_list_index);
+    
+        end loop;--- Loop over each Comma seperated value
+
+      v_trgt_child_list_index := v_trgt_child_object_list.next(v_trgt_child_list_index);
+    
+    end loop;--- Loop over each Comma seperated value
+
+end sp_src_objt_driven_create_objt;
+
+-----------------------------------------------------------------------------------------------------------
+---
+--- Used by the native command PCCreateLOBCvrObjects
+---
+----------------------------------------------------------------------------------------------------------- 
+procedure sp_create_coverage_objects
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+) 
+is
+    v_procedure_name   constant system_log.program_name%type   := pkg_name ||'sp_create_coverage_objects';
+    v_session_control  pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+      
+
+    v_applicable_lob_list         pkg_os_object.t_object_list;
+
+    v_applicable_lob_list_index   object.object_id%type;
+
+        
+    v_comma_separated_value_str    object_bv_value.business_variable_value%type;
+        
+                                                                                       
+begin
+
+    ---
+    --- Get the Children of type ReinsuranceApplicableProgramMainCoverage under ReinsuranceArrangement
+    --- 
+    pkg_os_object_search.sp_object_children_of_type_get
+    (
+       in_session_id,
+       in_transaction_id,
+       in_action_object_id,
+       gObjType_ApplicableProgramMainCoverage,
+       v_applicable_lob_list
+     );
+  
+    v_applicable_lob_list_index := v_applicable_lob_list.first;
+    
+    while v_applicable_lob_list_index is not null 
+    loop
+    
+    
+         if v_session_control.glogging_full 
+         then
+         
+              pkg_os_logging.sp_log
+              (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  ' Creating  ReinsuranceApplicableProgramMainCoverageSubType '||
+                  ' Under Parent ID : ' ||v_applicable_lob_list(v_applicable_lob_list_index)  
+              );
+              
+         end if;
+
+         ---
+         --- Get the Sub Coverage values  
+         ---            
+         v_comma_separated_value_str :=   pkg_os_object_io.fn_object_bv_get
+                                          (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_applicable_lob_list(v_applicable_lob_list_index),
+                                             gbv_ProgramMainCoverageSubTypeSet 
+                                          );
+        sp_list_driven_create_objt
+        (
+            in_session_id,
+            in_transaction_id,
+            v_applicable_lob_list(v_applicable_lob_list_index),
+            v_comma_separated_value_str,                             
+            gObjType_ProgramMainCoverageSubType,
+            gbv_ProgramMainCoverageSubTypeList
+        );         
+
+        v_applicable_lob_list_index := v_applicable_lob_list.next(v_applicable_lob_list_index);
+         
+    end loop;
+    
+    
+    
+     ---
+     --- Create   ReinsuranceApplicableJurisdictionMainCoverageSubType Instances
+     ---      
+     if v_session_control.glogging_full 
+     then
+     
+          pkg_os_logging.sp_log
+          (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Creating ReinsuranceApplicableJurisdictionMainCoverageSubType '  
+          );
+          
+     end if;    
+
+
+  
+     sp_src_objt_driven_create_objt 
+     (
+           in_session_id ,
+           in_transaction_id ,
+           in_action_object_id,
+           gObjType_ProgramMainCoverageSubType,
+           in_action_object_id,
+           gObjType_ReinsuranceApplicableJurisdiction, 
+           gObjType_JurisdictionMainCoverageSubType,   
+           gbv_ApplicableJurisCvr
+    ) ;    
+    
+    
+    
+     ---
+     --- Create  StackedReinsuranceLayerLOBCoverage Instances
+     ---      
+     if v_session_control.glogging_full 
+     then
+     
+          pkg_os_logging.sp_log
+          (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Creating StackedReinsuranceLayerLOBCoverage '  
+          );
+          
+     end if;    
+
+
+  
+     sp_src_objt_driven_create_objt 
+     (
+           in_session_id ,
+           in_transaction_id ,
+           in_action_object_id,
+           gObjType_ProgramMainCoverageSubType,
+           in_action_object_id,
+           gObjType_StackedReinsuranceLayer, 
+           gObjType_StackedLayerMainCoverageSubType,   
+           36408148 --gbv_refAssociatedReinsuranceCvr StackedReinsuranceLayerMainCoverageSubType - xReference - _Reference_Associated Reinsurance  SubCoverage
+    ) ;    
+    
+end sp_create_coverage_objects;
+	
+
+  
+
+-----------------------------------------------------------------------------------------------------------
+---
+--- Used by the native command PCCreateReinsuranceObjects
+---
+-----------------------------------------------------------------------------------------------------------
+
+procedure sp_create_iteration1_Objts 
+(
+    in_session_id         in     object.object_id%type,
+    in_transaction_id     in     object.object_id%type,
+    in_action_object_id   in     object.object_id%type,
+    in_object_cache       in out pkg_os_object_cache.t_object_cache 
+) 
+is
+  
+    v_procedure_name  constant system_log.program_name%type   := pkg_name ||'sp_create_iteration1_Objts';
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    
+    
+    v_applicable_lob_list_index    object.object_id%type; 
+       
+    v_comma_separated_value_str    object_bv_value.business_variable_value%type;
+    v_cession_method               object_bv_value.business_variable_value%type;
+    v_xol_layer_nmber              object_bv_value.business_variable_value%type;
+    v_program_enum                 object_bv_value.business_variable_value%type;                
+    
+    v_applicable_lob_list          pkg_os_object.t_object_list;
+
+
+begin
+
+                
+        if v_session_control.glogging_full 
+        then
+          
+              pkg_os_logging.sp_log
+              (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                ' Starting Creation of Itearation -1 Objects :' ||
+                ' Creating Child instances of ObjectType  Type  : ReinsuranceApplicableJurisdiction ' 
+              );
+              
+        end if;
+        
+        ---
+        --- Initialization
+        ---  
+                      
+        v_xol_layer_nmber := pkg_os_object_io.fn_object_bv_get ( in_session_id, in_transaction_id,in_action_object_id, gbv_XOLNumberofLayers); 
+        v_cession_method  := pkg_os_object_io.fn_object_bv_get ( in_session_id, in_transaction_id,in_action_object_id, gbv_CessionMethod);               
+
+        ---
+        --- Get the Jurisidiction Set values , selected by the User on UI
+        ---            
+        v_comma_separated_value_str :=   pkg_os_object_io.fn_object_bv_get
+                                         (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             in_action_object_id,
+                                             gbv_ReinsuranceArrangementJuris 
+                                          );
+        sp_list_driven_create_objt
+        (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id,
+            v_comma_separated_value_str,                             
+            gObjType_ReinsuranceApplicableJurisdiction,
+            gbv_ApplicableJuris
+        );
+
+
+       
+        if v_session_control.glogging_full 
+        then
+          
+              pkg_os_logging.sp_log
+              (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                ' Step 2A :' ||
+                ' Creating Child instances of ObjectType  Type  : ReinsuranceProgramAccountType ' 
+              );
+              
+        end if;
+
+        ---
+        --- Get the Program Set  values initialized based on the Programs selected on the UI
+        ---            
+        v_comma_separated_value_str :=   pkg_os_object_io.fn_object_bv_get
+                                         (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             in_action_object_id,
+                                             gbv_ProgramAccountTypeSet 
+                                          );
+        ---
+        --- We will only create the ReinsuranceProgramAccountType only when XOL is selected
+        ---       
+       if pkg_os_token.fn_find_in_set(g_enum_xol,v_cession_method) = 'F' 
+       then                                                  
+
+             v_comma_separated_value_str :='';
+             
+          
+        end if;
+                                            
+        sp_list_driven_create_objt
+        (
+            in_session_id,
+            in_transaction_id,
+            in_action_object_id,
+            v_comma_separated_value_str,                             
+            gObjType_ReinsuranceProgramAccountType,
+            gbv_ProgramAccountTypeList
+        );
+
+        v_applicable_lob_list.delete;
+        
+        ---
+        --- Get all children under ReinsuranceArrangement of type ReinsuranceProgramAccount 
+        --- Loop over ReinsuranceProgramAccount
+        --- a. Create child instances of  ReinsuranceProgramAccountCoverageDetail
+        --- b. There will be 1-1 mapping of this Object to the XOL Layer numbers entered on UI
+        --- 
+        pkg_os_object_search.sp_object_children_of_type_get
+        (
+           in_session_id,
+           in_transaction_id,
+           in_action_object_id,
+           gObjType_ReinsuranceProgramAccountType,
+           v_applicable_lob_list
+         );
+
+        v_applicable_lob_list_index := v_applicable_lob_list.first;
+
+        while v_applicable_lob_list_index is not null 
+        loop
+
+
+             if v_session_control.glogging_full 
+             then
+             
+                  pkg_os_logging.sp_log
+                  (
+                      in_session_id,
+                      in_transaction_id,
+                      v_procedure_name,
+                      ' Step 2B :' ||                       
+                      ' Creating ReinsuranceProgramAccountCoverageDetail '||
+                      ' Under Parent ID : ' ||v_applicable_lob_list(v_applicable_lob_list_index)  
+                  );
+                  
+             end if;
+
+             ---
+             --- Get the XOL # of Layers 
+             ---            
+             v_comma_separated_value_str :=   fn_stacklayer_input_str
+                                              (
+                                                 in_session_id,
+                                                 in_transaction_id,
+                                                 g_enum_xol,
+                                                 v_xol_layer_nmber 
+                                              );
+            sp_list_driven_create_objt
+            (
+                in_session_id,
+                in_transaction_id,
+                v_applicable_lob_list(v_applicable_lob_list_index),
+                replace(v_comma_separated_value_str ,g_enum_xol || '.',''),                             
+                gObjType_ProgramAccountCoverageDetail,
+                gbv_AccountCoverageLayer
+            );         
+
+            v_applicable_lob_list_index := v_applicable_lob_list.next(v_applicable_lob_list_index);
+             
+        end loop;   
+        
+                   
+        if v_session_control.glogging_full 
+        then
+            pkg_os_logging.sp_log
+            (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Step 3 :' ||              
+              'Creating Instance of Type  : ReinsuranceApplicableProgram ' 
+            );
+        end if;
+        
+          
+        ---
+        --- Get the Programe Set values , selected by the User on UI
+        ---                
+        v_comma_separated_value_str :=   pkg_os_object_io.fn_object_bv_get
+                                         (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             in_action_object_id,
+                                             gbv_ArrangementLOB 
+                                          );          
+        sp_list_driven_create_objt
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          v_comma_separated_value_str,
+          gObjType_ReinsuranceApplicableProgram,
+          gbv_ApplicableLOB
+        );
+
+        
+        
+        v_applicable_lob_list.delete;
+        
+        ---
+        --- On a given ReinsuranceApplicableProgram ,we want to create Objects instanes  
+        --- for all available Main coverages
+        --- To get the list of avialable Main Coverage enums seperated by comma , we will use the function     
+        --- PKG_OR_FUNCTIONS.FN_GET_PROGRAM_MAIN_CVRG_LIST
+        --- 
+        
+        pkg_os_object_search.sp_object_children_of_type_get
+        (
+           in_session_id,
+           in_transaction_id,
+           in_action_object_id,
+           gObjType_ReinsuranceApplicableProgram,
+           v_applicable_lob_list
+         );
+
+        v_applicable_lob_list_index := v_applicable_lob_list.first;
+
+        while v_applicable_lob_list_index is not null 
+        loop
+
+
+             if v_session_control.glogging_full 
+             then
+             
+                  pkg_os_logging.sp_log
+                  (
+                      in_session_id,
+                      in_transaction_id,
+                      v_procedure_name,
+                      ' Step 4 :' ||                       
+                      ' Creating ReinsuranceApplicableProgramMainCoverage '||
+                      ' Under Parent ID : ' ||v_applicable_lob_list(v_applicable_lob_list_index)  
+                  );
+                  
+             end if;
+
+             ---
+             --- Get the Program enum  value  
+             ---       
+             
+             v_program_enum :=   pkg_os_object_io.fn_object_bv_get
+                                 (
+                                    in_session_id,
+                                    in_transaction_id,
+                                    v_applicable_lob_list(v_applicable_lob_list_index),
+                                    gbv_ApplicableLOB 
+                                  );                 
+               
+             ---
+             --- Get the main coverage enum seperated by comma for the given Program enum   
+             ---              
+             v_comma_separated_value_str :=   pkg_or_functions.fn_get_program_main_cvrg_list
+                                              (
+                                                 in_session_id,
+                                                 in_transaction_id,
+                                                 v_program_enum 
+                                              );
+                                              
+             if v_session_control.glogging_full 
+             then
+             
+                  pkg_os_logging.sp_log
+                  (
+                      in_session_id,
+                      in_transaction_id,
+                      v_procedure_name,
+                      ' Main Coverage String  :' || v_comma_separated_value_str  ||
+                      ' Program enum : '  ||   v_program_enum||
+                      ' for Program Object : ' ||v_applicable_lob_list(v_applicable_lob_list_index)  
+                  );
+                  
+             end if;    
+             
+                                                       
+            sp_list_driven_create_objt
+            (
+                in_session_id,
+                in_transaction_id,
+                v_applicable_lob_list(v_applicable_lob_list_index),
+                v_comma_separated_value_str,                             
+                gObjType_ApplicableProgramMainCoverage,
+                gbv_ApplicableLOBCvrSet
+            );         
+
+            v_applicable_lob_list_index := v_applicable_lob_list.next(v_applicable_lob_list_index);
+             
+        end loop;        
+        
+
+        
+        if v_session_control.glogging_full 
+        then
+          
+            pkg_os_logging.sp_log
+            (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Step 5 :' ||               
+              'Creating Instance of Type  : StackedReinsuranceLayer ' 
+            );
+            
+        end if;
+        
+        
+        v_cession_method  := pkg_os_object_io.fn_object_bv_get ( in_session_id, in_transaction_id,in_action_object_id, gbv_CessionMethod);
+  
+         
+        
+        v_comma_separated_value_str :=   fn_stacklayer_input_str
+                                         (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_cession_method,
+                                             v_xol_layer_nmber
+                                          );
+        sp_list_driven_create_objt
+        (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          v_comma_separated_value_str,
+          gObjType_StackedReinsuranceLayer,
+          gbv_ReinsWrkflwObjCreationSearch
+        );        
+                
+            
+        
+end sp_create_iteration1_Objts;
+
+-----------------------------------------------------------------------------------------------------------
+---
+--- Used by the native command PCCreateStackedCvrObjects
+---
+----------------------------------------------------------------------------------------------------------- 
+procedure sp_create_placement_objects
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+) 
+is
+    v_procedure_name   constant system_log.program_name%type   := pkg_name ||'sp_create_placement_objects';
+    v_session_control  pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);      
+                                                                                       
+begin
+
+
+     ---
+     --- Create   StackedReinsuranceLayerPlcmnt Instances
+     ---      
+     if v_session_control.glogging_full 
+     then
+     
+          pkg_os_logging.sp_log
+          (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Creating StackedReinsuranceLayerPlacement '  
+          );
+          
+     end if;    
+
+
+  
+     sp_src_objt_driven_create_objt 
+     (
+           in_session_id ,
+           in_transaction_id ,
+           in_action_object_id,
+           gObjType_ReinsuranceParticipantReins,
+           in_action_object_id,
+           gObjType_StackedReinsuranceLayer, 
+           gObjType_StackedReinsuranceLayerPlcmnt,   
+           gbv_Ref_AssociatedReinsurer
+    ) ;    
+    
+    
+    
+     ---
+     --- Create  StackedReinsuranceLayerMainCoverageSubTypeCommission Instances
+     ---      
+     if v_session_control.glogging_full 
+     then
+     
+          pkg_os_logging.sp_log
+          (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Creating StackedReinsuranceLayerMainCoverageSubTypeCommission '  
+          );
+          
+     end if;    
+
+
+  
+     sp_src_objt_driven_create_objt 
+     (
+           in_session_id ,
+           in_transaction_id ,
+           in_action_object_id,
+           gObjType_ReinsuranceParticipantReins,
+           in_action_object_id,
+           gObjType_StackedLayerMainCoverageSubType, 
+           gObjType_MainCoverageSubTypeCommission,   
+           gbv_AssocReinsurerCvrComm
+    ) ;    
+    
+end sp_create_placement_objects; 
+-----------------------------------------------------------------------------------------------------------
+
+procedure sp_delete_reinsurer_participant
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+) 
+is
+    v_procedure_name   constant system_log.program_name%type   := pkg_name ||'sp_delete_reinsurer_participant';
+    v_session_control  pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+    v_participant_reinsurer number(18);
+    v_object_reinsurer_list pkg_os_object.t_object_list;
+    v_object_reinsurer_list_index  number(18);
+    v_object_state  number(18);
+    
+begin
+     pkg_os_object_search.sp_object_children_of_type_get
+     (
+      in_session_id,
+      in_transaction_id,
+      in_action_object_id,
+      gObjType_ReinsuranceParticipantReins,
+      v_object_reinsurer_list,
+      null,
+      true
+     );
+     v_object_reinsurer_list_index := v_object_reinsurer_list.first;
+     while v_object_reinsurer_list_index is not null
+     loop
+
+          v_object_state := pkg_os_object_io.fn_object_bv_get
+                                 (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_object_reinsurer_list(v_object_reinsurer_list_index),
+                                   pkg_os_constant_bv.gbv_GenObjObjectState
+                                  );
+          if v_object_state = 23
+          then
+
+                pkg_os_object.sp_object_delete
+                 (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    v_object_reinsurer_list(v_object_reinsurer_list_index),
+                    null
+                  );
+          if v_session_control.glogging_full 
+          then
+              pkg_os_logging.sp_log
+             (
+              in_session_id,
+              in_transaction_id,
+              v_procedure_name,
+              ' Deleted the participant reinsurer in created state '  
+              );
+           end if; 
+                               
+           end if;
+          v_object_reinsurer_list_index := v_object_reinsurer_list.next(v_object_reinsurer_list_index);
+      end loop;
+
+
+end sp_delete_reinsurer_participant;
+-------------------------------------------------------------------------------------------------------------------
+
+end pkg_or_procedures;
+/

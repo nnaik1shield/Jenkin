@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-02-21T17:37:17.594+05:30" update="2023-05-04T13:36:17.568+05:30">
+        <path name="BIClaimRecoverySummarybyRecoveryType" folder="/home/OneShieldBI/analyzers/claims/BIClaimRecoverySummarybyRecoveryType.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield BI - Claims" cube="CLAIM_RECOVERY_SUMMARY" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Expected_Recovery_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+            <measure formula="[Measures].[Recovery_Amount]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="measures" gembarOrdinal="1"/>
+            <measure formula="[Measures].[Recovery_Amount_Waived_Off]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:2]" gembarId="measures" gembarOrdinal="2"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Claim Recovery].[Claim Recovery Type]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/BarHorizontal" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Claim_Jurisdiction].[State]</drillColumn>
+            <drillColumn>[Claim Number].[Claim Number]</drillColumn>
+            <drillColumn>[Claim Recovery].[Claim Recovery Type]</drillColumn>
+            <drillColumn>[Claim Status].[Claim Status]</drillColumn>
+            <drillColumn>[Claim Waived Off Reason].[Claim Waived Off Reason]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Year]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Quarter]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Month]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Week]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Creation Day]</drillColumn>
+            <drillColumn>[Claim Creation Date].[Date]</drillColumn>
+            <drillColumn>[Current Owner].[Current Owner Role]</drillColumn>
+            <drillColumn>[Current Owner].[Current Owner Name]</drillColumn>
+            <drillColumn>[Measures].[Pending_Recovery_Amount]</drillColumn>
+            <drillColumn>[Measures].[Expected_Recovery_Amount]</drillColumn>
+            <drillColumn>[Measures].[Recovery_Amount]</drillColumn>
+            <drillColumn>[Measures].[Recovery_Amount_Waived_Off]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="true" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="184">
+            <labelWidth index="0">
+                <width>-71</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120,120,120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"center"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

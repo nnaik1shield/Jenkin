@@ -1,0 +1,2349 @@
+create or replace package body pkg_db_adhoc_journal
+-------------
+-- $Workfile:   pkg_db_adhoc_journal.PBK  $
+-- $Revision:   1.0  $
+--   $Author:   rmishra  $
+--     $Date:   May 07 2014 14:19:36  $
+
+-- 2015-06-30  Cheryl D  osbilling-884 - change the master policy. So to correct this you have to get child fitransaction from in_action_object_id and
+--                       then from fitransaction object get reference action policy, to summarize this you can get the policy_id using below function
+--                            v_master_policy_id         :=   pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, in_action_object_id, '29743646.299740462365946.2365046');
+-------------
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        show_version
+--
+-- %USAGE
+--        Display the version, revision, author, and date of this package body
+--
+-- %ALGORITHM
+--        Not specified
+--
+-- %PARAMS
+--        Not specified
+--
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+as procedure show_version
+is
+
+begin
+     dbms_output.put_line('$Workfile:   PKG_DB_ADHOC_JOURNAL.PBK $');
+     dbms_output.put_line('$Revision:   1.0  $');
+     dbms_output.put_line('$Author:   rmishra  $');
+     dbms_output.put_line('$Date:   07 May 2014 12:27:06  $');
+
+exception
+
+     when others then
+            dbms_output.put_line(sqlerrm(sqlcode));
+end;
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_create_adhoc_journal
+--
+--
+--   %USAGE
+--        We need to create a adhoc journal at run time on user request
+--
+--   %ALGORITHM
+--        This procedure will create FiTransaction of Adhoc journal type and its associated FItem and FiChange.
+--
+--
+--   %PARAM    in_session_id            Session ID
+--   %PARAM    in_transaction_id        Transaction ID
+--   %PARAM    in_action_object_id    ID of BillingAccountTrxSet of chosen type
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_adhoc_journal
+(
+     in_session_id          in                object.object_id%type,
+     in_transaction_id      in                object.object_id%type,
+     in_object_cache        in  out           pkg_os_object_cache.t_object_cache,
+     in_action_object_id    in                object.object_id%type ,
+     in_current_date_time   in                date default null,
+     io_action_outcome_id   in  out  nocopy   outcome.outcome_id%type
+)
+
+is
+
+     v_session_control                  pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id);
+     v_procedure_name                   constant system_log.program_name%type   :=   pkg_name||'sp_create_adhoc_journal';
+     v_BillingAcc_id                    object.object_id%type;
+     v_FiTrx_Amount                     float;
+     v_billaccount_parent_id            object.object_id%type;
+     v_fitransaction_obj_id             object.object_id%type;
+     v_current_date                     date                                    :=   pkg_os_time.fn_os_sysdate(in_session_id, in_transaction_id, in_action_object_id);
+     v_master_customer_id               object.object_id%type;
+     v_master_policy_id                 object.object_id%type;
+     v_datamart_tf                      char(1)                                 := 'T';
+     v_fitem_credit_id                  object.object_id%type;
+     v_fitem_debit_id                   object.object_id%type;
+     v_fitem_id                         object.object_id%type;
+     v_cash_category                    object_bv_value.business_variable_value%type;
+     v_fitem_debit_credit_new           number;
+     v_fitem_obj_id                     object.object_id%type;
+     v_fitem_debit_credit               number;
+     v_fitem_category                   number;
+     v_fitem_subcategory                number;
+     v_FitemRefPolicyCurrentTerm        object.object_id%type;
+     v_fi_credit_change_id_1            object.object_id%type;
+     v_fi_credit_change_id_2            object.object_id%type;
+     v_writing_company_id               object.object_id%type;
+     v_writing_co_billing_acc_id        object.object_id%type;
+     v_usersession_exchange_id          object.object_id%type;
+     v_exchange_sponsor_partner_id      object.object_id%type;
+     v_carrier_writing_entity_id        object.object_id%type;
+     v_carrier_billing_acc_id           object.object_id%type;
+     v_process_billing_trx_tf           char(1)     :=   'F';
+     v_billingacctrxset_id              object.object_id%type;
+     v_bv_table                         pkg_os_object_io.t_bv_table;
+     v_curr_batchstatus                 object_bv_value.business_variable_value%type;
+     v_FItemRefInstallment              object.object_id%type;
+     v_FItemRefPolicy                   object.object_id%type;
+     v_FItemRefPolicyTxn                object.object_id%type;
+     v_FitemRefPolicyTerm               object.object_id%type;
+     v_FitemEarnStatus                  lookup_list_value.lookup_enum%type;
+
+     v_batrxset_batchType               object_bv_value.business_variable_value%type;
+     
+     v_earned_Amount                    float := 0; -- LXPRODUCT-447
+     v_unearned_Amount                  float := 0; -- LXPRODUCT-447
+
+     v_object_list                      object_tt := new object_tt();  --OSPRODUCT-34737
+     v_policyTermPayer_id               object.object_id%type; 
+     v_inv_multipayer_mode               boolean;  
+     v_policy_transaction_id            object.object_id%type; 
+     v_ptp_object_id                    object.object_id%type; 
+     v_bill_plan_enabled_tf             number;
+     v_billing_account_type_id          object_bv_value.business_variable_value%type;
+     v_actor_type_id                    actor_type.actor_type_id%type           := pkg_os_wf_session.fn_actor_type_get ( in_session_id, in_transaction_id );
+     v_business_relation_id             object_bv_value.business_variable_value%type; -- OSPRODUCT-34737
+
+begin
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '............ Process Adhoc Journal'
+           );
+
+     end if;
+     
+     v_billingacctrxset_id:= in_action_object_id;
+
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+     -- Get the details entered by the user and required to create the debit and credit generation
+
+     v_billingacc_id            :=   pkg_os_object.fn_object_parent_get(in_session_id,in_transaction_id ,in_action_object_id);
+     --OSbilling-5405
+     v_billaccount_parent_id    :=   pkg_os_object.fn_object_parent_get(in_session_id,in_transaction_id ,v_billingacc_id);
+     v_master_customer_id       :=   pkg_os_object_search.fn_object_get_parent_of_type(in_session_id,in_transaction_id ,v_billingacc_id, pkg_os_constant.gObjType_Customer);
+
+     v_master_policy_id         :=   pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, in_action_object_id, gbv_MasterPolicyId_Path);
+     --v_master_policy_id         :=   pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, v_billingacc_id, '29704546.211195.292523142365346.205.12');
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '............ get master_policy_id' || v_master_policy_id
+           );
+     end if;
+
+     -- Get the current transaction ( Fitransaction ) for billingaccounttrxset
+
+     v_fitransaction_obj_id     :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id ,in_action_object_id , gbv_BillAccTrxSet_CurrTrx);
+
+     v_fitrx_amount             :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_fitransaction_obj_id, pkg_db_billing.gbv_fitransaction_amount);
+     
+     
+     -- Setting effective date for this FITransaction
+
+     pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id , v_fitransaction_obj_id , gbv_FITrx_EffectiveDate  , to_char(v_current_date, pkg_os_constant.dragondateformatdefault ));
+
+
+
+     -- Get the associated Fitem
+
+     v_fitem_obj_id           :=  pkg_os_object_io.fn_object_bv_get (in_session_id , in_transaction_id , v_fitransaction_obj_id , gbv_FITrx_RefAssociatedFitem );
+
+     v_FItemRefInstallment    := pkg_os_object_io.fn_object_bv_get (in_session_id , in_transaction_id , v_fitem_obj_id  , gbv_Fitem_RefPartOfInst );
+
+     -- UTPRODUCT-4626
+     -- setting  _Reference_Associated Policy Term for Fitem
+     --
+     v_FitemRefPolicyTerm  := pkg_os_object_io.fn_object_bv_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_fitem_obj_id,
+                                   dbv_Fitem_RefAssocPolicyTerm
+                              );
+
+     if v_FitemRefPolicyTerm is not null -- already set from UI
+     then
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '............ _RefPolicyTermID '||v_FitemRefPolicyTerm||' has already been set for Adhoc FItem ID '||v_fitem_obj_id
+                );
+          end if;
+     else
+          if -- if there is installment associated with the Adhoc Fitem, take the term from Installment
+               v_FItemRefInstallment is not null
+          then
+               v_FitemRefPolicyTerm  := pkg_os_object.fn_object_parent_get
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             v_FItemRefInstallment
+                                         );
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '............ _RefPolicyTermID '||v_FitemRefPolicyTerm||' was retrieved from _RefInstallment '|| v_FItemRefInstallment
+                     );
+               end if;
+          else -- take the term from Fitranasciton
+               v_FitemRefPolicyTerm  := pkg_db_functions.fn_get_policy_current_term
+                                        (
+                                             in_session_id,
+                                             in_transaction_id,
+                                             pkg_os_object_io.fn_object_bv_get (in_session_id, in_transaction_id, v_fitransaction_obj_id, gbv_FITrx_RefActionPolicy)
+                                         );
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '............ _RefPolicyTermID '||v_FitemRefPolicyTerm||' was retrieved from FITrnasaction '|| v_fitransaction_obj_id
+                     );
+               end if;
+          end if;
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_fitem_obj_id,
+               dbv_Fitem_RefAssocPolicyTerm,
+               v_FitemRefPolicyTerm
+          );
+
+     end if;
+     -- /UTPRODUCT-4626
+--Start  OSPRODUCT-34737
+
+	v_billing_account_type_id :=  pkg_os_object_io.fn_object_bv_get 
+                                   (
+                                       in_session_id, 
+                                       in_transaction_id , 
+                                       v_billingacc_id, 
+                                       pkg_db_constant.gbv_BAType--29711346
+                                    ); 
+	
+	
+	if v_billing_account_type_id = pkg_db_constant.gBillingAcType_Customer  -- Customer (201)
+	then
+	
+	    v_inv_multipayer_mode := pkg_db_multipayer.fn_multipayer_mode_tf
+                                  (
+                                       in_session_id,
+                                       in_transaction_id,
+                                       v_master_policy_id
+                                  );
+								 
+		if v_inv_multipayer_mode 
+		then
+          
+               v_object_list.delete;
+                
+			pkg_os_object_search.sp_object_with_attribute_get
+               (
+                    in_session_id,
+                    in_transaction_id ,
+                    v_FitemRefPolicyTerm, -- policy term
+                    PKG_DB_CONSTANT.gobjType_PTPPayer, --object type
+                    PKG_DB_MULTIPAYER.gbv_PTPPayer_Ref_CustmrPartnr,--32714824   ,  
+                    v_billaccount_parent_id, 
+                    v_object_list
+                );
+			
+               if v_object_list.count > 0 then
+               
+                    v_policyTermPayer_id := v_object_list(v_object_list.first).object_id;
+                    
+                    v_business_relation_id :=  pkg_os_object_io.fn_object_bv_get
+                                               (
+                                                     in_session_id,
+                                                     in_transaction_id,
+                                                     v_policyTermPayer_id, -- policy term as payer
+                                                     pkg_db_constant.gbv_PTPayerBusinessRelation  -- business_relationship
+                                               );
+               end if;
+               
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         ' v_object_list.first: '|| v_object_list(v_object_list.first).object_id ||
+                         ' v_business_relation_id: '|| v_business_relation_id 
+                     );
+               end if;
+		else
+			v_policy_transaction_id := pkg_os_object_io.fn_object_bv_get
+                                          (
+                                               in_session_id,
+                                               in_transaction_id,
+                                               v_FitemRefPolicyTerm,
+                                               pkg_db_constant.gbv_PolicyTermCreatedByTrx --29749301
+                                          );
+
+
+			v_ptp_object_id :=  pkg_os_object_search.fn_object_11_child_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        v_policy_transaction_id,
+                                        pkg_os_constant.gobjType_PolicyTrxPolicy
+                                   );
+							  
+			v_bill_plan_enabled_tf := pkg_os_object_io.fn_object_bv_get
+                                         ( 
+                                             in_session_id, 
+                                             in_transaction_id, 
+                                             v_ptp_object_id, 
+                                             pkg_db_payment_arrangement.gbv_PTPBillPlanEnabledTF --32704624
+                                         );
+		
+			if nvl(v_bill_plan_enabled_tf, pkg_db_constant.g_No) = pkg_db_constant.g_Yes
+			then
+				v_business_relation_id := pkg_db_business_relationship.gBusRel_PayerAndCarrier; -- Payer and carrier (10748)
+			else
+				v_business_relation_id := pkg_db_business_relationship.gBusRel_CarrAndProducingAgencyRecv;-- Carrier and Producing Agency(12048)			
+			end if;
+               
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         ' v_policy_transaction_id: '|| v_policy_transaction_id ||
+                         ' v_ptp_object_id: '|| v_ptp_object_id ||
+                         ' v_bill_plan_enabled_tf: '|| v_bill_plan_enabled_tf ||
+                         ' v_business_relation_id: '|| v_business_relation_id 
+                     );
+               end if;
+			
+		end if;
+	 
+	 
+	else
+										
+		if v_billing_account_type_id = pkg_db_constant.gBillingAcType_AgentBroker   and v_actor_type_id in (gActorType_AgencyController, gActorType_CashAndAccountClerk)
+		then
+			v_business_relation_id := pkg_db_business_relationship.gBusRel_InhouseAgencyAndBroker; -- Inhouse agency and broker (11348);
+		else
+			v_business_relation_id := pkg_db_business_relationship.gBusRel_CarrAndProducingAgencyPay; -- Carrier and Producing Agency ( Payables)  (10848);
+		end if;
+          
+          if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         ' v_billing_account_type_id: '|| v_billing_account_type_id ||
+                         ' v_actor_type_id: '|| v_actor_type_id ||                         
+                         ' v_business_relation_id: '|| v_business_relation_id 
+                     );
+               end if;
+	end if;	
+--End OSPRODUCT-34737
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '............ Setting reference from fitem to fitransaction with fitem_id '||v_fitem_obj_id ||' and fitransaction '||v_fitransaction_obj_id
+          );
+     end if;
+
+     --Setting reference from FItem to FItransaction (31758346 _Reference_Associated With FITransaction )
+
+     pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id , v_fitem_obj_id,gbv_FItem_RefAssWithFItrx, v_fitransaction_obj_id);
+
+     -- Get the type of FItem Selected by user
+
+     v_fitem_debit_credit              :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_fitem_obj_id , gbv_FItem_Debit_Credit) ;
+
+     v_fitem_category                  :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_fitem_obj_id , gbv_FItem_Category) ;
+
+     if v_fitem_debit_credit is not null and  v_fitem_debit_credit=246
+     then
+          v_fitrx_amount :=(-1)*v_fitrx_amount ;
+      else
+          v_fitrx_amount :=v_fitrx_amount ;
+     end if;
+     
+     -- Common for all Categroies
+     --     
+     v_earned_Amount       :=  0;                -- LXPRODUCT-447
+     v_unearned_Amount     :=  v_fitrx_amount;   -- LXPRODUCT-447
+     --
+
+
+     if nvl(v_fitem_category,0) in (gFitem_Category_Dividents)      --PMADEV-1176 (For Group Dividends "Earn Status" should be "Not Applicable") - avlasov
+     then
+          v_FitemEarnStatus := gFItem_EarnSts_NotApplicable;          
+     else
+          v_FitemEarnStatus := pkg_db_object.gfitem_unearned;
+     end if;
+     
+     
+     --LXPRODUCT-447
+     if v_fitem_category = gFitem_Category_ContComsn             
+     then
+          --OSPRODUCT-18308
+          if  v_fitem_debit_credit = pkg_db_object.gFItem_Debit 
+          then
+               v_fitem_debit_credit :=pkg_db_object.gFItem_Credit;
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,gbv_FItem_Debit_Credit,pkg_db_object.gFItem_Credit);
+          end if;
+
+          v_FitemEarnStatus    := pkg_db_object.gFItem_Earned;          
+          v_earned_Amount      := v_fitrx_amount;
+          v_unearned_Amount    := 0;     
+                                      
+          if v_session_control.gLogging_Full 
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...Adhoc FItem ID= '||v_fitem_obj_id ||', FItemCategory='||v_fitem_category||' Contingent Commission, Earning Status=' || v_FitemEarnStatus ||
+                    ', Earned_Amount=' || v_earned_Amount || ', Unearned_Amount=' || v_unearned_Amount
+               );
+          end if;   
+                 
+     end if;
+     --/ LXPRODUCT-447
+
+     --PMADEV-562_Begin
+     if v_session_control.gLogging_Full 
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '...Adhoc FItem ID '||v_fitem_obj_id ||' FItemCategory '||v_fitem_category||' _RefPolicyTermID '||v_FitemRefPolicyTerm||' _RefFitemInstallment '||v_FItemRefInstallment
+          );
+     end if;
+
+     -- OSBILLING-1656
+     pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,pkg_db_object.gbv_FItem_AccntingPeriod,pkg_db_functions.fn_get_fitem_acct_prd( in_session_id , in_transaction_id, v_fitem_obj_id));  -- To get the Accounting period of Fitem which is dependent on Effective date and creation date of fitem
+
+     if nvl(v_fitem_category,0) in (gFitem_ExtCredit_CatId,gFitem_Category_Dividents) and (v_FitemRefPolicyTerm is not null)
+     then
+           if v_fitem_category = gFitem_ExtCredit_CatId
+           then
+                pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_ExtCredit_SubCatId); --Set "External Credit" Sub-Category
+                pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitransaction_obj_id,gbv_FITrx_Type,gFITrx_Exteranl_Credit); --Set FITransaction type as "External Credit"
+
+           elsif v_fitem_category = gFitem_Category_Dividents
+           then
+
+                pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_GrpDivdnds_SubCatId); --Set "Group Dividends" Sub-Category
+
+           end if;
+
+           -- OSBILLING-3485 Commented fitem datamart update as it is already happening when batch is processed.
+           --pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,dbv_Fitem_RefAssocPolicyTerm ,v_FitemRefPolicyTerm); -- Set _Ref to Current Policy Term
+
+          -- pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_obj_id , v_datamart_tf);
+           --Debug purpose
+           if v_session_control.gLogging_Full
+           then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...(Before)Adhoc FItem ID '||v_fitem_obj_id ||' _RefPolicyTermID '||
+                    pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_fitem_obj_id ,dbv_Fitem_RefAssocPolicyTerm )
+               );
+           end if;
+     end if;
+     --PMADEV-562_End
+
+     -- 2017-04-06 Cheryl osbilling-3956 Add sub category
+     --
+     if nvl(v_fitem_category,0) = gFitem_Category_Dishfee
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_Dishfee); --Set "dish fee" Sub-Category
+    
+     elsif nvl(v_fitem_category,0) = gFitem_Category_Bankcharge
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_Bankcharge); --Set "bank charge" Sub-Category
+     elsif nvl(v_fitem_category,0) = gFitem_Category_Dividents
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_GrpDivdnds_SubCatId); ---Set " Group Dividends" Sub-Category  if category Group Dividends ; start OSPRODUCT-26025
+     elsif nvl(v_fitem_category,0) = gFitem_ExtCredit_CatId
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_ExtCredit_SubCatId); ---Set "External Credit" Sub-Category if category External Credit 
+     elsif nvl(v_fitem_category,0) = gFitem_Category_ServiceFee
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_ServiceFee); ---Set "Service Fee" Sub-Category if category Service Fee  
+     elsif nvl(v_fitem_category,0) = gFitem_Category_ConvAdjustment
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_ConvAdjustment); ---Set "Conversion Adjustment" Sub-Category if category Conversion Adjustment  
+     elsif nvl(v_fitem_category,0) = gFitem_Category_ContComsn
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_ContComsn); ---Set "Contingent Commission" Sub-Category if category Contingent Commission
+     elsif nvl(v_fitem_category,0) = gFitem_Category_Commission
+     then
+          pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id ,v_fitem_obj_id ,gbv_FItem_Subcategory,gFitem_SubCategory_Commission); --Set "Commission" Sub-Category  if category Commission; end  OSPRODUCT-26025
+     end if;
+
+
+     v_fitem_subcategory               :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_fitem_obj_id , gbv_FItem_Subcategory) ;
+
+     v_FitemRefPolicyCurrentTerm       :=   pkg_db_functions.fn_get_policy_current_term(in_session_id , in_transaction_id,v_master_policy_id);
+     
+
+     --
+     -- Create FItem of type Credit/Debit if above Fitem is of type Debit/Credit
+     --
+     --OSPRODUCT-18308
+     --v_fitem_debit_credit    := pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_fitem_obj_id , gbv_FItem_Debit_Credit) ;
+
+     if v_fitem_debit_credit = pkg_db_object.gFItem_Debit 
+     then
+          v_fitem_debit_credit_new := pkg_db_object.gFItem_Credit;
+     else
+          v_fitem_debit_credit_new := pkg_db_object.gFItem_Debit;
+     end if;
+
+     --
+     -- Get the Writing Company associated with the Policy
+     --
+
+     v_writing_company_id := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_master_policy_id ,
+          gbv_WritingCompany
+     );
+
+     --
+     -- Get the Billing Account of the Writing Company
+     --
+
+     v_writing_co_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_writing_company_id,
+          gObjType_BillingAccount
+     );
+
+     --
+     --   1.   Get the exchange, exchange sponsor partner and carrier billing account
+     --
+
+     v_usersession_exchange_id := pkg_os_wf_session.fn_exchange_get(in_session_id, in_transaction_id);
+
+     v_exchange_sponsor_partner_id := pkg_os_wf_session.fn_exchange_sponsor_get(in_session_id, in_transaction_id);
+
+     v_carrier_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_exchange_sponsor_partner_id,
+          gObjType_BillingAccount
+     );
+
+     v_carrier_writing_entity_id := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          nvl(v_writing_co_billing_acc_id, v_carrier_billing_acc_id),
+          gbv_BillingAccountParent
+     );
+
+     v_curr_batchstatus     :=     pkg_os_object_io.fn_object_bv_get
+                                   (
+                                        in_session_id,
+                                        in_transaction_id,
+                                        in_action_object_id,
+                                        pkg_os_constant_bv.gbv_GenObjObjectState
+                                   );
+
+
+     v_batrxset_batchType := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          gbv_FITrxSet_BatchType
+     );
+
+     if v_session_control.gLogging_Full
+     then
+
+           pkg_os_logging.sp_log
+           (
+                in_session_id,
+                in_transaction_id,
+                v_procedure_name,
+                '... Current Batch Status : '||v_curr_batchstatus
+           );
+
+     end if;
+
+     if v_curr_batchstatus =  gBatchStatus_Created or v_curr_batchstatus is null
+     then
+
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... Process further as Batch is getting created for the first time.'
+               );
+          end if;
+
+          --
+          -- Set BVs of BillingTransactionSet
+          --
+          v_bv_table.delete;
+
+          if v_batrxset_batchType is null
+          then
+               v_bv_table ( gbv_FITrxSet_BatchType ).business_variable_value := gBatch_Adhoc_Journal;
+          end if;
+
+          v_bv_table ( gbv_FITrxSet_TotalAmount ).business_variable_value := v_FiTrx_Amount;
+          v_bv_table ( gbv_BillAccTrxSet_ScrtyStatus).business_variable_value := gBillAccTrxSetScrtyStatus_New;
+          v_bv_table ( gbv_FITrxSet_ExternalBatchId).business_variable_value := 'Batch'||to_char( pkg_os_time.fn_os_sysdate( in_session_id, in_transaction_id, v_billingacctrxset_id), pkg_os_constant.DragonDateFormatDefault );
+          v_bv_table ( gbv_FITrxSetEnteredby).business_variable_value :=pkg_os_object_io.fn_object_bv_path_get(in_session_id ,in_transaction_id ,in_session_id ,gbv_UserSession_UserName_Path) ;
+          v_bv_table ( gbv_FITrxSet_EntryType).business_variable_value := gFITrx_EntryMode_Manual;
+          v_bv_table ( gbv_FITrx_TotalControlItems).business_variable_value := 1;
+          v_bv_table ( gbv_FITrxSetDatePosted       ).business_variable_value := to_char( pkg_os_time.fn_os_sysdate( in_session_id, in_transaction_id, v_billingacctrxset_id), pkg_os_constant.DragonDateFormatDefault );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_billingacctrxset_id, 
+               v_bv_table
+          );
+
+
+          -- Setting bv for created Fitem
+          --
+          v_bv_table.delete;
+
+          v_bv_table ( gbv_FItem_Effective_Date ).business_variable_value := to_char(v_current_date, pkg_os_constant.dragondateformatdefault );
+          v_bv_table ( gbv_Fitem_BillingStatus  ).business_variable_value := pkg_db_object.gFItemBillStatus_Active;
+          v_bv_table ( gbv_FItem_Subcategory  ).business_variable_value := v_fitem_subcategory;
+          v_bv_table ( gbv_FItem_Processing_Status ).business_variable_value := pkg_db_object.gfitemprocstatus_processed;
+          v_bv_table ( gbv_FItem_Bill_Status_Date ).business_variable_value := to_char(v_current_date, pkg_os_constant.dragondateformatdefault );
+          v_bv_table ( gbv_FItem_Earning_Status).business_variable_value := v_FitemEarnStatus;
+          v_bv_table ( PKG_DB_CONSTANT.gbv_FinancialBusinessRelation).business_variable_value := v_business_relation_id;  --OSPRODUCT-34737
+          
+          -- OSPRODUCT-15900
+          v_bv_table(pkg_db_object.gbv_FItem_Earning_Date).business_variable_value   :=   to_char
+                                                                                          (
+                                                                                               pkg_os_time.fn_os_sysdate
+                                                                                               (
+                                                                                                    in_session_id,
+                                                                                                    in_transaction_id,
+                                                                                                    v_fitem_obj_id
+                                                                                               ),
+                                                                                               pkg_os_constant.DragonDateFormatDefault
+                                                                                          );
+          -- OSPRODUCT-15900           
+          v_bv_table ( gbv_FItem_Earned_Amount).business_variable_value   := v_earned_Amount;
+          v_bv_table ( gbv_FItem_Unearned_Amount).business_variable_value := v_unearned_Amount;
+          v_bv_table ( gbv_FItem_RefPolicy).business_variable_value       := v_master_policy_id;
+          v_bv_table ( gbv_FItem_RefCustomer).business_variable_value     := v_master_customer_id;
+          ---v_bv_table ( gbv_FItem_RefAssWithFItrx).business_variable_value := v_billaccount_parent_id;
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id, 
+               in_transaction_id, 
+               v_fitem_obj_id, 
+               v_bv_table
+          );
+
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+                in_session_id,
+                in_transaction_id,
+                v_billingacctrxset_id,
+                gbv_FITrxSetDatePosted,
+                to_char( pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,v_billingacctrxset_id) , pkg_os_constant.DragonDateFormatDefault )
+           );
+
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '......... *** Test'||
+                     to_char( pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,v_billingacctrxset_id) , pkg_os_constant.DragonDateFormatDefault )
+               );
+          end if;
+
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '......... Call the Security Triggers validation process'
+               );
+          end if;
+
+          pkg_db_security_trigger.sp_process_security_triggers
+          (
+               in_session_id                 =>        in_session_id,
+               in_transaction_id             =>        in_transaction_id,
+               in_object_cache               =>        in_object_cache,
+               in_billacc_trx_set_id         =>        in_action_object_id,
+               io_action_outcome_id          =>        io_action_outcome_id,
+               in_current_date_time          =>        in_current_date_time,
+               io_process_billing_trx_tf     =>        v_process_billing_trx_tf
+           );
+       
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_billingacctrxset_id,
+               gbv_FITrxSetDatePosted,
+               to_char( SYSDATE, pkg_os_constant.DragonDateFormatDefault )
+          );
+
+
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_billingacctrxset_id, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitransaction_obj_id, v_datamart_tf);
+          -- OSBILLING-3485 Commented fitem datamart update as it is already happening when batch is processed.
+          --     pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_id, v_datamart_tf);
+          --     pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_obj_id , v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_master_policy_id, v_datamart_tf);
+
+          if v_process_billing_trx_tf  = 'T'
+          then
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '............... Process further because no security rules voilated by the Adhoc batch'
+                    );
+               end if;
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '............... Call the process to create the FItem and FIChange objects'
+                    );
+               end if;
+
+               pkg_db_object.sp_fitem_create
+               (
+                    in_session_id                =>    in_session_id,
+                    in_transaction_id            =>    in_transaction_id,
+                    in_parent_object_id          =>    nvl(v_writing_co_billing_acc_id, v_carrier_billing_acc_id),
+                    out_fitem_id                 =>    v_fitem_id,
+                    in_fitem_debit_credit        =>    v_fitem_debit_credit_new,
+                    in_fitem_category            =>    v_fitem_category,
+                    in_fitem_subcategory         =>    v_fitem_subcategory,
+                    in_fitem_effective_date      =>    to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+                    in_fitem_billing_status      =>    pkg_db_object.gFItemBillStatus_Active,
+                    in_fitem_processing_status   =>    pkg_db_object.gfitemprocstatus_processed,
+                    in_fitem_bill_status_date    =>    to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+                    in_fitem_Earningstatus       =>    v_FitemEarnStatus,
+                    in_fitem_earned_amount       =>    0,
+                    in_fitem_unearned_amount     =>    v_FiTrx_Amount*(-1),
+                    in_fitem_paid_amount         =>    0,
+                    in_FItemRefPolicy            =>    v_master_policy_id,
+                    in_FItemRefCustomer          =>    v_master_customer_id,
+                    in_FItemRefEntityBelongsTo   =>    v_billaccount_parent_id,
+                    in_FItemRefAssWithFItrx      =>    v_fitransaction_obj_id,
+                    in_FitemRefPolicyTerm        =>    v_FitemRefPolicyTerm,
+                    in_Fitem_element_business_relation => v_business_relation_id --OSPRODUCT-34737
+               );
+
+               --Setting reference from FItem to FItransaction (31758346 _Reference_Associated With FITransaction )
+
+               v_fitransaction_obj_id     :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , in_action_object_id , gbv_BillAccTrxSet_CurrTrx);
+               pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id , v_fitem_id,31758346, v_fitransaction_obj_id);
+
+
+               --
+               -- Create FIChange of type CREATE for the created credit fitem
+               --
+               pkg_db_object.sp_fichange_create
+               (
+                    in_session_id                  =>  in_session_id,
+                    in_transaction_id              =>  in_transaction_id,
+                    in_parent_fitransaction_id     =>  v_fitransaction_obj_id,
+                    out_fichange_id                =>  v_fi_credit_change_id_1,
+                    in_fichange_action             =>  pkg_db_object.gfichange_create,
+                    in_fichange_action_delta       =>  v_FiTrx_Amount,
+                    in_fichange_ref_fitem          =>  v_fitem_obj_id  ,
+                    in_fichange_sum_include        =>  pkg_db_object.gfichange_yes,
+                    in_fichange_process_date       =>  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+                    in_fichange_ref_pol            =>  v_master_policy_id,
+                    in_fichange_belongs_to         =>  v_billaccount_parent_id--v_fitransaction_obj_id OSbilling-5405
+               );
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '...............created FIChange1  '||v_fi_credit_change_id_1
+                    );
+               end if;
+
+               pkg_db_object.sp_fichange_create
+               (
+                    in_session_id                  =>  in_session_id,
+                    in_transaction_id              =>  in_transaction_id,
+                    in_parent_fitransaction_id     =>  v_fitransaction_obj_id,
+                    out_fichange_id                =>  v_fi_credit_change_id_2,
+                    in_fichange_action             =>  pkg_db_object.gfichange_create,
+                    in_fichange_action_delta       =>  v_FiTrx_Amount*(-1),
+                    in_fichange_ref_fitem          =>  v_fitem_id ,
+                    in_fichange_sum_include        =>  pkg_db_object.gfichange_yes,
+                    in_fichange_process_date       =>  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+                    in_fichange_ref_pol            =>  v_master_policy_id,
+                    in_fichange_belongs_to         =>  v_billaccount_parent_id--v_fitransaction_obj_id OSbilling-5405
+               );
+
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '...............created FIChange2 '||v_fi_credit_change_id_2
+                    );
+               end if;
+
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_master_policy_id, v_datamart_tf);
+
+               
+               pkg_cs_db_billing.sp_set_earning_status_custom   --OSPRODUCT-1038 Start
+               (
+                    in_session_id, 
+                    in_transaction_id,
+                    v_fitem_obj_id  --OSPRODUCT-2621 -- CHANGED LAST PARAM VARIABLE
+               );
+
+               io_action_outcome_id     :=     pkg_os_constant.gOutcome_OK;
+
+               --
+               -- Set the 'Creator FIChange' reference for Fitem
+               --
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_1);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_2);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_1, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_2, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_action_object_id, v_datamart_tf);
+
+
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_1);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,29998046,1);
+
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_2);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitransaction_obj_id, pkg_os_constant_bv.gbv_GenObjObjectState, pkg_db_object.gfitrxstatus_processed);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,gbv_BillAccTrxSet_ScrtyStatus, 3);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,pkg_os_constant_bv.gbv_GenObjObjectState, pkg_db_object.gBatchStatus_Processed);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,pkg_db_object.gbv_BillAccTrxSet_ProcessDate,  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ));
+               --
+               -- OSBILLING-767 Fetch and set the Accoutning Period for BillingAccounTTrxSet
+               --
+               ----- OSBILLING-3884
+               /*pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    pkg_db_object.gbv_FITrxSet_AccntingPeriod,
+                    pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id,in_transaction_id,in_action_object_id)
+               );*/
+               -- OSBILLING-3884
+                --
+                -- OSBILLING-767 Fetch and set the Accoutning Period for FItransaction
+                --
+               pkg_os_object_io.sp_object_bv_set
+               (
+                   in_session_id,
+                   in_transaction_id,
+                   v_fitransaction_obj_id,
+                   pkg_db_object.gbv_FITrx_AccntingPeriod,
+                   pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id)
+               );
+
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_id, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_obj_id , v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_1, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_2, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_master_policy_id, v_datamart_tf);
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitransaction_obj_id, v_datamart_tf);
+               pkg_db_nightly_process.sp_update_aging_status(in_session_id,in_transaction_id,v_master_policy_id);
+
+               -- OSBILLING-1816 : persist Billing Account Total Balance
+               -- PMADEV - 1176 : should be set after the DRAGON_FITEM datamart update
+               -- gbv_BillAcc_TotalBalance is calculated based on data in datamart
+               
+               -- OSBILLING-3884
+               /*pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    pkg_db_object.gbv_FITrxSet_BATotalBalance,
+                    pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         pkg_os_object.fn_object_parent_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_action_object_id
+                         ),
+                         pkg_db_object.gbv_BillAcc_TotalBalance
+                    )
+               );
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_action_object_id, v_datamart_tf);
+               */--OSBILLING-3884
+               io_action_outcome_id:=22;
+          else
+
+               if v_session_control.gLogging_Full
+               then
+                    pkg_os_logging.sp_log
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_procedure_name,
+                         '............... Do not Process further because security rules voilated by the Adhoc journal batch'
+                    );
+               end if;
+
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,pkg_os_constant_bv.gbv_GenObjObjectState, 39446);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,pkg_os_constant_bv.gbv_GenObjObjectState, 39446);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,pkg_os_constant_bv.gbv_GenObjObjectState, 49346);
+
+
+               --OSBILLING-7730-- to set accounting period at time of creation of adhoc journal whose security trigger is raised
+
+               pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_billingacctrxset_id,
+                         pkg_db_object.gbv_FITrxSet_AccntingPeriod,
+                         pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id,in_transaction_id , v_billingacctrxset_id)
+                    );
+
+               --End of  OSBILLING-7730--
+
+               --- OSBILLING-2393
+               pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_billingacctrxset_id, v_datamart_tf);
+               
+               io_action_outcome_id:=42046;
+
+          end if;
+
+     elsif v_curr_batchstatus = 49346 -- Referred
+     then
+
+          if v_session_control.gLogging_Full
+          then
+                 pkg_os_logging.sp_log
+                 (
+                      in_session_id,
+                      in_transaction_id,
+                      v_procedure_name,
+                      '...... Process further as batch is in referred state'
+                 );
+          end if;
+
+          pkg_db_object.sp_fitem_create
+          (
+              in_session_id                =>    in_session_id,
+              in_transaction_id            =>    in_transaction_id,
+              in_parent_object_id          =>    nvl(v_writing_co_billing_acc_id, v_carrier_billing_acc_id),
+              out_fitem_id                 =>    v_fitem_id,
+              in_fitem_debit_credit        =>    v_fitem_debit_credit_new,
+              in_fitem_category            =>    v_fitem_category,
+              in_fitem_subcategory         =>    v_fitem_subcategory,
+              in_fitem_effective_date      =>    to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+              in_fitem_billing_status      =>    pkg_db_object.gFItemBillStatus_Active,
+              in_fitem_processing_status   =>    pkg_db_object.gfitemprocstatus_processed,
+              in_fitem_bill_status_date    =>    to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+              in_fitem_Earningstatus       =>    pkg_db_object.gfitem_unearned,
+              in_fitem_earned_amount       =>    0,
+              in_fitem_unearned_amount     =>    v_FiTrx_Amount*(-1),
+              in_fitem_paid_amount         =>    0,
+              in_FItemRefPolicy            =>    v_master_policy_id,
+              in_FItemRefCustomer          =>    v_master_customer_id,
+              in_FItemRefEntityBelongsTo   =>    v_billaccount_parent_id,
+              in_FItemRefAssWithFItrx      =>    v_fitransaction_obj_id,
+              in_Fitem_element_business_relation => v_business_relation_id  --OSPRODUCT-34737
+          );
+
+
+          pkg_db_object.sp_fichange_create
+          (
+               in_session_id                  =>  in_session_id,
+               in_transaction_id              =>  in_transaction_id,
+               in_parent_fitransaction_id     =>  v_fitransaction_obj_id,
+               out_fichange_id                =>  v_fi_credit_change_id_1,
+               in_fichange_action             =>  pkg_db_object.gfichange_create,
+               in_fichange_action_delta       =>  v_FiTrx_Amount,
+               in_fichange_ref_fitem          =>  v_fitem_obj_id  ,
+               in_fichange_sum_include        =>  pkg_db_object.gfichange_yes,
+               in_fichange_process_date       =>  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+               in_fichange_ref_pol            =>  v_master_policy_id,
+               in_fichange_belongs_to         =>  v_billaccount_parent_id--v_fitransaction_obj_id OSBilling-5405
+          );
+
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... FIChange created  '||v_fi_credit_change_id_1
+               );
+          end if;
+
+
+          pkg_db_object.sp_fichange_create
+          (
+               in_session_id                  =>  in_session_id,
+               in_transaction_id              =>  in_transaction_id,
+               in_parent_fitransaction_id     =>  v_fitransaction_obj_id,
+               out_fichange_id                =>  v_fi_credit_change_id_2,
+               in_fichange_action             =>  pkg_db_object.gfichange_create,
+               in_fichange_action_delta       =>  v_FiTrx_Amount*(-1),
+               in_fichange_ref_fitem          =>  v_fitem_id ,
+               in_fichange_sum_include        =>  pkg_db_object.gfichange_yes,
+               in_fichange_process_date       =>  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ),
+               in_fichange_ref_pol            =>  v_master_policy_id,
+               in_fichange_belongs_to         =>  v_billaccount_parent_id--v_fitransaction_obj_id OSbilling-5405
+          );
+
+
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... FIChange created  '||v_fi_credit_change_id_2
+               );
+          end if;
+
+
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_master_policy_id, v_datamart_tf);
+
+          --
+          -- Set the 'Creator FIChange' reference for Fitem
+          --
+          --OSPRODUCT-1038 Start
+          pkg_cs_db_billing.sp_set_earning_status_custom(in_session_id, in_transaction_id,v_fitem_obj_id);--OSPRODUCT-2621 -- CHANGED LAST PARAM VARIABLE
+         --OSPRODUCT-1038 End
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,29998046,1);
+          
+          if v_session_control.gLogging_Full
+          then
+               pkg_os_logging.sp_log
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_procedure_name,
+                    '...... 29998046 set  '
+               );
+          end if;
+
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_1);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_2);
+          
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_1, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_2, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_action_object_id, v_datamart_tf);
+
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_obj_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_1);
+
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitem_id,pkg_db_cashpost.gbv_FItemRefCreatorFiChange,v_fi_credit_change_id_2);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,v_fitransaction_obj_id, pkg_os_constant_bv.gbv_GenObjObjectState, pkg_db_object.gfitrxstatus_processed);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,gbv_BillAccTrxSet_ScrtyStatus, 3);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,pkg_os_constant_bv.gbv_GenObjObjectState, pkg_db_object.gBatchStatus_Processed);
+          pkg_os_object_io.sp_object_bv_set(in_session_id,in_transaction_id,in_action_object_id,pkg_db_object.gbv_BillAccTrxSet_ProcessDate,  to_char(v_current_date, pkg_os_constant.dragondateformatdefault ));
+          
+          --
+          -- OSBILLING-767 Fetch and set the Accoutning Period for BillingAccounTTrxSet
+          --
+          /* OSBILLING-3884
+          pkg_os_object_io.sp_object_bv_set
+          (
+              in_session_id,
+              in_transaction_id,
+              in_action_object_id,
+              pkg_db_object.gbv_FITrxSet_AccntingPeriod,
+              pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id,in_transaction_id,in_action_object_id)
+          );
+          --
+          -- OSBILLING-1816 : persist Billing Account Total Balance
+          --
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               in_action_object_id,
+               pkg_db_object.gbv_FITrxSet_BATotalBalance,
+               pkg_os_object_io.fn_object_bv_get
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    pkg_os_object.fn_object_parent_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         in_action_object_id
+                    ),
+                    pkg_db_object.gbv_BillAcc_TotalBalance
+               )
+          );
+          /* OSBILLING-3884 */
+          --
+          -- OSBILLING-767 Fetch and set the Accoutning Period for FItransaction
+          --
+        
+          pkg_os_object_io.sp_object_bv_set
+          (
+              in_session_id,
+              in_transaction_id,
+              v_fitransaction_obj_id,
+              pkg_db_object.gbv_FITrx_AccntingPeriod,
+              pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id)
+          );
+
+
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_id, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitem_obj_id , v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_1, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fi_credit_change_id_2, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_master_policy_id, v_datamart_tf);
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, v_fitransaction_obj_id, v_datamart_tf);
+          pkg_db_nightly_process.sp_update_aging_status(in_session_id,in_transaction_id,v_master_policy_id);
+
+          pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id, in_action_object_id, v_datamart_tf);
+
+          io_action_outcome_id:=22;
+
+
+     End if;
+
+end sp_create_adhoc_journal;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_adhoc_reprocess
+(
+     in_session_id          in                object.object_id%type,
+     in_transaction_id      in                object.object_id%type,
+     in_object_cache        in  out           pkg_os_object_cache.t_object_cache,
+     in_action_object_id    in                object.object_id%type ,
+     in_current_date_time   in                date default null,
+     io_action_outcome_id   in  out  nocopy   outcome.outcome_id%type
+)
+
+is
+
+     v_session_control                  pkg_os_session.r_dragon_session_control :=   pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id);
+     v_procedure_name                   constant system_log.program_name%type   :=   pkg_name||'sp_create_adhoc_reprocess';
+     v_CreditBillingAcc_id              object.object_id%type;
+     v_BillingAcc_id                    object.object_id%type;
+     v_fi_trx_credit_id                 object.object_id%type;
+     v_fi_trx_debit_id                  object.object_id%type;
+     v_FiTrx_Amount                     float;
+     v_element_category                 number;
+     v_creditelement_subcategory        number;
+     v_debitelement_subcategory         number;
+     v_billaccount_parent_id            object.object_id%type;
+     v_fitransaction_obj_id             object.object_id%type;
+     v_current_date                     date                                    :=   pkg_os_time.fn_os_sysdate(in_session_id, in_transaction_id, v_fitransaction_obj_id);
+     v_batch_processing_date            date;
+     v_fi_credit_change_id              object.object_id%type;
+     v_fi_debit_change_id               object.object_id%type;
+     v_fitem_earning_status             object_bv_value.business_variable_value%type;
+     v_fitem_unearned_amount            number;
+     v_master_customer_id               object.object_id%type;
+     v_master_policy_id                 object.object_id%type;
+     v_datamart_tf                      char(1)                                 := 'T';
+     v_fitem_credit_id                  object.object_id%type;
+     v_fitem_debit_id                   object.object_id%type;
+     v_fitem_id                         object.object_id%type;
+     v_cash_category                    object_bv_value.business_variable_value%type;
+     v_fitem_debit_credit_new           number;
+     v_fitem_obj_id                     object.object_id%type;
+     v_fitem_debit_credit               number;
+     v_fitem_category                   number;
+     v_fitem_subcategory                number;
+     v_FitemRefPolicyCurrentTerm        object.object_id%type;
+     v_fi_credit_change_id_1            object.object_id%type;
+     v_fi_credit_change_id_2            object.object_id%type;
+     v_writing_company_id               object.object_id%type;
+     v_writing_co_billing_acc_id        object.object_id%type;
+     v_usersession_exchange_id          object.object_id%type;
+     v_exchange_sponsor_partner_id      object.object_id%type;
+     v_carrier_writing_entity_id        object.object_id%type;
+     v_carrier_billing_acc_id           object.object_id%type;
+     v_process_billing_trx_tf           char(1)     :=   'F';
+     v_billingacctrxset_id              object.object_id%type;
+     v_bv_table                         pkg_os_object_io.t_bv_table;
+     v_fi_change_underwriting object.object_id%type;
+     v_fi_change_current object.object_id%type;
+     v_fitem_current object.object_id%type;
+     v_fitem_underwriting object.object_id%type;
+     object_list pkg_os_object.t_object_list;
+	 v_batch_name object_bv_value.business_variable_value%type; ---- OSBILLING-7730
+
+begin
+    if v_session_control.gLogging_Full
+     then
+            pkg_os_logging.sp_log
+                            (
+                             in_session_id,
+                             in_transaction_id,
+                             v_procedure_name,
+                             '............ Entering SP_CREATE_ADHOC_REPROCESS'
+                             );
+
+                              end if;
+
+
+     v_billingacctrxset_id:= in_action_object_id;
+
+     io_action_outcome_id := 22;
+
+     -- Get the details entered by the user and required to create the debit and credit generation
+
+     v_billingacc_id            :=   pkg_os_object.fn_object_parent_get(in_session_id,in_transaction_id ,v_billingacctrxset_id);
+
+     v_master_customer_id       :=   pkg_os_object_search.fn_object_get_parent_of_type(in_session_id,in_transaction_id ,v_billingacc_id, pkg_os_constant.gObjType_Customer);
+
+     v_master_policy_id         :=   pkg_os_object_io.fn_object_bv_path_get(in_session_id, in_transaction_id, v_billingacc_id, '29704546.211195.292523142365346.205.12');
+
+     -- Get the current transaction ( Fitransaction ) for billingaccounttrxset
+
+     v_fitransaction_obj_id     :=   pkg_os_object_io.fn_object_bv_get(in_session_id , in_transaction_id , v_billingacctrxset_id , gbv_BillAccTrxSet_CurrTrx);
+
+     v_fitrx_amount             :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_fitransaction_obj_id, pkg_db_billing.gbv_fitransaction_amount);
+
+     -- Get the associated Fitem
+
+     v_fitem_obj_id           :=  pkg_os_object_io.fn_object_bv_get (in_session_id , in_transaction_id , v_fitransaction_obj_id , gbv_FITrx_RefAssociatedFitem );
+
+
+     v_FitemRefPolicyCurrentTerm       :=   pkg_db_functions.fn_get_policy_current_term(in_session_id , in_transaction_id,v_master_policy_id);
+
+
+
+     --
+     -- Get the Writing Company associated with the Policy
+     --
+
+     v_writing_company_id := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_master_policy_id ,
+          gbv_WritingCompany
+     );
+
+     --
+     -- Get the Billing Account of the Writing Company
+     --
+
+     v_writing_co_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_writing_company_id,
+          gObjType_BillingAccount
+     );
+
+     --
+     --   1.   Get the exchange, exchange sponsor partner and carrier billing account
+     --
+
+     v_usersession_exchange_id := pkg_os_wf_session.fn_exchange_get(in_session_id, in_transaction_id);
+
+     v_exchange_sponsor_partner_id := pkg_os_wf_session.fn_exchange_sponsor_get(in_session_id, in_transaction_id);
+
+     v_carrier_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+     (
+          in_session_id,
+          in_transaction_id,
+          v_exchange_sponsor_partner_id,
+          gObjType_BillingAccount
+     );
+
+     v_carrier_writing_entity_id := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+          nvl(v_writing_co_billing_acc_id, v_carrier_billing_acc_id),
+          gbv_BillingAccountParent
+     );
+
+   v_fitem_underwriting := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+           v_billaccount_parent_id,
+          29748546
+     );
+
+   v_fitem_current := pkg_os_object_io.fn_object_bv_get
+     (
+          in_session_id,
+          in_transaction_id,
+           v_fitransaction_obj_id,
+         31689946
+     );
+
+     v_fi_change_current := pkg_os_object_io.fn_object_bv_get
+    (
+          in_session_id,
+          in_transaction_id,
+            v_fitem_current,
+         31754446
+      );
+
+   v_fi_change_underwriting := pkg_os_object_io.fn_object_bv_get
+    (
+          in_session_id,
+          in_transaction_id,
+            v_fitem_underwriting,
+          31754446
+      );
+  /*
+  pkg_os_object_search.sp_object_children_of_type_get
+(
+     in_session_id    =>in_session_id,
+     in_transaction_id => in_transaction_id,
+     in_object_id      =>   v_fitransaction_obj_id,
+     in_child_object_type_id =>2365146,
+      object_list ,
+     NULL ,
+     in_recurse_flag =>'T',
+     NULL,
+     NULL,
+     NULL
+);
+    */
+--  DBMS_OUTPUT.pUT_LINE('v_fi_change_underwriting_company_transaction-'||v_fi_change_underwriting);
+--  DBMS_OUTPUT.pUT_LINE('v_fi_change_current_transaction-'||v_fi_change_current);
+--  DBMS_OUTPUT.pUT_LINE('v_fitem_associated_with_current_transaction-'||v_fitem_current);
+--  DBMS_OUTPUT.pUT_LINE('v_fitem_associated_under_writing_company-'||v_fitem_underwriting);
+--  DBMS_OUTPUT.pUT_LINE('v_fitransaction_obj_id -'||v_fitransaction_obj_id);
+--DBMS_OUTPUT.pUT_LINE('v_billingacctrxset_id -'||v_billingacctrxset_id);
+
+
+---
+--Set batch process total amount to zero
+--
+
+
+-- OSBILLING-7730	--
+
+v_batch_name:= pkg_os_lookup.fn_lookup_list_text_get
+                          (     PKG_DB_FUNCTIONS.FItemCategoryList,
+                                NVL(pkg_os_object_io.fn_object_bv_path_get
+                                (
+                                      in_session_id,
+                                      in_transaction_id,
+                                      in_action_object_id,
+                                      '29743646.31689946.29710146'-- Path from in_billingaccounttrxset to FItem subcategory
+                                 ),
+                                 pkg_os_object_io.fn_object_bv_path_get
+                                (
+                                      in_session_id,
+                                      in_transaction_id,
+                                      in_action_object_id,
+                                      '29743646.32175646.29710146'
+                                 ))
+                           );
+
+
+pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_action_object_id,32625948,v_batch_name);
+
+--End of OSBILLING-7730
+
+if v_session_control.gLogging_Full
+     then
+            pkg_os_logging.sp_log
+                            (
+                             in_session_id,
+                             in_transaction_id,
+                             v_procedure_name,
+                             '............ Setting batch amount to 0 for batch '||v_billingacctrxset_id
+                             );
+
+                              end if;
+
+
+ pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_action_object_id,gbv_FITrxSet_TotalAmount ,0);
+
+if v_session_control.gLogging_Full
+     then
+            pkg_os_logging.sp_log
+                            (
+                             in_session_id,
+                             in_transaction_id,
+                             v_procedure_name,
+                             '............ Setting reference null from billingaccounttrxset '||v_billingacctrxset_id
+                             );
+
+                              end if;
+
+pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id,in_action_object_id, v_datamart_tf);
+
+pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_action_object_id,29743646 ,NULL);
+
+--
+-- Delink object FITransaction from BillingAccountTransactionSet
+--
+
+ if v_session_control.gLogging_Full
+     then
+            pkg_os_logging.sp_log
+                            (
+                             in_session_id,
+                             in_transaction_id,
+                             v_procedure_name,
+                             '............ Deleting FITransaction object '||v_fitransaction_obj_id
+                             );
+
+                              end if;
+
+
+pkg_os_object.sp_object_delete
+          (
+               in_session_id,
+               in_transaction_id,
+               null,
+               v_fitransaction_obj_id ,
+               2365946
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          in_action_object_id,
+          pkg_db_object.gbv_FITrxSet_TotalItems,
+          0
+     );
+
+
+                v_bv_table.delete;
+
+               v_bv_table (pkg_db_object.gbv_FITrxSet_TotalItems      ).business_variable_value       :=       0;
+               v_bv_table (pkg_db_object.gbv_FITrxSet_TotalAmount     ).business_variable_value       :=       0;
+               v_bv_table (pkg_os_constant_bv.gbv_GenObjObjectState   ).business_variable_value       :=       gBatchStatus_Discarded;
+               v_bv_table (pkg_db_object.gbv_BillAccTrxSet_ProcessDate).business_variable_value       :=    to_char(v_current_date, pkg_os_constant.dragondateformatdefault );
+               v_bv_table (pkg_db_object.gbv_BillAccTrxSet_ScrtyStatus).business_variable_value       :=      3;
+               --
+               -- OSBILLING-1816 : persist Billing Account Total Balance
+               --
+/* OSBILLING-3884
+               v_bv_table(pkg_db_object.gbv_FITrxSet_BATotalBalance     ).business_variable_value := pkg_os_object_io.fn_object_bv_get
+                                                                                                     (
+                                                                                                          in_session_id,
+                                                                                                          in_transaction_id,
+                                                                                                          pkg_os_object.fn_object_parent_get
+                                                                                                          (
+                                                                                                               in_session_id,
+                                                                                                               in_transaction_id,
+                                                                                                               in_action_object_id
+                                                                                                          ),
+                                                                                                          pkg_db_object.gbv_BillAcc_TotalBalance
+                                                                                                     );
+
+-- OSBILLING-3884 */
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    v_bv_table
+               );
+
+                --
+                -- OSBILLING-767 Fetch and set the Accoutning Period for BillingAccounTTrxSet
+                --
+
+/*OSBILLING-3884
+                pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    in_action_object_id,
+                    pkg_db_object.gbv_FITrxSet_AccntingPeriod,
+                    pkg_db_functions.fn_get_fitransset_acct_prd(in_session_id,in_transaction_id,in_action_object_id)
+                );
+OSBILLING-3884 */
+
+/*
+                --
+                -- OSBILLING-767 Fetch and set the Accoutning Period for FItransaction
+                --
+                pkg_os_object_io.sp_object_bv_set
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitransaction_obj_id,
+                    pkg_db_object.gbv_FITrx_AccntingPeriod,
+                    pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id)
+                );
+*/ -- OSBILLING- 3529  As object is deleted
+ pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id,in_action_object_id, v_datamart_tf);
+-- OSBILLING- 3529 As object is deleted
+--pkg_os_datamart.sp_datamart_update_row(in_session_id, in_transaction_id,v_fitransaction_obj_id, v_datamart_tf);
+
+         io_action_outcome_id := 22;
+
+
+end sp_create_adhoc_reprocess;
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_create_journal_conv_adj
+--
+--
+--   %USAGE
+--        We need to create a adhoc journal at run time on user request
+--
+--   %ALGORITHM
+--        This procedure will create FiTransaction of Adhoc journal type and its associated FItem and FiChange.
+--
+--
+--   %PARAM    in_session_id            Session ID
+--   %PARAM    in_transaction_id        Transaction ID
+--   %PARAM    in_action_object_id    ID of BillingAccountTrxSet of chosen type
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_create_journal_conv_adj
+(
+     in_session_id          in              object.object_id%type,
+     in_transaction_id      in              object.object_id%type,
+     in_billingacc_id       in      	    object.object_id%type,
+     in_policy_id           in              object.object_id%type,
+     in_FiTrx_Amount        in              float,
+     io_action_outcome_id   in out nocopy   outcome.outcome_id%type,
+     o_billingacctrxset_id  out             object.object_id%type
+)
+
+ is
+
+     v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+     v_procedure_name constant system_log.program_name%type := pkg_name || 'sp_create_journal_conv_adj';
+
+     v_master_customer_id          object.object_id%type;
+     v_billaccount_parent_id       object.object_id%type;
+     v_fitransaction_obj_id        object.object_id%type;
+     v_current_date                date;
+     v_datamart_tf                 char(1) := 'T';
+     v_fitem_id                    object.object_id%type;
+     v_fitem_debit_credit_new      number;
+     v_fitem_obj_id                object.object_id%type;
+     v_fitem_debit_credit          number;
+     v_fitem_category              number;
+     v_fitem_subcategory           number;
+     v_fi_credit_change_id_1       object.object_id%type;
+     v_fi_credit_change_id_2       object.object_id%type;
+     v_writing_company_id          object.object_id%type;
+     v_writing_co_billing_acc_id   object.object_id%type;
+     v_exchange_sponsor_partner_id object.object_id%type;
+     v_carrier_billing_acc_id      object.object_id%type;
+     v_process_billing_trx_tf      char(1) := 'T';
+     v_bv_table                    pkg_os_object_io.t_bv_table;
+     v_curr_batchstatus            object_bv_value.business_variable_value%type;
+     v_FitemRefPolicyTerm          object.object_id%type;
+     v_FitemEarnStatus             lookup_list_value.lookup_enum%type;
+
+     v_batrxset_batchType object_bv_value.business_variable_value%type;
+
+begin
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '............ Process Adhoc Journal'
+          );
+
+     end if;
+
+     io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+
+
+     v_master_customer_id := pkg_os_object_search.fn_object_ultimate_parent_get
+                        (
+                             in_session_id,
+                             in_transaction_id,
+                             in_billingacc_id
+                        );
+     v_current_date := pkg_os_time.fn_os_sysdate
+                       (
+                            in_session_id,
+                            in_transaction_id,
+                            in_billingacc_id
+                       );
+
+     v_billaccount_parent_id := pkg_os_object.fn_object_parent_get
+                                (
+                                     in_session_id,
+                                     in_transaction_id,
+                                     in_billingacc_id
+                                );
+     --Create BATS Object
+     pkg_os_object.sp_object_create_basic
+     (
+          in_session_id,
+          in_transaction_id,
+          pkg_db_object.gObjType_BillingAccountTrxSet,
+          in_billingacc_id,
+          o_billingacctrxset_id,
+          null,
+          null,
+          'T'
+     );
+
+     --Create FI Transaction Object
+     pkg_os_object.sp_object_create_basic
+     (
+          in_session_id,
+          in_transaction_id,
+          pkg_db_object.gObjType_FITransaction,
+          o_billingacctrxset_id,
+          v_fitransaction_obj_id,
+          null,
+          null,
+          'T'
+     );
+
+     --Create Fitem Object
+     pkg_os_object.sp_object_create_basic
+     (
+          in_session_id,
+          in_transaction_id,
+          pkg_db_object.gObjType_FItem,
+          in_billingacc_id,
+          v_fitem_obj_id,
+          null,
+          null,
+          'T'
+     );
+     v_fitem_debit_credit := pkg_db_object.gFItem_Debit;
+
+     pkg_os_object_io.sp_object_bv_set ( in_session_id , in_transaction_id , v_fitransaction_obj_id , gbv_FITrx_EffectiveDate  , to_char(v_current_date, pkg_os_constant.dragondateformatdefault ));
+     --
+     -- Set BVs of BillingTransactionSet
+     --
+
+     v_bv_table.delete;
+
+     --if v_batrxset_batchType is null
+     --then
+          --v_bv_table(gbv_FITrxSet_BatchType).business_variable_value := gBatch_Adhoc_Journal;
+     --end if;
+
+     v_bv_table(gbv_FITrxSet_BatchType).business_variable_value := gBatch_Adhoc_Journal;
+     v_bv_table(gbv_BillAccTrxSet_CurrTrx).business_variable_value := v_fitransaction_obj_id;
+     v_bv_table(gbv_FITrxSetDatePosted).business_variable_value := to_char(SYSDATE,pkg_os_constant.DragonDateFormatDefault);
+     v_bv_table(gbv_FITrxSet_TotalAmount).business_variable_value := in_FiTrx_Amount;
+     v_bv_table(gbv_BillAccTrxSet_ScrtyStatus).business_variable_value := gBillAccTrxSetScrtyStatus_New;
+     v_bv_table(gbv_BillAccTrxSet_DisplayPrint).business_variable_value := 1;
+     v_bv_table(gbv_BillAccTrxSet_Origin).business_variable_value := 2;
+     v_bv_table(bv_FITrxSet_AcctPeriod).business_variable_value := pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id);
+     v_bv_table(gbv_FITrxSet_ExternalBatchId).business_variable_value := 'Batch' || to_char(pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,o_billingacctrxset_id),pkg_os_constant.DragonDateFormatDefault);
+     v_bv_table(gbv_FITrxSetEnteredby).business_variable_value := pkg_os_object_io.fn_object_bv_path_get(in_session_id,in_transaction_id,in_session_id,gbv_UserSession_UserName_Path);
+     v_bv_table(gbv_FITrxSet_EntryType).business_variable_value := gFITrx_EntryMode_Manual;
+     v_bv_table(gbv_FITrx_TotalControlItems).business_variable_value := 1;
+     v_bv_table(gbv_FITrxSetDatePosted).business_variable_value := to_char(pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,o_billingacctrxset_id),pkg_os_constant.DragonDateFormatDefault);
+
+     pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          o_billingacctrxset_id,
+          v_bv_table
+     );
+
+     --
+     -- Set BVs of FiTransactions
+     --
+     v_bv_table.delete;
+     v_bv_table(gbv_FITrx_RefAssociatedFitem).business_variable_value := v_fitem_obj_id;
+     v_bv_table(pkg_db_object.gbv_FITrx_Amount).business_variable_value := in_FiTrx_Amount;
+     v_bv_table(pkg_db_object.gbv_FITrx_TransactionType).business_variable_value := 1501;
+     v_bv_table(pkg_db_object.gbv_GenericObjSourceOrigin).business_variable_value := 2;
+     v_bv_table(gbv_FITrx_RefAssociatedPloicy).business_variable_value := in_policy_id;
+     v_bv_table(gbv_FITrx_RefActionPolicy).business_variable_value := in_policy_id;
+     v_bv_table(pkg_db_object.gbv_GenericObjRefCreator).business_variable_value   := pkg_os_object_io.fn_object_bv_get
+                                                                                     (
+                                                                                          in_session_id,
+                                                                                          in_transaction_id,
+                                                                                          in_session_id,
+                                                                                          210086
+                                                                                      );
+     pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          v_fitransaction_obj_id,
+          v_bv_table
+     );
+
+     if v_session_control.gLogging_Full then
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                v_fitem_obj_id ||
+                                '............ Setting reference from fitem to fitransaction with fitem_id ' ||
+                                v_fitem_obj_id || ' and fitransaction ' ||
+                                v_fitransaction_obj_id);
+
+     end if;
+
+     -- Get the type of FItem Selected by user
+     v_fitem_debit_credit := pkg_db_object.gFItem_Debit;
+     v_fitem_debit_credit_new := pkg_db_object.gFItem_Credit;
+     v_fitem_category := pkg_db_object.gFItem_Cat_ConvAdj;
+     v_fitem_subcategory := pkg_db_object.gFItem_SubCat_ConvAdj;
+
+     --Setting reference from FItem to FItransaction (31758346 _Reference_Associated With FITransaction )
+     --
+     -- Set BVs of FITEM
+     --
+
+     v_bv_table.delete;
+     v_bv_table(gbv_FItem_RefAssWithFItrx).business_variable_value := v_fitransaction_obj_id;
+     v_bv_table(pkg_db_object.gbv_GenericObjSourceOrigin).business_variable_value := 2;
+     v_bv_table(pkg_db_object.gbv_FItem_Earning_Status).business_variable_value := 4;
+     v_bv_table(pkg_db_object.gbv_FItem_AccntingPeriod).business_variable_value := pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id);
+     v_bv_table(gbv_FItem_Effective_Date).business_variable_value := to_char(v_current_date,pkg_os_constant.dragondateformatdefault);
+     v_bv_table(gbv_Fitem_BillingStatus).business_variable_value := pkg_db_object.gFItemBillStatus_Active;
+     v_bv_table(gbv_FItem_Subcategory).business_variable_value := v_fitem_subcategory; --gbv_FItem_Category
+     v_bv_table(gbv_FItem_Category).business_variable_value := v_fitem_category;
+     v_bv_table(gbv_FItem_Processing_Status).business_variable_value := pkg_db_object.gfitemprocstatus_processed;
+     v_bv_table(gbv_FItem_Bill_Status_Date).business_variable_value := to_char(v_current_date,pkg_os_constant.dragondateformatdefault);
+     v_bv_table(gbv_FItem_Earning_Status).business_variable_value := v_FitemEarnStatus;
+     -- OSPRODUCT-15900
+     v_bv_table(pkg_db_object.gbv_FItem_Earning_Date).business_variable_value   :=   to_char
+                                                                                     (
+                                                                                          pkg_os_time.fn_os_sysdate
+                                                                                          (
+                                                                                               in_session_id,
+                                                                                               in_transaction_id,
+                                                                                               v_fitem_obj_id
+                                                                                          ),
+                                                                                          pkg_os_constant.DragonDateFormatDefault
+                                                                                     );
+     -- OSPRODUCT-15900
+     v_bv_table(gbv_FItem_Earned_Amount).business_variable_value := 0;
+     v_bv_table(gbv_FItem_Unearned_Amount).business_variable_value := in_FiTrx_Amount;
+     v_bv_table(gbv_FItem_RefPolicy).business_variable_value := in_policy_id;
+     v_bv_table(gbv_FItem_RefCustomer).business_variable_value := v_master_customer_id;
+     v_bv_table(gbv_FItem_Debit_Credit).business_variable_value := v_fitem_debit_credit;
+     v_bv_table (gbv_FItem_RefAssWithFItrx).business_variable_value := v_billaccount_parent_id;
+
+     pkg_os_object_io.sp_object_bv_set
+     (
+          in_session_id,
+          in_transaction_id,
+          v_fitem_obj_id,
+          v_bv_table
+     );
+
+     v_FitemRefPolicyTerm     := pkg_db_functions.fn_get_policy_current_term
+                                 (
+                                      in_session_id ,
+                                      in_transaction_id ,
+                                      pkg_os_object_io.fn_object_bv_get
+                                      (
+                                           in_session_id ,
+                                           in_transaction_id ,
+                                           v_fitransaction_obj_id  ,
+                                           gbv_FITrx_RefActionPolicy
+                                      )
+                                 );
+
+     --
+     -- Get the Writing Company associated with the Policy
+     --
+
+     v_writing_company_id := pkg_os_object_io.fn_object_bv_get
+                             (
+                                  in_session_id,
+                                  in_transaction_id,
+                                  in_policy_id,
+                                  gbv_WritingCompany
+                             );
+
+     --
+     -- Get the Billing Account of the Writing Company
+     --
+
+     v_writing_co_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+                                    (
+                                         in_session_id,
+                                         in_transaction_id,
+                                         v_writing_company_id,
+                                         gObjType_BillingAccount
+                                    );
+
+     --
+     --   1.   Get the exchange, exchange sponsor partner and carrier billing account
+     --
+
+
+     v_exchange_sponsor_partner_id := pkg_os_wf_session.fn_exchange_sponsor_get
+                                      (
+                                           in_session_id,
+                                           in_transaction_id
+                                      );
+
+     v_carrier_billing_acc_id := pkg_os_object_search.fn_object_11_child_get
+                                 (
+                                      in_session_id,
+                                      in_transaction_id,
+                                      v_exchange_sponsor_partner_id,
+                                      gObjType_BillingAccount
+                                 );
+
+     v_curr_batchstatus := pkg_os_object_io.fn_object_bv_get
+                           (
+                                in_session_id,
+                                in_transaction_id,
+                                o_billingacctrxset_id,
+                                pkg_os_constant_bv.gbv_GenObjObjectState
+                           );
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id,
+                                in_transaction_id,
+                                v_procedure_name,
+                                '... Current Batch Status : ' ||
+                                v_curr_batchstatus);
+
+     end if;
+
+     if v_curr_batchstatus = gBatchStatus_Created or  v_curr_batchstatus is null then
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id,
+                                     in_transaction_id,
+                                     v_procedure_name,
+                                     '...... Process further as Batch is getting created for the first time.');
+
+          end if;
+
+           ---v_bv_table ( gbv_FItem_RefAssWithFItrx).business_variable_value := v_billaccount_parent_id;
+
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id,
+                                     in_transaction_id,
+                                     v_procedure_name,
+                                     '......... Call the Security Triggers validation process');
+
+          end if;
+
+
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               o_billingacctrxset_id,
+               v_datamart_tf
+          );
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               v_fitransaction_obj_id,
+               v_datamart_tf
+          );
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               in_policy_id,
+               v_datamart_tf
+          );
+
+          if v_process_billing_trx_tf = 'T' then
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id,
+                                          in_transaction_id,
+                                          v_procedure_name,
+                                          '............... Process further because no security rules voilated by the Adhoc batch');
+               end if;
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id,
+                                          in_transaction_id,
+                                          v_procedure_name,
+                                          '............... Call the process to create the FItem and FIChange objects');
+
+               end if;
+
+               pkg_db_object.sp_fitem_create(in_session_id              => in_session_id,
+                                             in_transaction_id          => in_transaction_id,
+                                             in_parent_object_id        => nvl(v_writing_co_billing_acc_id,v_carrier_billing_acc_id),
+                                             out_fitem_id               => v_fitem_id,
+                                             in_fitem_debit_credit      => v_fitem_debit_credit_new,
+                                             in_fitem_category          => v_fitem_category,
+                                             in_fitem_subcategory       => v_fitem_subcategory,
+                                             in_fitem_effective_date    => to_char(v_current_date,pkg_os_constant.dragondateformatdefault),
+                                             in_fitem_billing_status    => pkg_db_object.gFItemBillStatus_Active,
+                                             in_fitem_processing_status => pkg_db_object.gfitemprocstatus_processed,
+                                             in_fitem_bill_status_date  => to_char(v_current_date,pkg_os_constant.dragondateformatdefault),
+                                             in_fitem_Earningstatus     => v_FitemEarnStatus,
+                                             in_fitem_earned_amount     => 0,
+                                             in_fitem_unearned_amount   => in_FiTrx_Amount * (-1),
+                                             in_fitem_paid_amount       => 0,
+                                             in_FItemRefPolicy          => in_policy_id,
+                                             in_FItemRefCustomer        => v_master_customer_id,
+                                             in_FItemRefEntityBelongsTo => v_billaccount_parent_id,
+                                             in_FItemRefAssWithFItrx    => v_fitransaction_obj_id,
+                                             in_FitemRefPolicyTerm      => v_FitemRefPolicyTerm);
+
+               --Setting reference from FItem to FItransaction (31758346 _Reference_Associated With FITransaction )
+
+               v_fitransaction_obj_id := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                           in_transaction_id,
+                                                                           o_billingacctrxset_id,
+                                                                           gbv_BillAccTrxSet_CurrTrx);
+               pkg_os_object_io.sp_object_bv_set(in_session_id,
+                                                 in_transaction_id,
+                                                 v_fitem_id,
+                                                 31758346,
+                                                 v_fitransaction_obj_id);
+
+               --
+               -- Create FIChange of type CREATE for the created credit fitem
+               --
+               pkg_db_object.sp_fichange_create(in_session_id              => in_session_id,
+                                                in_transaction_id          => in_transaction_id,
+                                                in_parent_fitransaction_id => v_fitransaction_obj_id,
+                                                out_fichange_id            => v_fi_credit_change_id_1,
+                                                in_fichange_action         => pkg_db_object.gfichange_create,
+                                                in_fichange_action_delta   => in_FiTrx_Amount,
+                                                in_fichange_ref_fitem      => v_fitem_obj_id,
+                                                in_fichange_sum_include    => pkg_db_object.gfichange_yes,
+                                                in_fichange_process_date   => to_char(v_current_date,pkg_os_constant.dragondateformatdefault),
+                                                in_fichange_ref_pol        => in_policy_id,
+                                                in_fichange_belongs_to     => v_billaccount_parent_id --v_fitransaction_obj_id OSbilling-5405
+                                                );
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id,
+                                          in_transaction_id,
+                                          v_procedure_name,
+                                          '...............created FIChange1  ' ||
+                                          v_fi_credit_change_id_1);
+
+               end if;
+               pkg_db_object.sp_fichange_create(in_session_id              => in_session_id,
+                                                in_transaction_id          => in_transaction_id,
+                                                in_parent_fitransaction_id => v_fitransaction_obj_id,
+                                                out_fichange_id            => v_fi_credit_change_id_2,
+                                                in_fichange_action         => pkg_db_object.gfichange_create,
+                                                in_fichange_action_delta   => in_FiTrx_Amount * (-1),
+                                                in_fichange_ref_fitem      => v_fitem_id,
+                                                in_fichange_sum_include    => pkg_db_object.gfichange_yes,
+                                                in_fichange_process_date   => to_char(v_current_date,pkg_os_constant.dragondateformatdefault),
+                                                in_fichange_ref_pol        => in_policy_id,
+                                                in_fichange_belongs_to     => v_billaccount_parent_id --v_fitransaction_obj_id OSbilling-5405
+                                                );
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id,
+                                          in_transaction_id,
+                                          v_procedure_name,
+                                          '...............created FIChange2 ' ||
+                                          v_fi_credit_change_id_2);
+
+               end if;
+
+               pkg_os_datamart.sp_datamart_update_row(in_session_id,
+                                                      in_transaction_id,
+                                                      in_policy_id,
+                                                      v_datamart_tf);
+
+               io_action_outcome_id := pkg_os_constant.gOutcome_OK;
+               --
+               -- Set the 'Creator FIChange' reference for Fitem
+               --
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_obj_id,
+                    pkg_db_cashpost.gbv_FItemRefCreatorFiChange,
+                    v_fi_credit_change_id_1
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    pkg_db_cashpost.gbv_FItemRefCreatorFiChange,
+                    v_fi_credit_change_id_2
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fi_credit_change_id_1,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fi_credit_change_id_2,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    o_billingacctrxset_id,
+                    v_datamart_tf
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_obj_id,
+                    pkg_db_cashpost.gbv_FItemRefCreatorFiChange,
+                    v_fi_credit_change_id_1);
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    29998046,
+                    1
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    32133440,
+                    pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id)
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    pkg_db_cashpost.gbv_FItemRefCreatorFiChange,
+                    v_fi_credit_change_id_2
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitransaction_obj_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    pkg_db_object.gfitrxstatus_processed
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    o_billingacctrxset_id,
+                    gbv_BillAccTrxSet_ScrtyStatus,
+                    3
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    o_billingacctrxset_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    pkg_db_object.gBatchStatus_Processed
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    o_billingacctrxset_id,
+                    pkg_db_object.gbv_BillAccTrxSet_ProcessDate,
+                    to_char(v_current_date,pkg_os_constant.dragondateformatdefault)
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitransaction_obj_id,
+                    pkg_db_object.gbv_FITrx_AccntingPeriod,
+                    pkg_db_functions.fn_get_fitransaction_acct_prd(in_session_id,in_transaction_id,v_fitransaction_obj_id)
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_obj_id,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fi_credit_change_id_1,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fi_credit_change_id_2,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_policy_id,
+                    v_datamart_tf
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitransaction_obj_id,
+                    v_datamart_tf
+               );
+               pkg_db_nightly_process.sp_update_aging_status
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_policy_id
+               );
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                   in_session_id,
+                   in_transaction_id,
+                   o_billingacctrxset_id,
+                   v_datamart_tf
+               );
+               io_action_outcome_id := 22;
+          else
+
+               if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id,
+                                          in_transaction_id,
+                                          v_procedure_name,
+                                          '............... Do not Process further because security rules voilated by the Adhoc journal batch');
+
+               end if;
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    39446
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_fitem_obj_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    39446
+               );
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    o_billingacctrxset_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    49346
+               );
+               --- OSBILLING-2393
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                   in_session_id,
+                   in_transaction_id,
+                   o_billingacctrxset_id,
+                   v_datamart_tf
+               );
+               io_action_outcome_id := 42046;
+          end if;
+     End if;
+end sp_create_journal_conv_adj;
+
+
+--OSPRODUCT-16699
+procedure sp_adhoc_journal_cleanup
+(
+     in_session_id            in              object.object_id%type,
+     in_transaction_id        in              object.object_id%type,
+     in_billingacctrx_id      in              object.object_id%type
+)
+
+ is
+
+     v_session_control        pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+     v_procedure_name         constant system_log.program_name%type := pkg_name || 'sp_adhoc_journal_cleanup';
+
+     v_fitem_id               object.object_id%type;
+begin
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '............ Cleanning up Adhoc Journal for BATS ' || in_billingacctrx_id
+          );
+     end if;
+
+     v_fitem_id     :=   pkg_os_object_io.fn_object_bv_path_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_billingacctrx_id,
+                              '29743646.31689946'
+                         );
+     pkg_os_object.sp_object_delete
+     (
+          in_session_id,
+          in_transaction_id,
+          null,
+          v_fitem_id,
+          null
+     );
+     
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               'Deleted Fitem ' || v_fitem_id
+          );
+     end if;
+     
+end sp_adhoc_journal_cleanup;
+
+end pkg_db_adhoc_journal;
+/

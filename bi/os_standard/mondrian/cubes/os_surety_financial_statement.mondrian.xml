@@ -1,0 +1,548 @@
+<!--
+	$Modified By By: sphadte
+	$Date:   14 July 2020  $
+-->
+<Schema name="Surety Financial Statement Cubes">
+  <Dimension visible="true" highCardinality="false" name="Contractor Type">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Contractor Types" primaryKey="SCD_CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_CUSTOMER_DETAIL">
+      </Table>
+      <Level name="Contractor Type" visible="true" column="SCD_CONTRACTOR_TYPE" ordinalColumn="SCD_CONTRACTOR_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Contractor Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Account Type">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Account Types" primaryKey="SCD_CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_CUSTOMER_DETAIL">
+      </Table>
+      <Level name="Account Type" visible="true" column="SCD_ACCOUNT_TYPE" ordinalColumn="SCD_ACCOUNT_TYPE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Account Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Customer">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Customers" primaryKey="SCD_CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_CUSTOMER_DETAIL">
+      </Table>
+      <Level name="Customer" visible="true" column="SCD_CUSTOMER_NAME" nameColumn="SCD_CUSTOMER_NAME" ordinalColumn="SCD_CUSTOMER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Principal">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Principals" primaryKey="SCD_CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_CUSTOMER_DETAIL">
+      </Table>
+      <Level name="Principal" visible="true" column="SCD_CUSTOMER_NAME" nameColumn="SCD_CUSTOMER_NAME" ordinalColumn="SCD_CUSTOMER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Principal Name" description="Name of the Principal">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="WIPCustomer">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Customers" primaryKey="CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_WIP_CUSTOMER_DET">
+      </Table>
+      <Level name="Customer" visible="true" column="CUSTOMER_NAME" nameColumn="CUSTOMER_NAME" ordinalColumn="CUSTOMER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Name of the Customer">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="BondNumber">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Bonds" primaryKey="CUSTOMER_ID">
+      <Table name="BI_DIM_SURETY_CUST_BOND_DET">
+      </Table>
+      <Level name="Bond Number" visible="true" column="BD_BOND_NUMBER" nameColumn="BD_BOND_NUMBER" ordinalColumn="BD_BOND_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Number of the Customer">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Principal_Address" caption="Principal Address">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Countries" primaryKey="AD_ADDRESS_ID">
+      <Table name="BI_DIM_ADDRESS_DETAIL">
+      </Table>
+      <Level name="Country" visible="true" column="CL_COUNTRY_ID" nameColumn="AD_COUNTRY_NAME" ordinalColumn="AD_COUNTRY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Country" description="Name of the Country">
+	    <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">country</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="Jurisdiction" visible="true" column="AD_JURISDICTION_NAME" nameColumn="AD_JURISDICTION_NAME" ordinalColumn="AD_JURISDICTION_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Jurisdiction" description="Jurisdiction">
+	  <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">state</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="City" visible="true" column="AD_ADDRESS_CITY" nameColumn="AD_ADDRESS_CITY" ordinalColumn="AD_ADDRESS_CITY" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="City}" description="Name of the city">
+	    <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">city</Annotation>
+  </Annotations>
+      </Level>
+      <Level name="ZipCode" visible="true" column="AD_ADDRESS_ZIP_CODE" ordinalColumn="AD_ADDRESS_ZIP_CODE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="ZipCode" description="ZipCode">
+	    <Annotations>
+    <Annotation name="Data.Role">Geography</Annotation>
+    <Annotation name="Geo.Role">zip</Annotation>
+  </Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Bond Type" caption="Bond Type">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Bond Types" primaryKey="BT_BOND_MASTER_ID">
+      <Table name="BI_DIM_BOND_TYPE_DETAIL">
+      </Table>
+      <Level name="Category" visible="true" column="BT_CATEGORY_ID" nameColumn="BT_CATEGORY_NAME" ordinalColumn="BT_CATEGORY_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Category">
+      </Level>
+      <Level name="Type" visible="true" column="BT_TYPE_ID" nameColumn="BT_TYPE_NAME" ordinalColumn="BT_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Class Description">
+      </Level>
+      <Level name="Sub Type" visible="true" column="BT_SUB_TYPE_ID" nameColumn="BT_SUB_TYPE_NAME" ordinalColumn="BT_SUB_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Sub Type">
+      </Level>
+      <Level name="Class" visible="true" column="BT_CLASS_CODE" nameColumn="BT_CLASS_DESC" ordinalColumn="BT_CLASS_DESC" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Type">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Bond Status" caption="Bond Status">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Bond Statuses" primaryKey="OS_OBJECT_STATE_ID">
+      <Table name="BI_DIM_OBJECT_STATE">
+      </Table>
+      <Level name="Bond Status" visible="true" column="OS_OBJECT_STATE_ID" nameColumn="OS_OBJECT_STATE_NAME" ordinalColumn="OS_OBJECT_STATE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Current state of bond">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Bond_Broker" caption="Broker">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Brokers" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Bond_Broker">
+      </Table>
+       <Level name="Broker Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Name">
+	<Property name="Broker Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Broker Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="Broker Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Status">
+</Level>
+<Level name="Broker Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Effective Date">
+</Level>
+<Level name="Broker Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Broker Expiry Date">
+</Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Bond_POA" caption="POA">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All POAs" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Bond_POA">
+      </Table>
+      <Level name="POA Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POA Name">
+	<Property name="POA Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="POA Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="POA Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POA Status">
+</Level>
+<Level name="POA Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POA Effective Date">
+</Level>
+<Level name="POA Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="POA Expiry Date">
+</Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Surety_Office" caption="Surety Office">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Surety Offices" primaryKey="SO_SERVICE_TERRITORY_ID">
+      <Table name="BI_DIM_SERVICE_TERRITORY" alias="Surety_Office">
+      </Table>
+      <Level name="Surety_Office" visible="true" column="SO_SERVICE_TERRITORY_NUMBER" nameColumn="SO_SERVICE_TERRITORY_NAME" ordinalColumn="SO_SERVICE_TERRITORY_NAME" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never" caption="Surety Office" description="Surety Office">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Bond_Obligee" caption="Obligee">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Obligees" primaryKey="PE_PARTNER_ID">
+      <Table name="BI_DIM_PARTNER_ENTITY" alias="Bond_Obligee">
+      </Table>
+      <Level name="Obligee Name" column="PE_PARTNER_NAME" nameColumn="PE_PARTNER_NAME" ordinalColumn="PE_PARTNER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Obligee Name">
+	<Property name="Obligee Parent Name" column="PE_PARTNER_PARENT_NAME" type="String">
+        </Property>
+	<Property name="Obligee Code" column="PE_PARTNER_CODE" type="String">
+        </Property>
+	<Property name="Marketing Manager Name" column="PE_PARTNER_MKT_MANAGER_NAME" type="String">
+        </Property>
+</Level>
+<Level name="Obligee Status" column="PE_PARTNER_STATUS" nameColumn="PE_PARTNER_STATUS" ordinalColumn="PE_PARTNER_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Obligee Status">
+</Level>
+<Level name="Obligee Effective Date" column="PE_PARTNER_EFF_DATE" nameColumn="PE_PARTNER_EFF_DATE" ordinalColumn="PE_PARTNER_EFF_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Obligee Effective Date">
+</Level>
+<Level name="Obligee Expiry Date" column="PE_PARTNER_EXP_DATE" nameColumn="PE_PARTNER_EXP_DATE" ordinalColumn="PE_PARTNER_EXP_DATE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Obligee Expiry Date">
+</Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension visible="true" highCardinality="false" name="Creator" caption="Creator">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Creators" primaryKey="UD_USER_ID">
+      <Table name="BI_DIM_USER_DETAIL" alias="Creator">
+      </Table>
+      <Level name="Creator Role" visible="true" column="UD_USER_ROLE_ID" nameColumn="UD_USER_ROLE" ordinalColumn="UD_USER_ROLE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Creator Role" description="Creator role name">
+      </Level>
+      <Level name="Creator User" visible="true" column="UD_USER_ID" nameColumn="UD_USER_NAME" ordinalColumn="UD_USER_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Creator User" description="Name of the Creator">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Statement AsOf Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="STMT_ASOF_DT_TBL">
+      </Table>
+      <Level name="Statement Asof Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Statement Asof Date Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Statement Asof Date (Quarter)" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Statement Asof Date (Month)" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Statement Asof Date (Day)" description="Statement AsOf Date (Day)">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Contract WIP Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="STMT_ASOF_DT_TBL">
+      </Table>
+      <Level name="Statement Asof Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Statement Asof Date Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Statement Asof Date (Quarter)" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Statement Asof Date (Month)" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Statement Asof Date (Day)" description="Statement AsOf Date (Day)">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Est Completion Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="STMT_ASOF_DT_TBL">
+      </Table>
+      <Level name="Statement Asof Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Statement Asof Date Year" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Statement Asof Date (Quarter)" description="Name or number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Statement Asof Date (Month)" description="Name of the month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Statement Asof Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Statement Asof Date (Day)" description="Statement AsOf Date (Day)">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Bond Effective Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EFF_TIME">
+      </Table>
+      <Level name="Bond Effective Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Effective Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Effective Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Effective Date" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Bond Effective Date Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Bond Expiration Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EXP_TIME">
+      </Table>
+      <Level name="Bond Expiration Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Expiration Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Expiration Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Expiration Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Expiration Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Bond Expiration Date (Day)">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Time (Bond Executed Date)">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="EXECUTE_TIME">
+      </Table>
+      <Level name="Bond Executed Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Executed Year">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Executed Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or Number of the Quarter">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Executed Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+			</Annotations>
+      </Level>
+      <Level name="Bond Executed Day" visible="true" column="TD_DAY"  type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Bond Executed Day">
+	  <Annotations>
+			<Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[d]</Annotation>
+			</Annotations>
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  <Cube name="CUST_FINANCE_STMT_CUBE" caption="Customer Financial Statement Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_CUSTOMER_FINANCE_STMT">
+    </Table>
+    <DimensionUsage source="Contractor Type" name="Contractor Type" visible="false" foreignKey="CFS_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Account Type" name="Account Type" visible="false" foreignKey="CFS_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Principal" name="Principal" visible="true" foreignKey="CFS_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Statement AsOf Date)" name="Time (Statement AsOf Date)" visible="true" foreignKey="CFS_STMT_ASOF_DATE" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Statement Source">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Sources">
+        <Level name="Statement Source" visible="true" column="CFS_STMT_SOURCE" nameColumn="CFS_STMT_SOURCE" ordinalColumn="CFS_STMT_SOURCE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Customer Finance Statement source">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="false" highCardinality="false" name="Credit Score">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Credit Scores">
+        <Level name="Credit Score" visible="true" column="CFS_CREDIT_SCORE" nameColumn="CFS_CREDIT_SCORE" ordinalColumn="CFS_CREDIT_SCORE" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Credit Score">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Statement_Count" column="CFS_FINANCE_STMT_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="Statement Count" description="Number of Statements">
+    </Measure>
+    <Measure name="Assets_Cash" column="CFS_ASSETS_CASH_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Assets - Cash" description="Assets - Cash">
+    </Measure>
+    <Measure name="Assets_AccountsRecvTrade" column="CFS_ASSETS_ACCT_RECV_TRADE_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Assets - Account Receivable Trade" description="Assets - Account Receivable Trade">
+    </Measure>
+    <Measure name="Liability_ShortTermDebt" column="CFS_LIAB_SHORT_TERM_DEBT_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Liabilities - Short Term Debt" description="Liabilities - Short Term Debt">
+    </Measure>
+    <Measure name="Liability_AcctPayableTrade" column="CFS_LIAB_ACCT_PAYBL_TRADE_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Liabilities - Accounts Payable Trade" description="Liabilities - Accounts Payable Trade">
+    </Measure>
+    <Measure name="Current_Asset_Total" column="CFS_TOTAL_CURR_ASSET_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Total Current Assets" description="Total Current Assets">
+    </Measure>
+    <Measure name="Current_Liability_Total" column="CFS_TOTAL_CURR_LIAB_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Total Current Liabilities" description="Total Current Liabilities">
+    </Measure>
+    <Measure name="Working_Capital" column="CFS_WORKING_CAPITAL_AMT" datatype="Integer" formatString="#,###" aggregator="sum" caption="Working Capital" description="Working Capital">
+    </Measure>
+    <Measure name="Avg_Working_Capital" column="CFS_WORKING_CAPITAL_AMT" datatype="Integer" formatString="#,###" aggregator="avg" caption="Avg Working Capital" description="Average Working Capital">
+    </Measure>
+    <Measure name="Net_Income_Margin" column="CFS_NET_INCOME_MARGIN" datatype="Integer" formatString="##.##" aggregator="sum" caption="Net Income Margin" description="Net Income Margin">
+    </Measure>
+    <Measure name="Avg_NI_Margin" column="CFS_NET_INCOME_MARGIN" datatype="Integer" formatString="##.0%" aggregator="avg" caption="Avg NI Margin" description="Average Net Income Margin">
+    </Measure>
+    <Measure name="Gross_Profit_Margin" column="CFS_GROSS_PROFIT_MARGIN" datatype="Integer" formatString="##.##" aggregator="sum" caption="Gross Profit Margin" description="Gross Profit Margin">
+    </Measure>
+    <Measure name="Avg_GP_Margin" column="CFS_GROSS_PROFIT_MARGIN" datatype="Integer" formatString="##.0%" aggregator="avg" caption="Avg GP Margin" description="Average Gross Profit Margin">
+    </Measure>
+    <Measure name="Avg_Credit_Score" column="CFS_CREDIT_SCORE_NUMBER" datatype="Integer" formatString="##.##" aggregator="avg" caption="Avg Credit Score" description="Average Credit Score" visible="false">
+    </Measure>
+    <CalculatedMember name="Avg_Credit_Score_Text" caption="Avg Credit Score Text" description="Avg Credit Score" dimension="Measures" visible="false">
+      <Formula>
+        <![CDATA[Case 
+				  When [Measures].[Avg_Credit_Score] >= 97.0 AND [Measures].[Avg_Credit_Score] <= 100.0 Then 'AAA'
+				  When [Measures].[Avg_Credit_Score] >= 93.0 AND [Measures].[Avg_Credit_Score] <= 96.0 Then 'AA'
+				  When [Measures].[Avg_Credit_Score] >= 90.0 AND [Measures].[Avg_Credit_Score] <= 92.0 Then 'A'
+				  When [Measures].[Avg_Credit_Score] >= 87.0 AND [Measures].[Avg_Credit_Score] <= 89.0 Then 'BBB'
+				  When [Measures].[Avg_Credit_Score] >= 83.0 AND [Measures].[Avg_Credit_Score] <= 86.0 Then 'BB'
+				  When [Measures].[Avg_Credit_Score] >= 80.0 AND [Measures].[Avg_Credit_Score] <= 82.0 Then 'B'
+				  When [Measures].[Avg_Credit_Score] >= 77.0 AND [Measures].[Avg_Credit_Score] <= 79.0 Then 'CCC'
+				  When [Measures].[Avg_Credit_Score] >= 73.0 AND [Measures].[Avg_Credit_Score] <= 76.0 Then 'C'
+				  When [Measures].[Avg_Credit_Score] >= 70.0 AND [Measures].[Avg_Credit_Score] <= 72.0 Then 'D'
+				  When [Measures].[Avg_Credit_Score] >= 67.0 AND [Measures].[Avg_Credit_Score] <= 69.0 Then 'DDD'
+				  When [Measures].[Avg_Credit_Score] >= 63.0 AND [Measures].[Avg_Credit_Score] <= 66.0 Then 'DD'
+				  When [Measures].[Avg_Credit_Score] >= 60.0 AND [Measures].[Avg_Credit_Score] <= 62.0 Then 'D'
+				  Else 'N/A'
+			End]]>
+      </Formula>
+    </CalculatedMember>
+  </Cube>
+  <Cube name="SURETY_BOND_CUBE" caption="Surety Bond Cube" visible="true" cache="true" enabled="true">
+    <Table name="VW_FACT_SURETY_BOND_DETAIL">
+    </Table>
+    <DimensionUsage source="Principal_Address" name="Principal_Address" caption="Principal Address" visible="true" foreignKey="AD_PRINCIPAL_PRIMARY_ADDR_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Bond Type" name="Bond Type" caption="Bond Type" visible="true" foreignKey="BT_BOND_MASTER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Bond Status" name="Bond Status" caption="Bond Status" visible="true" foreignKey="OS_BOND_STATE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Principal" name="Principal" caption="Principal" visible="true" foreignKey="SCD_BOND_PRINCIPAL_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Bond Effective Date)" name="Time (Bond Effective Date)" visible="true" foreignKey="BD_EFF_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Bond Expiration Date)" name="Time (Bond Expiration Date)" visible="true" foreignKey="BD_EXP_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Time (Bond Executed Date)" name="Time (Bond Executed Date)" visible="true" foreignKey="BD_PROCESSED_DT" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Bond_Obligee" name="Bond_Obligee" caption="Obligee" visible="true" foreignKey="PE_BOND_OBLIGEE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Bond_POA" name="Bond_POA" caption="Power of Attorney" visible="false" foreignKey="PE_BOND_POA_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Bond_Broker" name="Bond_Broker" caption="Broker" visible="true" foreignKey="PE_BROKER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Creator" name="Creator" visible="true" foreignKey="UD_CREATOR_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Surety_Office" name="Surety_Office" caption="Surety Office" visible="true" foreignKey="SO_SERVICE_TERRITORY_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Renewable_YN" caption="Renewable">
+      <Hierarchy visible="true" hasAll="true">
+        <Level name="Renewable_YN" visible="true" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Renewable" description="Is this Bond renewable or not?">
+          <KeyExpression>
+            <SQL dialect="oracle">
+              <![CDATA[case when BD_RENEWABLE_IND = 1 then 'Renewable'  else 'Not Renewable' end]]>
+            </SQL>
+          </KeyExpression>
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension visible="true" highCardinality="false" name="Bond Number">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Bond Numbers">
+        <Level name="Bond Number" visible="true" column="BD_BOND_NUMBER" nameColumn="BD_BOND_NUMBER" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bond Number">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Bond_Count" column="BD_BOND_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Bond Count" description="Total number of bonds">
+    </Measure>
+    <Measure name="Premium" column="BD_PREMIUM_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Premium" description="Premium of the bond">
+    </Measure>
+    <Measure name="Liability_Amount" column="BD_LIABILITY_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Bond Liability" description="Bond Liability Amount">
+    </Measure>
+    <Measure name="Avg_Time_to_Execute" column="BD_TIME_TO_EXECUTE_DAYS" datatype="Numeric" formatString="####.0" aggregator="avg" caption="Avg Time to Execute (days)" description="Average time to execute a bond">
+    </Measure>
+    <Measure name="Executed_Count" column="BD_EXECUTED_IND" datatype="Integer" formatString="#,###" aggregator="sum" caption="Executed Count" description="Number of bonds executed">
+    </Measure>
+    <CalculatedMember name="Hit_Ratio" formatString="###.00%" caption="Hit Ratio" formula="IIf( [Measures].[Executed_Count] = 0, null, ([Measures].[Executed_Count] / [Measures].[Bond_Count]) )" dimension="Measures">
+    </CalculatedMember>
+  </Cube>
+  <Cube name="CUST_PROJECT_ANALYSIS_CUBE" caption="Customer Project Analysis Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_CUST_CONT_RPRT_DET">
+    </Table>
+    <DimensionUsage source="Time (Contract WIP Date)" name="Time (Contract WIP Date)" caption="Time (Contract WIP Date)" visible="true" foreignKey="CCRD_WIP_DATE" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="WIPCustomer" name="WIPCustomer" visible="true" foreignKey="SCD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="BondNumber" name="BondNumber" visible="true" foreignKey="SCD_CUSTOMER_ID" highCardinality="false">
+    </DimensionUsage>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Type of Construction">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Construction">
+        <Level name="Type of Construction" visible="true" column="CCRD_TYPE_OF_CONSTRUCTION" nameColumn="CCRD_TYPE_OF_CONSTRUCTION" ordinalColumn="CCRD_TYPE_OF_CONSTRUCTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Type of Construction">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Bonded">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Bonded">
+        <Level name="Bonded" visible="true" column="CCRD_BONDED_YN" nameColumn="CCRD_BONDED_YN" ordinalColumn="CCRD_BONDED_YN" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Bonded">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" highCardinality="false" name="Contract Price">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Contract Price">
+        <Level name="Contract Price" visible="true" column="CCRD_CONTRACT_PRICE_AMT" nameColumn="CCRD_CONTRACT_PRICE_AMT" ordinalColumn="CCRD_CONTRACT_PRICE_AMT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Contract Price">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Total Contract Price Amount" column="CCRD_CONTRACT_PRICE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Contract Price Amount" description="Contract Price Amount">
+    </Measure>
+    <Measure name="Cost to Complete Amount" column="CCRD_COST_TO_COMPLETE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Cost to Complete" description="Cost to Complete Amount">
+    </Measure>
+    <Measure name="Total Estimated Cost Amount - Open Jobs" column="CCRD_EST_COST_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Estimated Cost Amount - Open Jobs" description="Estimated Cost Amount">
+    </Measure>
+    <Measure name="Cost to Date Amount" column="CCRD_COST_TO_DATE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Cost to Date" description="Cost to Date Amount">
+    </Measure>
+    <Measure name="Billed to Date Amount" column="CCRD_BILLED_TO_DATE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Billed to Date" description="Billed to Date Amount">
+    </Measure>
+    <Measure name="Total Profit Earned Amount - Open Jobs" column="CCRD_PROFIT_EARNED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Profit Earned Amount - Open Jobs" description="Profit Earned Amount">
+    </Measure>
+    <Measure name="Total Revenues Earned Amount - Open Jobs" column="CCRD_REVENUES_EARNED_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Revenues Earned Amount - Open Jobs" description="Revenues Earned Amount">
+    </Measure>
+    <Measure name="Total Underbilling Amount - Open Jobs" column="CCRD_C_EE_B_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Underbilling - Open Jobs" description="Total Underbilling Amount">
+    </Measure>
+    <Measure name="Total Overbilling Amount - Open Jobs" column="CCRD_B_C_EE_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Overbilling - Open Jobs" description="Total Overbilling Amount">
+    </Measure>
+    <Measure name="Percent Completed - Open Jobs" column="CCRD_PRCT_COMPLETED" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Percent Completed - Open Jobs" description="Percent Completed">
+    </Measure>
+    <Measure name="Total Gross Profit" column="CCRD_EST_PROFIT_AMT" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Gross Profit" description="Gross Profit">
+    </Measure>
+    <Measure name="Avg Gross Profit-All Contracts" column="CCRD_EST_PROFIT_AMT" datatype="Numeric" formatString="$#,###" aggregator="avg" caption="Avg Gross Profit-All Contracts" description="Avg Gross Profit-All Contracts">
+    </Measure>
+    <Measure name="Average gross profit-Completed Contracts" datatype="Numeric" formatString="$#,###" aggregator="avg" caption="Average gross profit-Completed Contracts" description="Average gross profit-Completed Contracts">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_CUST_CONT_RPRT_DET.CCRD_JOB_COMPLETED_YN,1,CCRD_EST_PROFIT_AMT,0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Average gross profit-Open Contracts" datatype="Numeric" formatString="$#,###" aggregator="avg" caption="Average gross profit-Open Contracts" description="Average gross profit-Open Contracts">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(nvl(BI_FACT_CUST_CONT_RPRT_DET.CCRD_JOB_COMPLETED_YN,0),nvl(null,0),CCRD_EST_PROFIT_AMT,0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total Contract Price - Completed Contracts" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Contract Price - Completed Contracts" description="Total Contract Price - Completed Contracts">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(BI_FACT_CUST_CONT_RPRT_DET.CCRD_JOB_COMPLETED_YN,1,CCRD_CONTRACT_PRICE_AMT,0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total Contract Price - Open Jobs" datatype="Numeric" formatString="$#,###" aggregator="sum" caption="Total Contract Price - Open Jobs" description="Total Contract Price - Open Jobs">
+      <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[decode(nvl(BI_FACT_CUST_CONT_RPRT_DET.CCRD_JOB_COMPLETED_YN,0),nvl(null,0),CCRD_CONTRACT_PRICE_AMT,0)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+  </Cube>
+</Schema>

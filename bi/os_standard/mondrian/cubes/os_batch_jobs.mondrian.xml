@@ -1,0 +1,171 @@
+<Schema name="Batch Jobs Schema" description="Batch Jobs Schema">
+
+    <Dimension type="StandardDimension" visible="true" name="Batch_Type">
+      <Hierarchy name="Batch Type" visible="true" hasAll="true" description="Batch Type">
+        <Table name="BATCH_TYPE" alias="">
+        </Table>
+        <Level name="Batch Type" visible="true" column="BATCH_TYPE_ID" nameColumn="BATCH_TYPE_NAME" ordinalColumn="BATCH_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Batch Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+  <Dimension type="StandardDimension" visible="true" name="Status">
+      <Hierarchy name="Status" visible="true" hasAll="true" description="Status" primaryKey="JOB_STATUS_DEFINITION_CODE">
+        <Table name="JOB_STATUS_DEFINITION" alias="">
+        </Table>
+        <Level name="Status" visible="true" column="JOB_STATUS_DEFINITION_CODE" nameColumn="JOB_STATUS_DEFINITION_NAME" ordinalColumn="JOB_STATUS_DEFINITION_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Status">
+        </Level>
+      </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Batch Start Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="BATCH_START_DT">
+      </Table>
+      <Level name="Batch Start Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Batch Start Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+      </Level>
+      <Level name="Batch Start Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Batch Start Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Batch Start Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+    <Dimension type="StandardDimension" visible="true" name="Batch Start Time">
+      <Hierarchy name="Batch Time" visible="true" hasAll="true" description="Hour" primaryKey="TH_TIME_ID">
+        <Table name="BI_DIM_TIME_HOUR_MIN_DETAIL" alias="">
+        </Table>
+        <Level name="Hour" visible="true" column="TH_HOUR" nameColumn="TH_HOUR" ordinalColumn="TH_HOUR" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Start Time (Hr)">
+        </Level>
+        <Level name="Minute" visible="true" column="TH_MINUTE" nameColumn="TH_MINUTE" ordinalColumn="TH_MINUTE" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Start Time (Min)">
+        </Level>
+      </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Batch End Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="BATCH_END_DT">
+      </Table>
+      <Level name="Batch End Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Batch End Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+      </Level>
+      <Level name="Batch End Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Batch End Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Batch End Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+    <Dimension type="StandardDimension" visible="true" name="Batch End Time">
+      <Hierarchy name="Batch Time" visible="true" hasAll="true" description="Hour" primaryKey="TH_TIME_ID">
+        <Table name="BI_DIM_TIME_HOUR_MIN_DETAIL" alias="">
+        </Table>
+        <Level name="Hour" visible="true" column="TH_HOUR" nameColumn="TH_HOUR" ordinalColumn="TH_HOUR" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Batch End Time (Hr)">
+        </Level>
+        <Level name="Minute" visible="true" column="TH_MINUTE" nameColumn="TH_MINUTE" ordinalColumn="TH_MINUTE" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="End Time (Min)">
+        </Level>
+      </Hierarchy>
+  </Dimension>
+  
+   <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Job Start Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="JOB_START_DT">
+      </Table>
+      <Level name="Job Start Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Job Start Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+      </Level>
+      <Level name="Job Start Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Job Start Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Job Start Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Dimension type="StandardDimension" visible="true" name="Job Start Time">
+      <Hierarchy name="Job Time" visible="true" hasAll="true" description="Hour" primaryKey="TH_TIME_ID">
+        <Table name="BI_DIM_TIME_HOUR_MIN_DETAIL" alias="">
+        </Table>
+        <Level name="Hour" visible="true" column="TH_HOUR" nameColumn="TH_HOUR" ordinalColumn="TH_HOUR" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Job Start Time (Hr)">
+        </Level>
+        <Level name="Minute" visible="true" column="TH_MINUTE" nameColumn="TH_MINUTE" ordinalColumn="TH_MINUTE" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Job Start Time (Min)">
+        </Level>
+      </Hierarchy>
+  </Dimension>
+  
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" name="Job End Date">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="TD_DATE">
+      <Table name="BI_DIM_TIME_DETAIL" alias="JOB_END_DT">
+      </Table>
+      <Level name="Job End Date Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR_ORDER" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" description="Year">
+      </Level>
+      <Level name="Job End Date Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" description="Name or number of Quarter">
+      </Level>
+      <Level name="Job End Date Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" description="Name of the Month">
+      </Level>
+      <Level name="Job End Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" description="Job End Date">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  
+   <Dimension type="StandardDimension" visible="true" name="Job End Time">
+      <Hierarchy name="Job Time" visible="true" hasAll="true" description="Hour" primaryKey="TH_TIME_ID">
+        <Table name="BI_DIM_TIME_HOUR_MIN_DETAIL" alias="">
+        </Table>
+        <Level name="Hour" visible="true" column="TH_HOUR" nameColumn="TH_HOUR" ordinalColumn="TH_HOUR" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Job End Time (Hr)">
+        </Level>
+        <Level name="Minute" visible="true" column="TH_MINUTE" nameColumn="TH_MINUTE" ordinalColumn="TH_MINUTE" type="Integer" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Job End Time (Min)">
+        </Level>
+      </Hierarchy>
+  </Dimension>
+  
+  <Cube name="Job Detail" visible="true" description="Job Detail" cache="true" enabled="true">
+    <Table name="VW_BI_ASYNC_JOB_STATUS">
+    </Table>
+    <DimensionUsage source="Batch_Type" name="Batch Type" visible="true" foreignKey="ASYNC_BATCH_TYPE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Status" name="Status" visible="true" foreignKey="JOB_STATUS" highCardinality="false">
+    </DimensionUsage>
+	<DimensionUsage source="Job Start Date" name="Job Start Date" visible="true" foreignKey="JOB_START_DATE" highCardinality="false">
+	</DimensionUsage>
+	  <DimensionUsage source="Job Start Time" name="Job Start Time" visible="true" foreignKey="JOB_START_TIME" highCardinality="false" />
+	<DimensionUsage source="Job End Date" name="Job End Date" visible="true" foreignKey="JOB_END_DATE" highCardinality="false">
+	</DimensionUsage>
+	<DimensionUsage source="Job End Time" name="Job End Time" visible="true" foreignKey="JOB_END_TIME" highCardinality="false" />
+    <Measure name="Job_Count" column="JOB_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Job Count" description="Total number of jobs">
+    </Measure>
+  </Cube>
+  
+  <Cube name="Batch Detail" visible="true" description="Batch Detail" cache="true" enabled="true">
+    <Table name="VW_BI_ASYNC_BATCH" alias="ASYNC_BATCH">
+	  <SQL dialect="generic">
+          <![CDATA[(ASYNC_BATCH.ASYNC_BATCH_START_DATE >= sysdate-7)]]>           
+        </SQL>
+    </Table>
+    <DimensionUsage source="Batch_Type" name="Batch Type" visible="true" foreignKey="ASYNCH_BATCH_TYPE_ID" highCardinality="false" />
+    <DimensionUsage source="Status" name="Status" visible="true" foreignKey="ASYNC_BATCH_STATUS" highCardinality="false" />
+    <DimensionUsage source="Batch Start Date" name="Batch Start Date" visible="true" foreignKey="ASYNC_BATCH_START_DATE" highCardinality="false" />
+    <DimensionUsage source="Batch Start Time" name="Batch Start Time" visible="true" foreignKey="ASYNC_BATCH_START_TIME" highCardinality="false" />
+    <DimensionUsage source="Batch End Date" name="Batch End Date" visible="true" foreignKey="ASYNC_BATCH_END_DATE" highCardinality="false" />
+    <DimensionUsage source="Batch End Time" name="Batch End Time" visible="true" foreignKey="ASYNC_BATCH_END_TIME" highCardinality="false" />
+    
+    <Measure name="Batch_Count" column="ASYNC_BATCH_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Batch Count" description="Total number of batches">
+    </Measure>
+    <Measure name="Batch_Success_Job_Count" column="ASYNC_BATCH_SUCCESS_JOB_COUNT" visible="true" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Success Jobs" description="Total number of successful jobs">
+    </Measure>
+    <Measure name="Batch_Total_Job_Count" column="ASYNC_BATCH_JOB_COUNT" visible="true" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Batch Jobs" description="Total number of jobs">
+    </Measure>
+    <Measure name="Batch_Failed_Job_Count" column="ASYNC_BATCH_JOB_COUNT" visible="true" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Batch Jobs" description="Total number of jobs">
+    </Measure>
+        <CalculatedMember name="Batch_Failed_Job_Count" formatString="#,###" caption="Total Failed Jobs" description="Total Failed Jobs" dimension="Measures" visible="true">
+      <Formula>
+        <![CDATA[[Measures].[Batch_Total_Job_Count] - [Measures].[Batch_Success_Job_Count]]]>
+      </Formula>
+    </CalculatedMember>
+	 
+  </Cube>
+</Schema>

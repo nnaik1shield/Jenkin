@@ -1,0 +1,1533 @@
+create or replace package body pkg_db_stmt_rollup_modify
+as
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_generic_rollup_create
+--
+--
+--   %USAGE
+--        This procedure creates a set of 'reconciliation' objects, that represent a de-normalized view of receivables.
+--
+--
+--   %ALGORITHM
+--   Given a Session ID, Transaction Id, BillingAccount ID, FItransactionSet ID, Billing Period
+--   Start Date, Billing Period End Date, Rollup Levels and Reconciliation Type
+--   Get all the children of type Rollup mapped with the Reconciliation Type
+--   For each FItem under the given BillingAccount, which are due on and before Statement As Of
+--   Date and of type Debit and with some balance, do the following
+--        Evaluate Fitem with the Filter Rule if exists
+--        If Filter Rule evaluates to True then
+--             Intialize the Recon List Index with Policy Id concatenated with FItem Due Date
+--             Initialize the Recon List
+--             Based on FItem Sub-category, get the Recon ITem ID from DB_RECON_ITEM
+--             Get Recon Item Map row based on FItem Sub-category and Recon Item ID
+--             Set the Current Rollup with adding the BV Value of Recon Item Map to the previous value of Current Rollup
+--             Add this FItem has having contributed to the rollup
+--        else
+--             Log Error Message
+--
+--   Loop through the v_recon_record_list, create an object for every instance, and populate BVs based on the sub-array.
+--
+--  Now, loop through the child_list, and create child objects which will be used if the user wants to partially pay at a lower level.
+--
+--
+--
+--   %PARAM    in_session_id                 Session ID
+--   %PARAM    in_transaction_id             Transaction ID
+--   %PARAM    in_partner_billing_acct_id    The billing account that has sent the current statement.
+--   %PARAM    in_stmt_as_of_date            The date as of the current statement was generated.
+--   %PARAM    in_recon_type                 The reconciliation rollup type to be used.
+--
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_generic_rollup_create
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_account_id                   in             object.object_id%type,
+     in_billing_trx_set_id                   in             object.object_id%type,
+     in_recon_type                           in             db_reconciliation.db_reconciliation_id%type,
+     io_fitem_list                           in out nocopy  pkg_db_stmt.t_fitem_list,
+     in_trx_type                             in             db_transaction_set_type.db_trxset_enum%type default null,
+     in_rollup_type                          in             number default 1,
+     in_start_date                              in               object_bv_value.business_variable_value%type,--VAULTDEV-4484
+     in_end_date                              in               object_bv_value.business_variable_value%type--VAULTDEV-4484
+
+)
+as
+
+     v_procedure_name                        constant system_log.program_name%type     := pkg_name||'sp_generic_rollup_create';
+     v_session_control                       pkg_os_session.r_dragon_session_control   := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id);
+     v_procedure_start_time                  number                                       := dbms_utility.get_time;
+     cursor c_recon_item(cin_recon_type      in     db_reconciliation.db_reconciliation_id%type)
+     is
+          select
+               item_bv_id
+          from
+               db_recon_item
+          where
+               db_recon_id = cin_recon_type
+     ;
+
+     v_db_recon_row                          db_reconciliation%rowtype;
+     v_db_recon_item_id                      db_recon_item.db_recon_item_id%type;
+     v_recon_record_list                     pkg_db_stmt.t_recon_record_list;
+     v_recon_contributors_list               pkg_db_stmt.t_recon_contributors_list;
+     v_recon_contributors                    pkg_db_stmt.t_recon_contributors;
+     v_recon_record_index                    varchar2(100);
+     v_recon_bv_index                        varchar2(12);
+     v_recon_contributors_index              varchar2(100);
+     v_recon_object_id                       object.object_id%type;
+     v_recon_contrib_object_id               object.object_id%type;
+     v_fitem_index                           number;
+     v_total_due                             number;
+     v_total_changes                         number := 0;
+     v_prior_changes                         number := 0;
+     v_policy_id                             object_bv_value.business_variable_value%type;
+     v_policy_transaction_id                 object_bv_value.business_variable_value%type;
+     v_due_date                              object_bv_value.business_variable_value%type;
+     v_policy_effective_date                 object_bv_value.business_variable_value%type;
+     v_policy_term_effdate                   object_bv_value.business_variable_value%type;
+     v_datamart_tf                           char(1) := 'T';
+     v_category_id                           object_bv_value.business_variable_value%type;
+     v_installment_id                        object.object_id%type;
+     v_installment_no                        object_bv_value.business_variable_value%type;
+      v_asset_id                              object.object_id%type;--VAULTDEV-4484
+	v_policy_term_id 					object.object_id%type;
+     v_token_table                           pkg_os_token.t_string_table;
+     v_sub_category_id                       number;
+     v_billingaccounttrxset_id               object.object_id%type;
+     v_bv_table                              pkg_os_object_io.t_bv_table;
+     v_current_date                          object_bv_value.business_variable_value%type;
+     v_current_policy_date                   varchar2(50);
+     v_item_bv_id                            db_recon_item.item_bv_id%type;
+     v_in_billing_acct_object_type           object.object_id%type;
+     v_db_recon_item_list                    pkg_db_stmt.t_db_recon_item_list;
+     v_recon_item_indx                       number;
+     v_count                                 number :=0;
+     wrong_configuration                     exception;
+     v_fitem_bv_id                           business_variable.business_variable_id%type;
+     v_fitem_amount                          float :=0;
+     v_current_rollup_amount                 float;
+     v_entered_by                            object_bv_value.business_variable_value%type;
+     v_db_recon_item_map_row                 db_recon_item_cat_map%rowtype;
+     v_start_timestamp                       number         := dbms_utility.get_time;
+
+     v_fitem_aging_status                    number;
+
+     v_past_due                              number :=0;
+     v_current_due                           number :=0;
+     v_prior_past_due                              number :=0;
+     v_prior_current_due                           number :=0;
+
+     v_paid_by_Account                       object.object_id%type;
+     v_rollup_actual_due_date                 object_bv_value.business_variable_value%type;
+     v_rem_bal                                   float;--VAULTDEV-4484
+     v_trx_type                                  object.object_id%type;
+     v_trx_subtype                               object.object_id%type;
+     v_rollup_trx_display_name                   varchar(50);
+     v_rem_lux_bal					float;
+     v_tot_non_lux_premium				float;
+     v_tot_lux_premium					float;
+     -- Arun - OSBILLING-5872 - Start
+     v_allocation_type          number;
+     v_aiging_status            number;
+     -- Arun - OSBILLING-5872 - End
+     v_last_policy_trx                       object.object_id%type;  --OSBILLING-5982
+     v_comm_type                             object_bv_value.business_variable_value%type;
+     v_policytrxid_null_flag                 number := 0; --LXPRODUCT-249
+     v_rolluptrx_type                        varchar2(50);--LXPRODUCT-249
+	 v_fitem_cat_id                          number; --OSPRODUCT-14045
+
+begin
+
+     v_current_date                := to_char(pkg_os_time.fn_os_sysdate(in_session_id,in_transaction_id,in_billing_trx_set_id),pkg_os_constant.DragonDateFormatDefault) ;      --  Get the buckets for Invoice
+     v_in_billing_acct_object_type := pkg_os_object.fn_object_type_get(in_session_id,in_transaction_id ,in_billing_trx_set_id);
+
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Creating Reconciliation Objects for BillingAccountID:'||in_billing_account_id||
+               ' ReconciliationTypeID:' || in_recon_type ||
+               ' in_billing_trx_set_id: ' || in_billing_trx_set_id||
+               'io_fitem_list count : '|| io_fitem_list.count||
+               'billing end date :'||in_end_date||
+               'in_trx_type :'||in_trx_type||
+               'in_rollup_type :'||in_rollup_type
+          );
+
+     end if;
+
+     ----------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     --   Get Reconciliation meta-data ....
+     --
+     ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+     v_db_recon_row := pkg_db_object.fn_db_reconciliation_row(in_session_id, in_transaction_id, in_recon_type);
+     v_db_recon_item_list    := pkg_db_stmt.fn_get_db_recon_item_list(in_session_id, in_transaction_id, in_recon_type);
+
+
+     ----------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     --   Loop through the selected FItems ...
+     --
+     ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+     v_fitem_index := io_fitem_list.first;
+
+     while v_fitem_index is not null
+     loop
+
+
+          --
+          --     @@@VG: Since all of this information is already available, it should have been cached in the io_fitem_list before being sent here ...
+          --
+
+          v_category_id       := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_fitem_index, pkg_db_stmt.gbv_Fitem_category);
+          v_sub_category_id       := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_fitem_index, pkg_db_stmt.gbv_Fitem_subcategory);
+
+          --
+          --      Two arrays are populated:
+          --
+          --      a) v_recon_record_list[RollupCriteria][ReconItem[ReconItem BVID]] - this represents a roll-up.
+          --      b) v_recon_contributors_list[RollupCriteria][FItemID] = FItemID - this represents a FITEM that contributes to a roll-up.
+          --
+
+          --
+          --     Check whether this reconciliation calls for filtering fitems above and beyond the caller did. If so, filter.
+          --
+
+          if   v_db_recon_row.fitem_filter_rule is null
+          or
+          pkg_os_exp.fn_evaluate_expression(in_session_id, in_transaction_id, v_fitem_index, v_db_recon_row.fitem_filter_rule ) = 'T'
+          then
+
+               --
+               --      The Index for recon objects will be the distinct rollup criteria based identifiers
+               --
+
+               v_recon_record_index := io_fitem_list(v_fitem_index);
+
+               if v_session_control.gLogging_Full then
+
+                  pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,'... Recon Record Index:' || v_recon_record_index ||'fitem index: ' ||  v_fitem_index);
+
+               end if;
+
+               --
+               --     If this reconciliation record is being encountered for the first time ... do some initialization, before we start adding
+               --     amounts of its constituent fitems to it.
+               --
+
+               if  v_recon_record_list.exists( v_recon_record_index ) = false
+               then
+               if v_session_control.gLogging_Full then----osproduct5996 20200901 Cheryl
+
+                  pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,'... Recon Record Index:' || v_recon_record_index ||'fitem index: ' ||  v_fitem_index
+                                        || ' exists = false');
+
+               end if;                 
+
+                    --
+                    --   Initialize the appropriate rollup level attributes to zero.
+                    --
+
+                    for r_recon_item in c_recon_item(in_recon_type) loop
+
+                        v_recon_record_list( v_recon_record_index )( r_recon_item.item_bv_id ) := 0;
+
+                    end loop;
+               else  ----osproduct5996 20200901 Cheryl
+               if v_session_control.gLogging_Full then
+
+                  pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,'... Recon Record Index:' || v_recon_record_index ||'fitem index: ' ||  v_fitem_index
+                                        || ' exists = true');
+
+               end if;      
+                    
+
+               end if;
+
+               --
+               --   Using the Sub-Category find the Recon-Item to which we should rollup ... put a different way, we already know, which reconciliation record we are part of. So from a statement
+               --     view perspective, we know the row. However, we do not know the column into which the balance on this fitem will be rolled up.
+               --
+
+               v_db_recon_item_id := null;
+               v_item_bv_id       := null;
+
+               v_count:= 0;
+
+               v_recon_item_indx := v_db_recon_item_list.first;
+
+               while v_recon_item_indx is not null
+               loop
+                    if
+                    (
+                         (
+                                       v_db_recon_item_list(v_recon_item_indx).item_fitem_filter_rule_id is null
+                         or
+                                       pkg_os_exp.fn_evaluate_expression(in_session_id, in_transaction_id, v_fitem_index,v_db_recon_item_list(v_recon_item_indx).item_fitem_filter_rule_id ) = 'T'
+                         )
+                         and
+                         (
+                                       v_db_recon_item_list(v_recon_item_indx).item_map_fitem_filter_rule_id is null
+
+                         or
+                                       pkg_os_exp.fn_evaluate_expression(in_session_id, in_transaction_id, v_fitem_index, v_db_recon_item_list(v_recon_item_indx).item_map_fitem_filter_rule_id ) = 'T'
+                         )
+                         and
+                         (
+                                       v_db_recon_item_list(v_recon_item_indx).item_fitem_category_set_id is null
+
+                         or
+                                       pkg_db_billing_modify.fn_fitem_category_in_set(v_category_id, v_db_recon_item_list(v_recon_item_indx).item_fitem_category_set_id) = 'T'
+                         )
+                         and
+                         (
+                                       v_db_recon_item_list(v_recon_item_indx).item_map_fitem_subcat_set_id is null
+
+                         or
+                                       pkg_db_billing_modify.fn_fitem_subcategory_in_set(v_sub_category_id,v_db_recon_item_list(v_recon_item_indx).item_map_fitem_subcat_set_id) = 'T'
+                         )
+                    )
+                    then
+                         v_count    := v_count+1;
+                         v_db_recon_item_id  := v_db_recon_item_list(v_recon_item_indx).db_recon_item_id;
+                         v_item_bv_id := v_db_recon_item_list(v_recon_item_indx).item_bv_id;
+                    end if;
+
+                    v_recon_item_indx := v_db_recon_item_list.next(v_recon_item_indx);
+
+               end loop;
+
+               -- v_count gives the number of rows in db_recon_item_cat_map table which are eligible.
+               -- If more than 1 row is eligible, thrown an exception.
+
+               if v_count > 1
+               then
+                    begin
+                         pkg_os_logging.sp_log_error(in_session_id, in_transaction_id, v_procedure_name, '...wrong_configuration:... Multiple Recon Item ID found for ReconciliationID: ' ||in_recon_type||' FItemID:'||v_fitem_index );
+
+                         raise wrong_configuration;
+                    end;
+               end if;
+
+
+               if v_db_recon_item_id is not null then
+
+                    if v_session_control.gLogging_Full then
+
+                       pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name, '...... Found Recon Item ID: ' || in_recon_type||' FItemID:'||v_fitem_index || 'item_bv_id:' ||v_item_bv_id);
+
+                    end if;
+
+                    --   Get Recon Item Row based on  Recon Item ID, this will tell us the BV we need to increment in the rollup record.
+
+                    --   v_db_recon_item_row := pkg_db_object.fn_db_recon_item_row(in_session_id, in_transaction_id, v_db_recon_item_id);
+
+                    --
+                    --   Get Recon Item Map row based on Reconciliation type, Recon Item ID and FItem Sub-category - this will tell us the source
+                    --  FItem BV from which we will get the amount to add to the rollup.
+                    --
+
+                    --
+                    --  Now find out which BV we should be reading from FITEM ... should this be the initial amount, the current amount, etc.
+                    --
+
+                    --PMADEV-1971
+                    v_db_recon_item_map_row := pkg_db_stmt.fn_get_db_recon_item_cat_map (in_session_id, in_transaction_id, v_db_recon_item_id,v_sub_category_id);
+
+                    v_fitem_bv_id := v_db_recon_item_map_row.fitem_bv_id;
+
+                    v_fitem_amount := nvl( pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_fitem_index, v_fitem_bv_id ), 0);
+
+                    if v_session_control.gLogging_Full then
+
+                       pkg_os_logging.sp_log( in_session_id, in_transaction_id, v_procedure_name, '...... Updating Rollup:' || v_recon_record_index ||' Rollup BV-ID:' ||v_item_bv_id ||' Adding Fitem Amount:' ||v_fitem_amount );
+
+                    end if;
+
+                    v_current_rollup_amount := nvl( v_recon_record_list( v_recon_record_index )( v_item_bv_id ), 0 );
+
+                    v_recon_record_list( v_recon_record_index )( v_item_bv_id ) := v_current_rollup_amount + v_fitem_amount;
+
+                    --   Add this FItem has having contributed to the rollup ...
+
+                    v_recon_contributors_list( v_recon_record_index )( v_fitem_index ) := v_fitem_index;
+
+
+               end if; -- v_db_recon_item_id is not null
+
+          end if; -- if the fitem passes the db_reconciliation filter rule.
+
+          if v_session_control.gLogging_Full then
+
+             pkg_os_logging.sp_log( in_session_id, in_transaction_id, v_procedure_name, '... Completed considering FItemID:' || v_fitem_index );
+
+          end if;
+
+          v_fitem_index := io_fitem_list.next(v_fitem_index);
+
+     end loop;
+
+     --
+     --   Loop through the v_recon_record_list, create an object for every instance, and populate BVs based on the sub-array.
+     --   Now, loop through the child_list, and create child obhjects which will be used if the user wants to partially pay
+     --   at a lower level.
+     --
+
+     if v_session_control.gLogging_Performance then
+
+          pkg_os_logging.sp_log_performance(in_session_id, in_transaction_id, v_procedure_name, v_start_timestamp, '... Completed identifying rollup objects ...Count:'||v_recon_record_list.count );
+
+     end if;
+
+
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     --     Now, we have looped through all of the FItems passed, and incremented amounts taken from these fitems to various BVs in our rollup-records.
+     --
+     --     We can now start acting on the rollup records.
+     --
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     --     @@@VG: This is a flaming kludge done as part of OSBILLING-330 but I am documenting it prior to killing it.
+     --
+     --     The code below handles the situation where are called with a PolicyTransaction as the input billing_transaction_set_id.
+     --
+     --     If this is true, and there is no corresponding Billing Transaction Set, this code creates one.
+     --
+     --     The bottom line is that this SHOULDN'T be called with a PolicyTransaction ...
+     --
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+
+     --@Keerthi P:S This requires the workflow of Invoice to be modified to call from a context of BATRXSET
+
+     if v_in_billing_acct_object_type = pkg_os_constant.gobjType_PolicyTransaction  then
+
+          if v_session_control.gLogging_Full then
+
+              pkg_os_logging.sp_log_error( in_session_id, in_transaction_id, v_procedure_name, '... Generic Rollup being called with a PolicyTransaction as input.' );
+
+          end if;
+
+          v_billingaccounttrxset_id := pkg_os_object_io.fn_object_bv_get(in_session_id,in_transaction_id , in_billing_trx_set_id, pkg_db_stmt.gbv_FITrxSetRefBillTrxSet);
+
+          if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name, '... Found Asssociated/Reference BillingTrxSetID:'||v_billingaccounttrxset_id );
+
+          end if;
+
+          if v_billingaccounttrxset_id is null
+          then
+
+               pkg_os_object.sp_object_create
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    pkg_db_stmt.gObjType_BillingAccountTrxSet, -- BillingAccountTrxSet
+                    in_billing_account_id,
+                    v_billingaccounttrxset_id
+               );
+
+               --Set the BV's of the BillingAccountTrxSet
+
+               v_bv_table.delete;
+
+               v_bv_table ( pkg_db_stmt.gbv_FITrxSetEntryType        ).business_variable_value := pkg_db_object.gBatchEntryMethod_System;
+               v_bv_table ( pkg_db_stmt.gbv_FITrxSetEnteredby        ).business_variable_value := v_entered_by;
+               v_bv_table ( pkg_db_stmt.gbv_FITrxSetDatePosted       ).business_variable_value := v_current_date;
+               v_bv_table ( pkg_db_stmt.gbv_FITrxSetExternalBatchId  ).business_variable_value := 'Batch'||v_current_date;
+               v_bv_table ( pkg_db_stmt.gbv_FITrxSetBatchType        ).business_variable_value := pkg_db_stmt.g_SetType_Invoice ;
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_billingaccounttrxset_id,
+                    v_bv_table
+               );
+
+               -- Set the reference from PolicyTrx to BillingAccountTrx Set
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    in_billing_trx_set_id,
+                    pkg_db_billing.gbv_PolTrxRefBillingAccTrxSet,
+                    v_billingaccounttrxset_id
+               );
+
+               -- Set the reference from  BillingAccountTrx Set to PolicyTrx
+
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_billingaccounttrxset_id,
+                    pkg_db_object.gbv_BillAccTrxSet_RefPolTrx, --  32502146
+                    in_billing_trx_set_id
+               );
+
+          end if; -- if there was no associated FITranasctionSet with the PolicyTransaction that was passed in ...
+
+     end if; -- is the incoming object a PolicyTransaction that has strayed from the flock? OSBILLING-330, OSBILLING-528, OSBILLING-1497
+
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+     --
+     --     Having constructed the rollups, now it is time to act based on them.
+     --
+     --     Recall, two arrays are maintained:
+     --      a) v_recon_record_list[RollupCriteria][ReconItem[ReconItem BVID]]
+     --      b) v_recon_contributors_list[RollupCriteria][FItemID] = FItemID
+     --
+     --     We build a cache of rollup objects, namely v_recon_object_cache to hold the rollup objects that we will create.
+     --
+     ------------------------------------------------------------------------------------------------------------------------------------------------
+
+     v_total_changes := 0;
+
+    -- sp_clear_caches(in_session_id,in_transaction_id);
+    -- sp_initialize_caches(in_session_id,in_transaction_id);
+
+     v_recon_record_index := v_recon_record_list.first;
+
+     while v_recon_record_index is not null loop
+
+
+          if ( v_recon_contributors_list.exists(v_recon_record_index))
+          then
+
+               v_recon_contributors := v_recon_contributors_list( v_recon_record_index );
+
+          end if;
+
+          v_recon_contributors_index := v_recon_contributors.first;
+
+          if v_recon_contributors_index is not null then
+
+          --
+          --      Create a new rollup object ... @@@VG: OSBILLING-1497 Modifying the parent from PT to BATrxset is clouding the picture and will need
+          --     to be addressed.
+          --
+
+         if   v_in_billing_acct_object_type = pkg_db_object.gObjType_BillingAccountTrxSet
+         then
+               pkg_os_object.sp_object_create
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_db_recon_row.rollup_object_type_id,
+                    in_billing_trx_set_id,--
+                    v_recon_object_id
+               );
+          else
+
+               pkg_os_object.sp_object_create
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_db_recon_row.rollup_object_type_id,
+                    v_billingaccounttrxset_id,
+                    v_recon_object_id
+               );
+
+          end if;
+
+          --
+          --      Set the object state to recon new ...
+          --
+
+          pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id, pkg_os_constant_bv.gbv_GenObjObjectState, pkg_db_stmt.gObjState_ReconNew);
+
+		  --OSBILLING-5135 change to logging level full instead of performance
+          if v_session_control.gLogging_Full then
+
+            pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name, '... Created Rollup ObjectID:' || v_recon_object_id ||' for Index:' || v_recon_record_index);
+
+          end if;
+			--OSBILLING-5135 end
+
+          --
+          --     Now, set the amount attributes (BVs) in the newly created recon object.
+          --
+
+          v_recon_bv_index := v_recon_record_list( v_recon_record_index ).first;
+
+          while v_recon_bv_index is not null loop
+
+               --
+               --     Set the BV value in the rollup object ...
+               --
+
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id, v_recon_bv_index, v_recon_record_list( v_recon_record_index )( v_recon_bv_index ));
+
+
+
+               -- The Index's content depends on what the user had selected for the rollup ...
+
+               v_token_table.delete;
+               pkg_os_token.sp_tokenize_string( v_recon_record_index, '-', v_token_table );
+
+               --
+               --     @VG: Flaming kludge ... call function which centralizes this ... if we change this where we build it, this code will break.
+               --
+
+               v_policy_id              :=   v_token_table( v_token_table.first );
+               v_policy_effective_date  :=   v_token_table( v_token_table.next( v_token_table.first ));
+               v_policy_transaction_id  :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.first ) ));
+               v_due_date               :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.first ) )));
+               v_category_id            :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.first ) ))));
+               v_installment_id         :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.first ))))));
+               v_installment_no         :=   pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_installment_id, 29718346 );
+               v_asset_id               :=     v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next(v_token_table.first )))))));--VAULTDEV-4484
+	       	v_policy_term_id		:=	v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next(v_token_table.next(v_token_table.first ))))))));--VAULTDEV-9936
+               v_paid_by_Account        :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next(v_token_table.next(v_token_table.first )))))))));
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+
+                          '...... Rollup index:' ||
+                          ' v_policy_id :' || v_policy_id ||'v_policy_effective_date:'||v_policy_effective_date||'v_policy_transaction_id:'||v_policy_transaction_id
+                          ||'v_due_date:'||v_due_date||'v_category_id'||v_category_id||'v_installment_id'||v_installment_id||'v_asset_id'||v_asset_id||'v_paid_by_Account'||v_paid_by_Account||' on Installment:'||v_installment_id);
+
+               if   v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next(v_token_table.next(v_token_table.first )))))))) is not null
+                    then
+               v_rollup_actual_due_date :=   v_token_table( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next( v_token_table.next(v_token_table.next(v_token_table.first )))))))));
+               end if;
+
+               --VAULTDEV-4484
+                              v_rem_bal:=  fn_get_remaining_bal(in_session_id, in_transaction_id,v_paid_by_Account,v_asset_id,v_policy_transaction_id,in_end_date);
+		--VAULTDEV-5172
+			v_rem_lux_bal:=  fn_get_lux_remaining_bal(in_session_id, in_transaction_id,v_paid_by_Account,v_asset_id,v_policy_transaction_id,in_end_date);
+			v_tot_lux_premium:=  fn_get_total_lux_premium(in_session_id, in_transaction_id,v_paid_by_Account,v_asset_id,in_end_date);--VAULTDEV-6627
+               v_tot_non_lux_premium:=  fn_get_total_premium(in_session_id, in_transaction_id,v_paid_by_Account,v_asset_id,in_end_date);--VAULTDEV-6627
+
+               v_policytrxid_null_flag  :=   0;  --LXPRODUCT-249
+               if v_policy_transaction_id is null and v_installment_id is not null
+               then
+
+                    v_policytrxid_null_flag  :=   1;  --LXPRODUCT-249
+                    v_policy_transaction_id := pkg_os_object_io.fn_object_bv_path_get( in_session_id, in_transaction_id, v_installment_id, '34001446.212018.28555404' );
+
+                 --OSBILLING-5135 change to logging level full instead of performance
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+
+                          '...... Rollup is not setting associated policy transaction:' ||
+                          ' Setting PT :' || v_policy_transaction_id ||
+                          ' on Installment:'||v_installment_id);
+						  
+                    -- OSPRODUCT-13671 - Start
+                    -- Checking the returned transaction id is of type PTP.
+                    If pkg_os_object.fn_object_type_get(
+                                        in_session_id,
+                                        in_transaction_id ,
+                                        v_policy_transaction_id
+                                    ) = pkg_os_constant.gobjType_PolicyTrxPolicy  then
+                      
+                          if v_session_control.gLogging_Full then
+                            
+                                pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name, 
+                                '... Getting PT from PTP ' || v_policy_transaction_id ) ;
+                            
+                          end if;                                  
+                          v_policy_transaction_id  := pkg_os_object_search.fn_object_get_parent_of_type(
+                                                                in_session_id, 
+                                                                in_transaction_id,
+                                                                v_policy_transaction_id, 
+                                                                pkg_os_constant.gobjType_PolicyTransaction ) ;      
+                                                                
+                    end if;        
+                    -- OSPRODUCT-13671 - End
+               end if;
+				--OSBILLING-5135 end
+               --OSBILLING-5982 start
+               If v_policy_term_id is not null then
+                 v_policy_term_effdate := pkg_os_object_io.fn_object_bv_get( in_session_id, in_transaction_id, v_policy_term_id, 29705846);
+               End if;
+               --OSBILLING-5982 end
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,      pkg_db_stmt.gbv_Recon_RelatedPolicyID, v_policy_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_RelatedPolicyTrxId, v_policy_transaction_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_DueDate, v_due_date );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_EffectiveDate, v_policy_effective_date );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_Category, v_category_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_reconciliation.gbv_Recon_ValidationStatus, 1 );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_cash_apply.gbv_Recon_InstallNumber,v_installment_no );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_constant.gbv_Recon_associated_BA,v_paid_by_Account );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_constant.gbv_recon_rollup_type,in_rollup_type);--VAULTDEV-4484
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_constant.gbv_recon_associated_asset ,v_asset_id );--VAULTDEV-4484
+               pkg_os_object_io.sp_object_bv_set(in_session_id,
+											    in_transaction_id,
+											    v_recon_object_id,
+											    32951524,
+											    v_policy_term_id); --OSbilling-6261
+			   pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,  pkg_db_constant.gbv_Recon_AgingStatus ,PKG_DB_FUNCTIONS.fn_get_rollup_aging(in_session_id, in_transaction_id  ,v_recon_object_id   ));
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     gbv_Recon_TermEffDate ,v_policy_term_effdate);  --OSBILLING-5982
+
+               v_trx_type := pkg_os_object_io.fn_object_bv_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_policy_transaction_id,
+                                   pkg_os_constant_bv.gbv_PolicyTranType
+                              );
+
+               v_trx_subtype := pkg_os_object_io.fn_object_bv_get
+                              (
+                                   in_session_id,
+                                   in_transaction_id,
+                                   v_policy_transaction_id,
+                                   pkg_os_policy_transaction.gbv_PolicyTrxSubType
+                              );
+              v_rollup_trx_display_name := CASE WHEN v_trx_type       in (pkg_db_object.gBillTrxType_NewBusiness,pkg_db_object.gBillTrxType_Renewal,pkg_db_object.gBillTrxType_Rewrite,pkg_db_object.gBillTrxType_NBRewrite  )
+                                                  then 'Installment'
+                                             when v_trx_type     = pkg_db_object.gBillTrxType_Endorsement and  NVL (v_trx_subtype , 1 ) =1
+                                                  Then 'Endorsement'
+                                             when v_trx_type     = pkg_db_object.gBillTrxType_Endorsement and  NVL (v_trx_subtype , 1)  in (pkg_db_billing_modify.gTrxSubType_changeBilltype,pkg_db_billing_modify.gTrxSubType_changepayplan  )
+                                                  Then 'Installment'
+                                             ELSE  pkg_os_object_io.fn_object_bv_path_get
+                                                                           (
+                                                                                in_session_id,
+                                                                                in_transaction_id,
+                                                                                v_policy_transaction_id,
+                                                                                31866546.32645646
+                                                                           )        END;
+
+              pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,pkg_db_constant.gbv_Recon_trxtype_display ,v_rollup_trx_display_name);
+
+
+
+
+                    --OSBILLING-5135 change to logging level full instead of performance
+              if v_session_control.gLogging_Full then
+
+                    pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                          '...... Setting Rollup BVs on Recon object:' || v_recon_object_id ||
+                          ' Rollup BVID:' || v_recon_bv_index || ':' || v_recon_record_list( v_recon_record_index )( v_recon_bv_index ) ||
+                          ' Rollup Criteria (null implies not selected) - Policy ID:' || v_policy_id || ' PolicyTrx ID:' || v_policy_transaction_id ||
+                          ' Due Date:' || v_due_date || ' Policy Eff Dt:' || v_policy_effective_date || ' Category ID:' || v_category_id
+
+
+
+
+
+                          || 'Installment:'||v_installment_no);
+                          /*|| 'v_rollup_actual_due_date:' ||v_rollup_actual_due_date)*/
+
+               end if;
+				--OSBILLING-5135 end
+               pkg_os_object_io.sp_object_bv_set( in_session_id,in_transaction_id,v_recon_object_id, pkg_db_stmt.gbv_Recon_Index_Str, v_recon_record_index);
+
+               v_recon_bv_index := v_recon_record_list( v_recon_record_index ).next( v_recon_bv_index );
+
+          end loop; -- for each bv on the rollup object ...
+
+          --
+          --     Update the commission percentage in the rollup object ... (OSBILLING-1630)
+          --
+          --     @@@VG: This is a little hokey, because what if this is not an agency statement, but rather something we are sending to
+          --     an inspection company or a reinsurance company?
+          --
+          -- @Keerthi  Yes, there should be a way to tell whether the rollup we are creating are commissionable or not throuhg a parameter or anything
+          v_last_policy_trx := pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                 in_transaction_id,
+                                                                 v_policy_id,
+                                                                 31909746);  --Last functional trx
+
+          v_comm_type := pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                                                in_transaction_id,
+                                                                nvl(v_policy_transaction_id,v_last_policy_trx),
+                                                                pkg_db_object.gbv_PolicyTrx_RefCoverages),
+                              33996546  --Comm Type
+                         );
+--          if v_policy_transaction_id is not null then
+            If nvl(v_comm_type, 1) = 1 then --OSPRODUCT-15561
+               declare
+
+                    v_reference_coverages     object.object_id%type;
+                    v_commission_pct          float;
+
+               begin
+
+                    v_reference_coverages := pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         nvl(v_policy_transaction_id,v_last_policy_trx),
+                         pkg_db_object.gbv_PolicyTrx_RefCoverages
+                    );
+
+                    v_commission_pct := pkg_os_object_io.fn_object_bv_get
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_reference_coverages,
+                         pkg_db_reconciliation.gbv_Policy_Comm_Pct  
+                    );
+
+                    pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_recon_object_id,
+                         pkg_db_stmt.gbv_Recon_PolicyCommPct,
+                         v_commission_pct
+                    );
+
+                    if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_procedure_name,
+                              '...... Setting commission pct:'||v_commission_pct
+                         );
+
+                    end if;
+
+               end;
+          else
+               pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id,
+                         in_transaction_id,
+                         v_recon_object_id,
+                         pkg_db_stmt.gbv_Recon_PolicyCommPct,
+                         0
+                    );
+
+          end if; -- if policy_transaction_id is not null
+
+
+          --
+          --     Based on the rollup policy, figure out the current date ...
+          --
+
+          if v_policy_id is not null
+
+          then
+               v_current_policy_date := to_char(pkg_db_functions.fn_get_policy_current_date(in_session_id, in_transaction_id, v_policy_id), pkg_os_constant.DragonDateFormatDefault);
+          else
+               v_current_policy_date := v_current_date;
+
+          end if;
+          --
+          --   Now create contributor objects for the current rollup object.
+          --
+
+          v_recon_contributors_index := v_recon_contributors.first;
+
+          while v_recon_contributors_index is not null
+          loop
+
+               --
+               --     Create a new contributor (rollup-member) object ...
+               --
+
+               pkg_os_object.sp_object_create
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    pkg_db_stmt.gObjTypeRollupMember,
+                    v_recon_object_id,
+                    v_recon_contrib_object_id
+               );
+
+               --
+               --     Point a reference to the fitem ...
+               --
+
+               pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, v_recon_contrib_object_id, pkg_db_stmt.gbv_RollupMember_Contributor, v_recon_contributors_index);
+
+                if v_session_control.gLogging_Full then
+
+                         pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                              'added contibutor'||v_recon_contrib_object_id);
+				end if;
+
+               if v_policytrxid_null_flag  =   1  --LXPRODUCT-249
+               then
+                    select    nvl(SUB_CATEGORY , CATEGORY) , fitem_category_id
+                    into      v_rolluptrx_type , v_fitem_cat_id      --OSPRODUCT-14045 added v_fitem_cat
+                    from      dragon_fitem f 
+                    where     f.fitem_id = v_recon_contributors_index; 
+                    
+                    pkg_os_object_io.sp_object_bv_set
+                    (
+                         in_session_id, 
+                         in_transaction_id, 
+                         v_recon_object_id,
+                         pkg_db_constant.gbv_Recon_trxtype_display, 
+                         v_rolluptrx_type
+                    );
+					
+					if v_fitem_cat_id = pkg_db_billing_payable.gFItem_Category_Cash
+                    then
+                         pkg_os_object_io.sp_object_bv_set
+                         (
+                             in_session_id, 
+                             in_transaction_id, 
+                             v_recon_object_id,
+                             pkg_db_constant.gbv_recon_rollup_type, 
+                             2               --Payment type
+                         );
+                    else
+                        pkg_os_object_io.sp_object_bv_set
+                        (
+                             in_session_id, 
+                             in_transaction_id, 
+                             v_recon_object_id,
+                             pkg_db_constant.gbv_recon_rollup_type, 
+                             1                   --Billed type
+                        );
+                    end if;
+               end if;
+          
+		  
+		       if v_policytrxid_null_flag  =   0     --OSPRODUCT-14045 
+               then
+                    select     fitem_category_id
+                    into       v_fitem_cat_id       
+                    from      dragon_fitem f 
+                    where     f.fitem_id = v_recon_contributors_index; 
+                                        
+                    if v_fitem_cat_id = pkg_db_billing_payable.gFItem_Category_Cash
+                    then
+                         pkg_os_object_io.sp_object_bv_set
+                         (
+                             in_session_id, 
+                             in_transaction_id, 
+                             v_recon_object_id,
+                             pkg_db_constant.gbv_recon_rollup_type, 
+                             2                       --Payment type
+                         );
+                    else
+                        pkg_os_object_io.sp_object_bv_set
+                        (
+                             in_session_id, 
+                             in_transaction_id, 
+                             v_recon_object_id,
+                             pkg_db_constant.gbv_recon_rollup_type, 
+                             1                      --Billed type
+                        );
+                    end if;
+               end if;
+               --OSBILLING-3041
+               -- check the aging status
+               --
+
+               v_fitem_aging_status    := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_recon_contributors_index, pkg_db_stmt.gbv_FItem_Aging_Status);
+
+               if v_fitem_aging_status = PastDue then--OSBilling-5262  --OSPRODUCT-34650(changed the enum value to 3(past due))
+
+                     v_past_due := v_past_due+pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_recon_contributors_index, pkg_db_object.gbv_FItem_Amount_Due);
+
+               elsif v_fitem_aging_status=pkg_db_functions.CurrentDue then
+
+                     v_current_due := v_current_due+pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id, v_recon_contributors_index, pkg_db_object.gbv_FItem_Amount_Due);
+
+               end if;
+
+               if v_session_control.gLogging_performance then
+
+                    pkg_os_logging.sp_log_performance(in_session_id, in_transaction_id, v_procedure_name,v_start_timestamp,'v_fitem_aging_status : ' || v_fitem_aging_status
+                    || 'v_past_due : '|| v_past_due
+                    || 'v_current_due : '|| v_current_due
+                    );
+
+
+               end if;
+
+			--OSPRODUCT-12178
+               pkg_os_object_io.sp_object_bv_set
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_recon_contrib_object_id,
+                    pkg_os_constant_bv.gbv_GenObjObjectState,
+                    pkg_os_constant.gObjState_Alive
+               );
+
+               pkg_os_datamart.sp_datamart_update_row
+               (
+                    in_session_id,
+                    in_transaction_id,
+                    v_recon_contrib_object_id,
+                    v_datamart_tf
+               );
+
+                    --   Get the next contributor
+               v_recon_contributors_index := v_recon_contributors.next( v_recon_contributors_index );
+
+          end loop;
+
+
+          v_total_due := pkg_os_object_io.fn_object_bv_get(in_session_id, in_transaction_id,
+                                                                 v_recon_object_id, v_db_recon_row.rollup_total_due_bv_id );
+
+           if v_session_control.gLogging_Full then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... v_db_recon_row.rollup_total_due_bv_id: ' || v_db_recon_row.rollup_total_due_bv_id
+                    || 'v_total_due:'||v_total_due
+                     ||'v_recon_object_id:'||v_recon_object_id);
+
+          end if;
+
+
+          pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, v_recon_object_id,
+                                                  pkg_db_stmt.gbv_Recon_TotalDue, v_total_due );
+
+          v_total_changes := v_total_changes + v_total_due;
+
+            if NVL(in_trx_type,0) not in (gBatch_PCAS_PolicyTrx ,gBatch_Agency_Statement) --osproduct5996 20200901 Cheryl
+            then
+             -- Arun - OSBILLING-5872 - Start
+              v_aiging_status := PKG_DB_FUNCTIONS.fn_get_rollup_aging(in_session_id, in_transaction_id,v_recon_object_id   );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,
+                                                  pkg_db_constant.gbv_Recon_AgingStatus ,v_aiging_status );
+
+                 if nvl(v_aiging_status , 1) = 1
+                   then
+                       -- Set to pro-rata if future due
+                         v_allocation_type := gAllocationType_Prorata;
+                    else
+
+                         -- Set to sequential
+                         v_allocation_type := gAllocationType_Sequence;
+
+                    end if;
+
+                         pkg_os_object_io.sp_object_bv_set
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              v_recon_object_id,
+                              gbv_Recon_AllocationType,
+                              v_allocation_type
+                         );
+
+              -- Arun - OSBILLING-5872 - End
+              end if; --osproduct5996 20200901 Cheryl
+
+           -- Custome call to set BVs on rollup:
+               PKG_DB_STMT_ACCT_ROLLUP.sp_update_rollup_custom
+                (
+                    in_session_id,
+                    in_transaction_id,
+                    v_recon_object_id,
+                    in_trx_type
+               );
+           --
+          --     We are done making the rollup object ... so update the datamart.
+          --
+
+          pkg_os_datamart.sp_datamart_update_row
+          (
+               in_session_id,
+               in_transaction_id,
+               v_recon_object_id,
+               v_datamart_tf
+          );
+
+          end if;
+
+            --   Get the next reconciliation record ...
+          v_recon_record_index := v_recon_record_list.next( v_recon_record_index );
+
+     end loop;
+
+     -- sp_clear_caches(in_session_id,in_transaction_id);
+     -- sp_initialize_caches(in_session_id,in_transaction_id);
+
+    v_prior_changes := pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_billing_trx_set_id,
+                              pkg_db_stmt.gbv_FITrxSet_TotalChange
+                         );
+    v_prior_past_due := pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_billing_trx_set_id,
+                              pkg_db_stmt.gbv_FITrxSet_PastDue
+                         );
+     v_prior_current_due := pkg_os_object_io.fn_object_bv_get
+                         (
+                              in_session_id,
+                              in_transaction_id,
+                              in_billing_trx_set_id,
+                              pkg_db_stmt.gbv_FITrxSet_CurrentDue
+                         );
+    if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+               '... Setting the Total changes from Transactions: ' || round(v_total_changes,2)
+               || 'earlier :' ||v_prior_changes);
+
+
+     end if;
+
+     v_total_changes := v_total_changes + nvl(v_prior_changes,0);
+     v_past_due :=v_past_due+ nvl(v_prior_past_due,0);
+     v_current_due := v_current_due+ nvl(v_prior_current_due,0);
+
+
+/* Below procedure was getting called with wrong variable v_current_due in baseint3 environment instead of v_total_changes.
+It seems this was a miss during deployment of ticket OSBilling-5262. Hence, fixing it under OSBILLING-7616*/
+
+     pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_billing_trx_set_id,
+                                             pkg_db_stmt.gbv_FITrxSet_TotalChange, round(v_total_changes,2));--OSBilling-5262
+
+   -- Finish of OSBILLING-7616--
+
+     pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_billing_trx_set_id,
+                                             pkg_db_stmt.gbv_FITrxSet_AmountDueWOLate, round(v_total_changes,2));
+
+     pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_billing_trx_set_id,
+											 pkg_db_cashpost.gbv_FITrxSetTotalAmount, round(v_total_changes,2));--OSBilling-5262
+
+     --OSBILLING-3041
+     pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_billing_trx_set_id,
+                                    pkg_db_stmt.gbv_FITrxSet_PastDue, round(v_past_due,2));
+
+     pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, in_billing_trx_set_id,
+                                    pkg_db_stmt.gbv_FITrxSet_CurrentDue, round(v_current_due,2));
+
+
+end sp_generic_rollup_create;
+
+
+-------------------------------------------------------------------------------------------
+--
+--   %NAME
+--        sp_fitem_rollup_create
+--
+--
+--   %USAGE
+--        create rollup for fitem passed
+--
+--   %ALGORITHM
+--
+--
+--   %PARAM    in_session_id                 session ID
+--   %PARAM    in_transaction_id             transaction ID
+--   %PARAM    in_fitem_id                   fitem id
+--   %PARAM    in_trx_type                   transaction type
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+procedure sp_fitem_rollup_create
+(
+     in_session_id            in             object.object_id%type,
+     in_transaction_id        in             object.object_id%type,
+     in_billing_trx_set_id    in             object.object_id%type,
+     in_fitem_row              in             dragon_fitem%rowtype,
+     in_recon_object_type     in             db_reconciliation.rollup_object_type_id%type default null,
+     in_rollup_type           in             integer,
+     in_amount                   in             integer  DEFAULT NULL ,
+     in_due_date                 in             object_bv_value.business_variable_value%type  DEFAULT NULL
+)
+is
+
+     v_procedure_name         constant  system_log.program_name%type := pkg_name||'sp_update_rollup_custom';
+     v_session_control                  pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+     v_recon_object_id             object.object_id%type;
+     v_cash_recon_contrib_id            object.object_id%type;
+     v_paid_by_Account                  integer;
+
+begin
+
+     pkg_os_object.sp_object_create
+     (
+          in_session_id,
+          in_transaction_id,
+          in_recon_object_type,
+          in_billing_trx_set_id,
+          v_recon_object_id
+     );
+     if v_session_control.gLogging_Full then
+
+          pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '... Created Rollup ObjectID:'||v_recon_object_id );
+
+     end if;
+
+      --
+          --   Create a Rollup Member object to hold the selected Cash Item information
+          --
+
+          pkg_os_object.sp_object_create
+          (
+               in_session_id,
+               in_transaction_id,
+               pkg_db_cash_apply.gObjTypeRollupMember,
+               v_recon_object_id,
+               v_cash_recon_contrib_id
+          );
+
+          pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_cash_recon_contrib_id,
+               pkg_db_cash_apply.gbv_RollupMember_Contributor,
+               in_fitem_row.Fitem_Id
+          );
+
+          if v_session_control.gLogging_Full
+          then
+
+               pkg_os_logging.sp_log(in_session_id, in_transaction_id, v_procedure_name,
+                    '......... Created Recon Rollup Member: ' || v_cash_recon_contrib_id || ' for selected Cash FItem:' || in_fitem_row.Fitem_Id);
+
+          end if;
+
+              pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,      pkg_db_stmt.gbv_Recon_RelatedPolicyID, in_fitem_row.policy_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_RelatedPolicyTrxId, in_fitem_row.Policy_Transaction_Id);
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_DueDate, nvl(in_due_date,TO_CHAR(in_fitem_row.actual_due_date,pkg_os_constant.DragonDateFormatDefault) ));
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_stmt.gbv_Recon_Category, in_fitem_row.fitem_category_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     pkg_db_cash_apply.gbv_Recon_InstallNumber,in_fitem_row.installment_id );
+               pkg_os_object_io.sp_object_bv_set( in_session_id, in_transaction_id, v_recon_object_id,     29763946,in_fitem_row.billing_account_id );
+              pkg_os_object_io.sp_object_bv_set(in_session_id, in_transaction_id, v_recon_object_id,
+                                                  pkg_db_stmt.gbv_Recon_TotalDue, in_amount );
+
+
+           pkg_os_object_io.sp_object_bv_set
+          (
+               in_session_id,
+               in_transaction_id,
+               v_recon_object_id,
+               34005446,
+               in_rollup_type
+          );
+
+end sp_fitem_rollup_create;
+
+function  fn_get_record_index_value
+(
+     in_record_index         in      varchar2,
+     in_position             in         number
+)
+return    varchar2
+is
+
+begin
+
+return null;
+
+end;
+
+--Added under VAULTDEV-4484
+----------------------------------------------------------------------------------------------
+-- Get the remaining balance to be set on rollups.
+---------------------------------------------------------------------------------------------
+function  fn_get_remaining_bal
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id                        in                object.object_id%type,
+     in_asset_id                                 in              object.object_id%type,
+     in_pol_trx_id                              in              object.object_id%type,--VAULTDEV-7854
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float
+
+is
+
+v_procedure_name                        constant system_log.program_name%type     := pkg_name||'fn_get_remaining_bal';
+v_session_control                       pkg_os_session.r_dragon_session_control   := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+v_return_value                           float;
+v_rem_bal                                   float;
+v_billing_end_date                         date;
+
+begin
+
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Entering the process to get remaining balance with billing account as :'||in_billing_acc_id||'for asset :'||in_asset_id||'with billing end date as:'||in_billing_end_date
+
+          );
+
+     end if;
+
+     --get the billing end date in right format
+     v_billing_end_date:= to_date(in_billing_end_date,pkg_os_constant.DragonDateFormatDefault);
+
+     --derive the balance of remaining fitems excluding the present invoice period
+     begin
+          select
+          	nvl(sum(df.balance),0)
+          into
+               v_rem_bal
+          from
+               dragon_fitem df, dragon_policy dp
+          where
+
+               df.billing_account_id = in_billing_acc_id
+
+          and
+               dp.policy_id = df.policy_id
+          and
+               df.fitem_type_id = pkg_db_stmt.g_FItem_Debit
+          /*and
+               (trunc(df.due_date) >= trunc(v_billing_end_date))
+          and
+               (
+                    df.fitem_billed_tf is null
+
+               )
+*/
+           and
+               df.fitem_asset_id = in_asset_id
+          and
+               df.policy_transaction_id = in_pol_trx_id--VAULTDEV-7854
+          and
+(
+           (df.policy_id = in_policy_id or in_policy_id is not null ) -- Keerthi Policy Invoice
+          or
+          ( dp.direct_billed_to_id = pkg_db_stmt.g_Direct_CustomerBill   and in_policy_id  is null )
+)
+          and
+          	df.fitem_sub_category_id not in (57324, 57924,57824)
+          and
+               dp.billing_method_id = pkg_db_stmt.g_BillingMethod_Direct
+
+           ;--VAULTDEV-7854
+     exception
+     when no_data_found
+     then
+          return null;
+     end;
+     --return the remaining balance
+     v_return_value:= v_rem_bal;
+
+     return v_return_value;
+end;
+
+function  fn_get_lux_remaining_bal
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,
+     in_pol_trx_id						in         	object.object_id%type,--VAULTDEV-7854
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float
+is
+v_procedure_name                        constant system_log.program_name%type     := pkg_name||'fn_get_remaining_bal';
+v_session_control                       pkg_os_session.r_dragon_session_control   := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+v_return_value  					float;
+v_rem_bal							float;
+v_billing_end_date					date;
+begin
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Entering the process to get remaining balance with billing account as :'||in_billing_acc_id||'for asset :'||in_asset_id||'with billing end date as:'||in_billing_end_date
+          );
+     end if;
+     --get the billing end date in right format
+	v_billing_end_date:= to_date(in_billing_end_date,pkg_os_constant.DragonDateFormatDefault);
+     --derive the balance of remaining fitems excluding the present invoice period
+     begin
+          select
+          	nvl(sum(df.balance),0)
+          into
+          	v_rem_bal
+          from
+          	dragon_fitem df, dragon_policy dp
+          where
+          	df.billing_account_id = in_billing_acc_id
+          and
+          	dp.policy_id = df.policy_id
+          and
+          	df.fitem_type_id = pkg_db_stmt.g_FItem_Debit
+          /*and
+          	(trunc(df.due_date) >= trunc(v_billing_end_date))
+          and
+               (
+                    df.fitem_billed_tf is null
+               )*/
+          and
+          	df.fitem_asset_id = in_asset_id
+		and
+          	df.policy_transaction_id = in_pol_trx_id         --VAULTDEV-7854
+		and
+          	df.fitem_sub_category_id in (57324, 57924,57824)     --Lux Valuables
+          and
+          	dp.billing_method_id = pkg_db_stmt.g_BillingMethod_Direct
+and
+(
+           (df.policy_id = in_policy_id and  in_policy_id is not null ) -- Keerthi Policy Invoice
+          or
+          ( dp.direct_billed_to_id = pkg_db_stmt.g_Direct_CustomerBill   and in_policy_id  is null )
+);
+     exception
+     when no_data_found
+     then
+     	return null;
+     end;
+	--return the remaining balance
+	v_return_value:= v_rem_bal;
+     return v_return_value;
+end;
+-----------------------------------------------------------------------------------------------------------------------
+function  fn_get_total_premium
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,--VAULTDEV-6627
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float
+is
+v_procedure_name                        constant system_log.program_name%type     := pkg_name||'fn_get_total_premium';
+v_session_control                       pkg_os_session.r_dragon_session_control   := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+v_return_value  					float;
+v_initial_amt						float;
+v_billing_end_date					date;
+begin
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Entering the process to get total premium with billing account as :'||in_billing_acc_id||'for asset :'||in_asset_id||'with billing end date as:'||in_billing_end_date
+          );
+     end if;
+     --derive the tota premium of non lux fitems
+     begin
+          select
+          	nvl(sum(df.initial_amount),0)
+          into
+          	v_initial_amt
+          from
+          	dragon_fitem df, dragon_policy dp
+          where
+          	df.billing_account_id = in_billing_acc_id
+          and
+          	dp.policy_id = df.policy_id
+          and
+          	df.fitem_type_id = pkg_db_stmt.g_FItem_Debit
+          and
+          	df.fitem_asset_id = in_asset_id--VAULTDEV-6627
+		and
+          	df.fitem_sub_category_id not in (57324, 57924,57824)
+          and
+          	dp.billing_method_id = pkg_db_stmt.g_BillingMethod_Direct
+and
+(
+           (df.policy_id = in_policy_id and in_policy_id is not null ) -- Keerthi Policy Invoice
+          or
+          ( dp.direct_billed_to_id = pkg_db_stmt.g_Direct_CustomerBill   and in_policy_id  is null )
+)    ;
+ exception
+     when no_data_found
+     then
+     	v_initial_amt:= 0;
+     end;
+	--return the total non lux  premium
+	v_return_value:= v_initial_amt;
+     return v_return_value;
+end;
+-----------------------------------------------------------------------------------------------------------------------
+function  fn_get_total_lux_premium
+(
+     in_session_id                           in             object.object_id%type,
+     in_transaction_id                       in             object.object_id%type,
+     in_billing_acc_id         			in      		object.object_id%type,
+     in_asset_id             				in         	object.object_id%type,--VAULTDEV-6627
+     in_billing_end_date					in			object_bv_value.business_variable_value%type,
+     in_policy_id                            in             object.object_id%type default null
+)
+return float
+is
+v_procedure_name                        constant system_log.program_name%type     := pkg_name||'fn_get_total_lux_premium';
+v_session_control                       pkg_os_session.r_dragon_session_control   := pkg_os_session.fn_session_control_get(in_session_id, in_transaction_id) ;
+v_return_value  					float;
+v_initial_amt						float;
+v_billing_end_date					date;
+begin
+     if v_session_control.gLogging_Full
+     then
+          pkg_os_logging.sp_log
+          (
+               in_session_id,
+               in_transaction_id,
+               v_procedure_name,
+               '|||||| Entering the process to get total premium with billing account as :'||in_billing_acc_id||'for asset :'||in_asset_id||'with billing end date as:'||in_billing_end_date
+          );
+     end if;
+     --derive the tota premium of lux fitems
+     begin
+          select
+          	nvl(sum(df.initial_amount),0)
+          into
+          	v_initial_amt
+          from
+          	dragon_fitem df, dragon_policy dp
+          where
+          	df.billing_account_id = in_billing_acc_id
+          and
+          	dp.policy_id = df.policy_id
+          and
+          	df.fitem_type_id = pkg_db_stmt.g_FItem_Debit
+          and
+          	df.fitem_asset_id = in_asset_id--VAULTDEV-6627
+		and
+          	df.fitem_sub_category_id  in (57324, 57924,57824)
+          and
+          	dp.billing_method_id = pkg_db_stmt.g_BillingMethod_Direct
+and
+(
+           (df.policy_id = in_policy_id or in_policy_id is not null ) -- Keerthi Policy Invoice
+          or
+          ( dp.direct_billed_to_id = pkg_db_stmt.g_Direct_CustomerBill   and in_policy_id  is null )
+);
+     exception
+     when no_data_found
+     then
+     	v_initial_amt:=0;
+     end;
+	--return the total premium
+	v_return_value:= v_initial_amt;
+     return v_return_value;
+end;
+--------------------------------------------------------------------------------------------------------------
+end pkg_db_stmt_rollup_modify;
+/
+

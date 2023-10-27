@@ -1,0 +1,46 @@
+create or replace package pkg_or_functions
+as
+------------------------------------------------------------------------------------------------------------
+gObjType_ReinsuranceApplicableJurisdiction constant object_type.object_type_id%type := 4196648;
+gObjType_ReinsuranceApplicableLOB          constant object_type.object_type_id%type := 4196548;
+gbv_ReinsuranceArrangementJuris            constant business_variable.business_variable_id%type := 35809048;
+gbv_ApplicableJuris                        constant business_variable.business_variable_id%type := 35811948;
+gbv_ArrangementLOB                         constant business_variable.business_variable_id%type := 35809648;
+gbvProtectionLevel                         constant business_variable.business_variable_id%type := 35810348;
+gbvCessionType                             constant business_variable.business_variable_id%type := 35808348;
+  
+------------------------------------------------------------------------------------------------------------  
+function fn_get_juris_lob_count
+(
+     in_session_id                   in               object.object_id%type,
+     in_transaction_id               in               object.object_id%type,
+     in_action_object_id             in               object.object_id%type
+)
+return varchar2;
+------------------------------------------------------------------------------------------------------------
+
+function fn_check_valid_values(in_session_id in object.object_id%type,
+                        in_transaction_id in object.object_id%type,
+                        in_action_object_id in object.object_id%type)
+
+return char;
+------------------------------------------------------------------------------------------------------------
+function fn_get_cession_type_name
+  (
+          in_session_id         in object.object_id%type,
+          in_transaction_id     in object.object_id%type,
+          in_cession_id       in   varchar2
+   )
+return varchar2;
+
+------------------------------------------------------------------------------------------------------------
+function fn_get_program_main_cvrg_list
+(
+  in_session_id         in     object.object_id%type,
+  in_transaction_id     in     object.object_id%type,
+  in_program_id         in     object.object_id%type
+)
+return varchar2;
+------------------------------------------------------------------------------------------------------------
+END PKG_OR_FUNCTIONS;
+/

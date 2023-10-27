@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2023-03-10T17:30:55.780+05:30" update="2023-06-29T08:24:50.857-04:00">
+        <path name="BIAssetAnalysisBuildingGeoMap" folder="/home/OneShieldBI/analyzers/policy/BIAssetAnalysisBuildingGeoMap.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="Oneshield BI - Policy" cube="ASSET_ANALYSIS_SUMMARY_BUILDING" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="false" totalsOnTopLeft="false" useNonVisualTotals="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="true" version="14" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Total_Premium]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:1]" gembarId="color" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Address].[Country]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0"/>
+            <attribute formula="[Address].[Jurisdiction]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="1"/>
+            <attribute formula="[Address].[City]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="2"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="2.0" chartType="CUSTOM" customChartType="open_layers" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="250" backgroundColor="#ffffff" labelColor="#000000" labelSize="12" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="12" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" excelMergePivotCells="true" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns>
+            <drillColumn>[Address].[Country]</drillColumn>
+            <drillColumn>[Address].[Jurisdiction]</drillColumn>
+            <drillColumn>[Address].[City]</drillColumn>
+            <drillColumn>[Address].[ZipCode]</drillColumn>
+            <drillColumn>[Broker].[Broker Status]</drillColumn>
+            <drillColumn>[Broker].[Broker]</drillColumn>
+            <drillColumn>[Building_Area].[SQFT]</drillColumn>
+            <drillColumn>[Building_Construction_type].[Class]</drillColumn>
+            <drillColumn>[Building_Roof_Type].[Roof Type]</drillColumn>
+            <drillColumn>[Coverage Name].[Coverage Name]</drillColumn>
+            <drillColumn>[Effective Date].[Date]</drillColumn>
+            <drillColumn>[Measures].[Total_Earned_Premium]</drillColumn>
+            <drillColumn>[Measures].[Total_Incurred_Loss]</drillColumn>
+            <drillColumn>[Measures].[Total_Premium]</drillColumn>
+            <drillColumn>[Building_No_of_Floors].[Number of Floors]</drillColumn>
+            <drillColumn>[Policy].[Policy Number]</drillColumn>
+            <drillColumn>[Policy].[Policy Term]</drillColumn>
+            <drillColumn>[Transaction].[Coverage_Transaction_Name]</drillColumn>
+        </drillColumns>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="false" fieldListView="CMDVIEWCATEGORY">
+        <rowFieldWidths actualWidths="114,125,112"/>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"args":{"type":"bubbles","baseLayer":"Open Street Maps","zoomState":{"center":{"lon":-8065509.0279277,"lat":5199246.0029521},"zoom":9,"layers":["Open Street Maps","Measures"],"extent":{"top":5284396.8524499,"left":-8236422.2231496,"bottom":5114095.1534543,"right":-7894595.8327058}},"scalingType":"linear","colorRange":["#FF0000","#FFBF3F","#FFFF00","#BFDF3F","#008000"],"filter.selection.max.count":500},"visualizationId":"open_layers"}]</pluginData>
+    </uiAttributes>
+</reportRecord>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-06-16T14:21:24" created="2011-06-16T14:16:09" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Submission/Marketing Dashboard Quote Trend.xanalyzer" name="Marketing Dashboard Quote Trend"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="CHART" cube="QUOTE" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure calculateSubtotalsUsingFormula="true" id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="EXPRESSION" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Quote  Count" locale=""/>
+                </displayLabels>
+                <expression>[Measures].[Quote_Count]-[Measures].[Bind_Count]</expression>
+                <numberFormat formatShortcut="NONE" formatScale="0" formatCategory="General Number">
+                    <formatExpression></formatExpression>
+                </numberFormat>
+            </measure>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Bind_Count]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Time (Creation Date)].[Creation Month]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Time (Creation Date)].[Creation Year]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+            <filter viewFilterEnum="MULTIPLE" formula="[Producer].[Agency]">
+                <predicates>
+                    <predicate parameterName="Agency" operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Agent Mark" formula="[Producer].[None].[None].[Agent  Mark]"/>
+                        <member pos="0" caption="Aviva Canada" formula="[Producer].[None].[None].[Aviva  Canada]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="STACKED_VERTICAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="6">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

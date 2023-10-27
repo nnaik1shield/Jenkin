@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2010-12-07T16:40:26" created="2010-12-07T16:40:26" description="" updatedBy="joe" createdBy="joe">
+        <path folder="" name="Line of Business Trend"/>
+    </commonStorageAttributes>
+    <report version="5" showDrillLinks="false" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="QUOTE" catalog="Dragon Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:0]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]"/>
+            <measure id="[MEASURE:1]" sortOrderEnum="NONE" measureTypeEnum="TREND" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Quote_Count]">
+                <displayLabels>
+                    <displayLabel labelPlural="" label="Change" locale=""/>
+                </displayLabels>
+                <trendFacet trendAttributeFormula="[Time (Effective Date)].[Effective Month]" amount="1" trendDirectionEnum="LAG" trendTypeEnum="DIFFERENCE"/>
+                <numberFormat formatShortcut="TREND_ARROW_GR" formatScale="2" formatCategory="Default">
+                    <formatExpression>Case
+When [Measures].CurrentMember &gt; 0
+Then '|#,##0|arrow=up'
+When [Measures].CurrentMember &lt; 0
+Then '|#,##0|arrow=down'
+Else '|#,##0'
+End</formatExpression>
+                </numberFormat>
+            </measure>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="DESC" showSubtotal="false" formula="[Time (Effective Date)].[Effective Year]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Time (Effective Date)].[Effective Month]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Time (Effective Date)].[Effective Year]">
+                <predicates>
+                    <predicate operatorEnum="EQUAL" ordinal="1">
+                        <member pos="-1"/>
+                        <member pos="0"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>

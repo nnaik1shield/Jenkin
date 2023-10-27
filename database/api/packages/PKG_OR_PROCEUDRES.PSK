@@ -1,0 +1,109 @@
+create or replace package pkg_or_procedures
+is
+
+  --   Package Constants ...
+  
+  gObjType_ReinsuranceArrangement                  constant number := 4196348;
+  gObjType_ReinsuranceApplicableJurisdiction       constant number := 4196648;
+  gObjType_ReinsuranceApplicableProgram            constant number := 4196548;
+  gObjType_ApplicableProgramMainCoverage           constant number := 4196848;
+  gObjType_JurisdictionMainCoverageSubType         constant number := 4196748;
+  gObjType_ReinsuranceProgramAccountType           constant number := 4261548;
+  gObjType_ProgramAccountCoverageDetail            constant number := 4261748; 
+  gObjType_ProgramMainCoverageSubType              constant number := 4257548;   
+
+ 
+  gbv_ReinsuranceArrangementJuris                  constant number := 35809048;
+  gbv_ApplicableJuris                              constant number := 35811948;
+  gbv_ArrangementLOB                               constant number := 35809648;
+  gbv_ApplicableLOB                                constant number := 35811848;
+  gbv_ApplicableLOBCvr                             constant number := 35933248;
+  gbv_ApplicableLOBCvrSet                          constant number := 35812348;
+  gbv_ApplicableJurisCvr                           constant number := 35814548;
+  gbv_ProgramAccountTypeSet                        constant number := 35809748;  
+  gbv_ProgramAccountTypeList                       constant number := 36378148; 
+  gbv_AccountCoverageLayer                         constant number := 36378948;  
+  gbv_ProgramMainCoverageSubTypeSet                constant number := 36372448; 
+  gbv_ProgramMainCoverageSubTypeList               constant number := 36380148;     
+  
+  gObjType_ReinsuranceParticipantReins             constant number := 4196448;
+  gObjType_StackedReinsuranceLayer                 constant number := 4197548;
+  gObjType_StackedLayerMainCoverageSubType         constant number := 4197648;
+  gObjType_StackedReinsuranceLayerPlcmnt           constant number := 4197748;
+  gObjType_MainCoverageSubTypeCommission           constant number := 4197848;
+ 
+  gbv_CessionMethod                                constant number := 35808348;
+  gbv_ReinsWrkflwObjCreationSearch                 constant number := 36017348;
+  gbv_ReinsuranceMethodType                        constant number := 35811248;
+  gbv_ReinsuranceLayer                             constant number := 35812048;
+  gbv_XOLNumberofLayers                            constant number := 35810548;
+  gbv_ReinsurerTotalPlacement                      constant number := 35812148;
+  gbv_SurplusCededNumberofLines                    constant number := 35813748;
+  gbv_CoverageAggregateLmtAmnt                     constant number := 35813648;
+  gbv_CoverageLmtAmnt                              constant number := 35813548;
+  gbv_ExcessDeductibleAmnt                         constant number := 35813848;
+  gbv_ReinsurerPlacement                           constant number := 35815448;
+  gbv_refAssociatedReinsuranceCvr                  constant number := 35815248;
+  gbv_Ref_AssociatedReinsurer                      constant number := 35815448;
+  gbv_AssocReinsurerCvrComm                        constant number := 36087348;
+  
+  g_enum_xol                                       constant number := 101;   
+  g_enum_quota                                     constant number := 100;  
+  g_enum_surplus                                   constant number := 103;                                                                               
+
+-----------------------------------------------------------------------------------------------------------
+procedure sp_list_driven_create_objt 
+(
+       in_session_id                   in    object.object_id%type,
+       in_transaction_id               in    object.object_id%type,
+       in_reinsurancearrangement_id    in    object.object_id%type,
+       in_comma_separated_value_str    in    varchar2,  
+       in_create_object_type           in    object.object_id%type,
+       in_create_objt_init_bv_id       in    object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------
+procedure sp_create_coverage_objects
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+) ;
+
+-----------------------------------------------------------------------------------------------------------
+procedure sp_src_objt_driven_create_objt 
+(
+       in_session_id                     in    object.object_id%type,
+       in_transaction_id                 in    object.object_id%type,
+       in_src_srch_parent_objt_id        in    object.object_id%type,
+       in_src_objt_type_id               in    object.object_id%type,
+       in_trgt_srch_parent_objt_id       in    object.object_id%type,
+       in_trgt_srch_objt_type_id         in    object.object_id%type,
+       in_create_object_type             in    object.object_id%type,
+       in_create_objt_key_bv_id          in    object.object_id%type
+);
+-----------------------------------------------------------------------------------------------------------
+
+procedure sp_create_iteration1_Objts 
+(
+    in_session_id         in     object.object_id%type,
+    in_transaction_id     in     object.object_id%type,
+    in_action_object_id   in     object.object_id%type,
+    in_object_cache       in out pkg_os_object_cache.t_object_cache 
+) ;
+-----------------------------------------------------------------------------------------------------------
+procedure sp_create_placement_objects
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+); 
+-----------------------------------------------------------------------------------------------------------
+procedure sp_delete_reinsurer_participant
+(
+    in_session_id         in    object.object_id%type,
+    in_transaction_id     in    object.object_id%type,
+    in_action_object_id   in    object.object_id%type
+);
+-------------------------------------------------------------------------------------------------------------
+end pkg_or_procedures;
+/

@@ -1,0 +1,62 @@
+<Schema name="Dragon MD Analysis Cubes">
+
+<!--
+	$Modified By By: Ysharma
+	$Date:   10 July 2020  $
+-->
+
+  <Dimension visible="true" highCardinality="false" name="Attribute" caption="Attribute">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Attributes" primaryKey="AD_ATTRIBUTE_ID">
+      <Table name="BI_DIM_ATTRIBUTE_DETAIL">
+      </Table>
+      <Level name="Attribute Name" visible="true" column="AD_ATTRIBUTE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Attribute" description="Attribute">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Rule" caption="Rule">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Rules" primaryKey="RD_RULE_ID">
+      <Table name="BI_DIM_RULE_DETAIL">
+      </Table>
+      <Level name="Rule" visible="true" column="RD_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Rule" description="Description of the rule where the attribute is used">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Usage Type" caption="Usage Type">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Usage Types" primaryKey="AU_TYPE_ID">
+      <Table name="BI_DIM_ATTRIBUTE_USAGE_TYPE">
+      </Table>
+      <Level name="Usage Type" visible="true" column="AU_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Usage Type" description="Various ways an attribute is used">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+
+  <Dimension visible="true" highCardinality="false" name="Line of Business" caption="Line of Business">
+    <Hierarchy visible="true" hasAll="true" allMemberName="All Lines" primaryKey="PD_PRODUCT_ID">
+      <Table name="BI_DIM_PRODUCT_DETAIL">
+      </Table>
+      <Level name="Line of Business" visible="true" column="PD_LOB_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Line of Business" description="Line of Business">
+      </Level>
+      <Level name="Product" visible="true" column="PD_PRODUCT_NAME"  type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" caption="Product" description="Product Name">
+      </Level>
+    </Hierarchy>
+  </Dimension>
+  
+  <Cube name="ATTRIBUTE_USAGE" caption="Attribute Usage Cube" visible="true" cache="true" enabled="true">
+    <Table name="BI_FACT_ATTRIBUTE_USAGE_DETAIL">
+    </Table>
+    <DimensionUsage source="Attribute" name="Attribute" caption="Attribute" visible="true" foreignKey="AD_ATTRIBUTE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Rule" name="Rule" caption="Rule" visible="true" foreignKey="RD_RULE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Usage Type" name="Usage Type" caption="Usage Type" visible="true" foreignKey="AU_TYPE_ID" highCardinality="false">
+    </DimensionUsage>
+    <DimensionUsage source="Line of Business" name="Line of Business" visible="true" foreignKey="PD_PRODUCT_ID" highCardinality="false">
+    </DimensionUsage>
+
+    <Measure name="Attribute_Usage_Count" column="ATTRIBUTE_USAGE_DETAIL_ID" datatype="Integer" formatString="#,###" aggregator="count" caption="Attribute Usage Count" description="Number of ways the attribute is being used.">
+    </Measure>
+  </Cube>
+
+</Schema>

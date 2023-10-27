@@ -1,0 +1,744 @@
+CREATE OR REPLACE PACKAGE PKG_PC_LARGE_SCHEDULE
+
+-------------
+-- $Workfile:   BASE_API.PKG_PC_LARGE_SCHEDULE.PSK  $
+-- $Revision:   1.6  $
+--   $Author:   pmedapati  $
+--     $Date:   11 Jan 2013 17:50:46  $
+-------------
+
+IS
+
+------------------------------------------------------------------------------------------------------------------------
+--   Package Constants ...
+------------------------------------------------------------------------------------------------------------------------
+gbv_RefCustActivityLoc           constant object_type.object_type_id%type := 32204646;
+gbv_RefPRLCoveredLoc             constant object_type.object_type_id%type := 31889373;
+gbv_RefCustActivityJurstn        constant object_type.object_type_id%type := 32204546;
+gbv_RefPRLCoveredJurstn          constant object_type.object_type_id%type := 31889273;
+-- gObjType_PolicyCommercial       constant object_type.object_type_id%type    :=   363901;
+gObjType_PolicyHCPL                constant object_type.object_type_id%type := 3193746;
+gObjType_PolicyPRLJurisdiction     constant object_type.object_type_id%type := 3171873;
+gObjType_PolicyPRLLocation         constant object_type.object_type_id%type := 3171973;
+gbv_CustomerJurisCountry           constant number(12) := 29482846;
+gbv_CustomerJurisState             constant number(12) := 21768101;
+
+gObjType_PolicyCFLocation          constant object_type.object_type_id%type :=   2191505;
+gObjType_PolicyCFBuilCoverage      constant object_type.object_type_id%type :=   2191305;
+gObjType_PolicyCFJurisdiction      constant object_type.object_type_id%type :=   2191405;
+gObjType_PolGLJurisLiabltyCov      constant object_type.object_type_id%type :=   2227307;
+gObjType_PolGLLocLiabltyCov        constant object_type.object_type_id%type :=   2184605;
+gObjType_PolGLBuildLiabltyCov      constant object_type.object_type_id%type :=   2184705;
+gObjType_PolGLLocAddlClassCode  constant object_type.object_type_id%type  :=   2185405;
+
+
+gObjType_PolicyCAULocation          constant object_type.object_type_id%type  :=   3533148;
+gbv_CAULocation_RefCovered    constant business_variable.business_variable_id%type := 34015348;
+
+
+gObjType_PTP          constant object_type.object_type_id%type  :=  2276904;
+gObjType_PT         constant object_type.object_type_id%type  :=  629;
+gObjType_ObjectDocument     constant object_type.object_type_id%type  :=  325;
+gObjType_LSController     constant object_type.object_type_id%type  :=  3172746;
+gObjType_Policy_LSController     constant object_type.object_type_id%type  :=  3771448;																					   
+gObjType_PolicyCommercial   constant object_type.object_type_id%type  :=  363901;
+gObjType_PolicyCustomer     constant object_type.object_type_id%type  :=  383005;
+gObjType_PolicyCPP        constant object_type.object_type_id%type  :=  2197405;
+gObjType_PolicyCPPCF      constant object_type.object_type_id%type  :=  2197605;
+gObjType_PolicyCPPGL      constant object_type.object_type_id%type  :=  2197905;
+gObjType_PolicyGL        constant object_type.object_type_id%type  :=  2184505;
+
+gObjType_CustomerAddress    constant object_type.object_type_id%type  :=  2304114;
+gObjType_CustomerLocation   constant object_type.object_type_id%type  :=  320;
+gObjType_CustomerBuilding   constant object_type.object_type_id%type  :=  7;
+
+gObjType_PolCABAJurisdiction  constant object_type.object_type_id%type := 2600146;
+gObjType_PolCABALocation    constant object_type.object_type_id%type := 2600346;
+gObjType_PolCABAVehicle     constant object_type.object_type_id%type := 2600746;
+gbv_CABALocation_RefCovered     constant business_variable.business_variable_id%type := 30531446;
+gOutcome_NoDelete               constant outcome.outcome_id%type := 243148;
+
+gbv_CustLocation_RefLocatedAt constant business_variable.business_variable_id%type := 29254314;
+gbv_CFLocation_RefCovered   constant business_variable.business_variable_id%type := 26450005;
+gbv_CFBuilding_RefCovered   constant business_variable.business_variable_id%type := 26449805;
+gbv_GLBuilding_RefCovered   constant business_variable.business_variable_id%type := 26378405;
+gbv_CFJuris_RefCoveredJuris   constant business_variable.business_variable_id%type := 26449905;
+gbv_GLJuris_RefCoveredJuris   constant business_variable.business_variable_id%type := 27024407;
+gbv_GLLocation_RefCovered   constant business_variable.business_variable_id%type := 26378305;
+gbv_GenericThirdPartyObject   constant business_variable.business_variable_id%type := 21786501;
+gbv_ChildCount_CustBuilding   constant business_variable.business_variable_id%type := 211723;
+
+gObjState_GlobalUpdateTemplate  constant object_state.object_state_id%type := 51746;
+gbv_PTP_Refers_TemplateObject   constant business_variable.business_variable_id%type := 31923046;
+gObjType_PolicyCAUCoverages               constant object_type.object_type_id%type  :=  3554248;
+
+--------------------------------------------------------------------------------
+--- LOB Indicators
+--------------------------------------------------------------------------------
+
+-- Commercial Fire/Property Line of Business Indicator
+gbv_CPP_LOB_Property_Sel_Ind      constant business_variable.business_variable_id%type   :=   26464505;
+
+-- Commercial General Liability Line of Business Indicator
+gbv_CPP_LOB_GL_Sel_Ind        constant business_variable.business_variable_id%type   :=   26464605;
+
+-- Commercial Inland Marine Line of Business Indicator
+gbv_CPP_LOB_IMarine_Sel_Ind     constant business_variable.business_variable_id%type   :=   26464805;
+
+-- Commercial Crime Line of Business Indicator
+gbv_CPP_LOB_Crime_Sel_Ind     constant business_variable.business_variable_id%type   :=   26464705;
+
+-- Commercial Business Auto Line of Business Indicator
+gbv_CPP_LOB_BAuto_Sel_Ind     constant business_variable.business_variable_id%type   :=   30530346;
+
+------------------------------------------------------------------------------------------------------------------------
+-- PolicyCFBuildingCoverage
+------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyCFBuild_PropBuildInd     constant business_variable.business_variable_id%type   :=   27761709;
+
+------------------------------------------------------------------------------------------------------------------------
+-- PolicyCFLocation
+------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyCFLoc_PropLocInd         constant business_variable.business_variable_id%type        :=   31906046;
+
+
+------------------------------------------------------------------------------------------------------------------------
+-- PolicyCFJurisdiction
+------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyCFJuris_PropJurisInd     constant business_variable.business_variable_id%type        :=   31905946;
+
+------------------------------------------------------------------------------------------------------------------------
+-- PolicyGLJurisdictionLiabilityCoverage
+------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyGLJuris_GLJurisInd       constant business_variable.business_variable_id%type        :=   31906146;
+
+------------------------------------------------------------------------------------------------------------------------
+-- PolicyGLLocationLiabilityCoverage
+------------------------------------------------------------------------------------------------------------------------
+
+gbv_PolicyGLLoc_GLLocInd           constant business_variable.business_variable_id%type   :=   27761809;
+gbv_Doc_ScheduleObjectType    constant business_variable.business_variable_id%type  :=  29616946;
+
+gbv_GenericSequenceNumber   constant business_variable.business_variable_id%type  :=  30258201;
+
+------------------------------------------------------------------------------------------------------------------------
+--   Enums
+------------------------------------------------------------------------------------------------------------------------
+
+gCovered_Indicator_Yes             constant lookup_list_value.lookup_enum%type                 :=   1;
+gCovered_Indicator_No               constant lookup_list_value.lookup_enum%type                 :=   2;
+
+------------------------------------------------------------------------------------------------------------------------
+gObjType_PolicyCAU          constant object_type.object_type_id%type  :=  3532848;
+gObjType_PolicyCAUVehicle         constant object_type.object_type_id%type  :=  3533048;
+gbv_customer_object_path   constant business_variable.business_variable_id%type   :=   22067105;
+
+gObjType_CompanyJurisdiction constant  object_type.object_type_id%type := 204;
+gObjType_Policycf                      constant object_type.object_type_id%type := 2191005;
+gObjType_PolicyCR                       constant object_type.object_type_id%type := 2185705;
+gObjType_PolicyCRJurisdiction           constant object_type.object_type_id%type := 2186105;
+gbv_PolCRJur_RefCoveredJur              constant business_variable.business_variable_id%type := 26451005;
+
+gObjType_Dap_Param_Block  constant object_type.object_type_id%type := 3271999; 
+gBatchParam_Async_batch_Id_BV constant business_variable.business_variable_id%type := 32047699;
+g_Commercial_package_policy constant pd_product.pd_product_id%type := 2805 ;
+g_General_Liability_policy constant pd_product.pd_product_id%type := 4205 ;
+
+procedure show_version;
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_job_initialization_routines
+(
+  in_session_id         in    object.object_id%type,
+  in_transaction_id     in    object.object_id%type,
+  in_action_object_id   in    object.object_id%type,
+  io_action_outcome_id  in out  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_schedule_datamart_update
+(
+     in_session_id                 in   object.object_id%type,
+     in_transaction_id             in   object.object_id%type,
+     in_action_object_id           in   object.object_id%type,
+     io_action_outcome_id          in out outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_property_tree_create_all
+(
+  in_session_id            in object.object_id%type,
+    in_transaction_id        in object.object_id%type,
+    io_object_cache          in out nocopy pkg_os_object_cache.t_object_cache,
+    io_message_list          in out nocopy pkg_os_message.t_message_list,
+  in_action_id             in action.action_id%type,
+    in_action_object_id      in object.object_id%type,
+    in_action_object_type_id in object_type.object_type_id%type,
+    io_action_outcome_id     in out nocopy outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_multiplicity_list_command
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+  in_command_type     in      number
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_property_tree_validate
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+     in_underwrite_execute         in boolean default true
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_fix_xform_merge_bvs
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     in_action_object_id           in             object.object_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_property_schedule_import
+(
+  in_session_id     in  object.object_id%type,
+  in_transaction_id   in  object.object_id%type,
+     in_user_session_id       in   object.object_id%type,
+  in_action_id      in  action.action_id%type,
+  in_objectdocument_id  in  object.object_id%type,
+  io_action_outcome_id  out outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_property_schedule_export
+(
+  in_session_id     in  object.object_id%type,
+  in_transaction_id   in  object.object_id%type,
+     in_user_session_id       in   object.object_id%type,
+  in_action_id      in  action.action_id%type,
+  in_objectdocument_id  in  object.object_id%type,
+  io_action_outcome_id  out outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_property_add_peer
+(
+  in_session_id            in        object.object_id%type,
+  in_transaction_id        in        object.object_id%type,
+  io_object_cache          in out    pkg_os_object_cache.t_object_cache,
+  in_action_object_id      in        object.object_id%type,
+  in_action_object_type_id in        object_type.object_type_id%type,
+  io_action_outcome_id     in out    outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_property_add_location
+(
+  in_session_id            in        object.object_id%type,
+  in_transaction_id        in        object.object_id%type,
+  io_object_cache          in out    pkg_os_object_cache.t_object_cache,
+  in_action_object_id      in        object.object_id%type,
+  in_action_object_type_id in        object_type.object_type_id%type,
+  io_action_outcome_id     in out    outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_object_create_clone
+(
+  in_session_id     in    object.object_id%type,
+  in_transaction_id   in    object.object_id%type,
+  in_action_object_id   in    object.object_id%type,
+  io_action_outcome_id  in out  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_object_create_references
+(
+  in_session_id     in    object.object_id%type,
+  in_transaction_id   in    object.object_id%type,
+  in_action_object_id   in    object.object_id%type,
+  io_action_outcome_id  in out  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_object_child_building
+(
+  in_session_id     in    object.object_id%type,
+  in_transaction_id   in    object.object_id%type,
+  in_action_object_id   in    object.object_id%type,
+  in_action_object_type_id  in    object_type.object_type_id%type,
+  io_action_outcome_id  in out  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_covered_object_status_get
+(
+  in_ptp_id         in    object.object_id%type,
+  in_status_type        in    varchar2
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_pnbt_change_count_get
+(
+  in_ptp_id         in    object.object_id%type
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_max_location_sequence_get
+(
+  in_ptp_id     in    object.object_id%type
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_max_GL_location_seq_get
+(
+  in_ptp_id       in    object.object_id%type,
+  in_juris_id     in    object.object_id%type
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_max_building_sequence_get
+(
+  in_ptp_id     in    object.object_id%type,
+  in_location_id    in    object.object_id%type
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+function fn_Max_GL_Building_Sequence_Get
+(
+  in_ptp_id     in    object.object_id%type,
+  in_location_id    in    object.object_id%type
+)
+return number;
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_building_global_update
+(
+  in_session_id     in        object.object_id%type,
+  in_transaction_id   in        object.object_id%type,
+  in_ptp_object_id    in        object.object_id%type,
+  in_action_id      in    action.action_id%type,
+  io_action_outcome_id  in out    outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_global_update_selected
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_clear_all_native_bvs
+(
+  in_session_id     in        object.object_id%type,
+  in_transaction_id   in        object.object_id%type,
+  in_action_object_id   in        object.object_id%type,
+  in_action_id      in    action.action_id%type,
+  io_action_outcome_id  in out    outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_set_session_policy
+(
+  in_session_id     in        object.object_id%type,
+  in_transaction_id   in        object.object_id%type,
+  in_action_object_id   in        object.object_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_log_messages
+(
+  in_session_id     in      object.object_id%type,
+  in_transaction_id   in      object.object_id%type,
+  io_message_list     in out nocopy pkg_os_message.t_message_list
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_hcpl_custactvty_add_wrk_loc
+( in_session_id            in object.object_id%type,
+  in_transaction_id        in object.object_id%type,
+  in_action_object_id      in object.object_id%type,
+  in_action_object_type_id in object_type.object_type_id%type,
+  io_object_cache          in out pkg_os_object_cache.t_object_cache,
+  io_action_outcome_id     in out outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_move_loc_under_right_jursdn
+( in_session_id            in object.object_id%type,
+  in_transaction_id        in object.object_id%type,
+  in_action_object_id      in object.object_id%type, --v_policy_bop_loc_id
+  in_qualification_rule_id in object_type.object_type_id%type,
+  io_object_cache          in out pkg_os_object_cache.t_object_cache,
+  io_action_outcome_id     in out outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_schedule_tree_validate
+(
+  in_session_id                 in             object.object_id%type,
+  in_transaction_id             in             object.object_id%type,
+  io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+  io_message_list               in out nocopy  pkg_os_message.t_message_list,
+  in_action_id                  in             action.action_id%type,
+  in_action_object_id           in             object.object_id%type,
+  in_action_object_type_id      in             object_type.object_type_id%type,
+  io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_vehicle_tree_validate
+(
+  in_session_id                 in             object.object_id%type,
+  in_transaction_id             in             object.object_id%type,
+  io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+  io_message_list               in out nocopy  pkg_os_message.t_message_list,
+  in_action_id                  in             action.action_id%type,
+  in_action_object_id           in             object.object_id%type,
+  in_action_object_type_id      in             object_type.object_type_id%type,
+  io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+function fn_get_child_tree(  in_session_id object.object_id%type ,
+                             in_transaction_id object.object_id%type ,
+                             in_object_id object.object_id%type )
+return object.object_id%type;
+
+procedure sp_clone_commercial_auto(in_session_id in object.object_id%type,
+                        in_transaction_id  in object.object_id%type,
+                        in_action_object_id   in object.object_id%type,
+                        io_action_outcome_id in out outcome.outcome_id%type);
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_update_ls_customer_dm(in_session_id in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_object_id  in object.object_id%type ,
+                                    io_action_outcome_id in out outcome.outcome_id%type);
+
+function fn_get_customer_jurisdiction(in_session_id in object.object_id%type,
+                                in_transaction_id in object.object_id%type,
+                                in_ptp_id     in object.object_id%type,
+                                in_customer_id in object.object_id%type,
+                                in_jurisdiction_text in varchar2)
+return number;
+function fn_get_cppcf_jurisdiction(in_session_id in object.object_id%type,
+                                in_transaction_id in object.object_id%type,
+                                in_ptp_id     in object.object_id%type,
+                                in_cppcf_id in object.object_id%type,
+                                in_jurisdiction_text in varchar2)
+return number;                  
+
+procedure sp_add_customer_jurisdiction(
+      in_session_id in  object.object_id%type,
+      in_transaction_id in  object.object_id%type,
+      in_action_object_id  object.object_id%type, 
+      in_object_cache    in out        pkg_os_object_cache.t_object_cache,
+      io_message_list    in out        pkg_os_message.t_message_list,
+      in_action_id       in            action.action_id%type,
+      io_action_outcome_id in out        outcome.outcome_id%type) ;                  
+
+procedure sp_object_child_ca_vehicle
+(
+     in_session_id      in   object.object_id%type,
+     in_transaction_id      in          object.object_id%type,
+     in_action_object_id       in    object.object_id%type,
+     in_action_object_type_id    in          object_type.object_type_id%type,
+     io_action_outcome_id     in out outcome.outcome_id%type
+);
+
+procedure sp_delete_global_udate_veh(in_session_id      in   object.object_id%type,
+                                     in_transaction_id      in          object.object_id%type,
+                                     in_action_object_id       in    object.object_id%type,
+                                     in_action_object_type_id    in          object_type.object_type_id%type,
+                                     io_action_outcome_id     in out outcome.outcome_id%type
+                                );
+procedure sp_policy_ls_controller_create( 
+     in_session_id            in    object.object_id%type,
+     in_transaction_id        in    object.object_id%type,
+     in_action_object_id      in    object.object_id%type,
+     io_action_outcome_id   in out outcome.outcome_id%type
+);
+procedure sp_ca_vehicle_tree_validate
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type,
+     in_underwrite_execute         in boolean default true
+);  
+procedure sp_validation_start_init_db(in_session_id         in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+procedure sp_delete_mini_trees(in_session_id         in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+
+procedure sp_load_min_tree( in_session_id            in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               io_object_cache       in out nocopy  pkg_os_object_cache.t_object_cache,
+                               io_message_list       in out nocopy  pkg_os_message.t_message_list,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+
+procedure sp_delete_mini_tree(in_session_id         in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+
+procedure sp_validation_assembly_start(in_session_id            in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               io_object_cache       in out nocopy  pkg_os_object_cache.t_object_cache,
+                               io_message_list       in out nocopy  pkg_os_message.t_message_list,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+procedure sp_validation_assembly_tree(in_session_id            in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               io_object_cache       in out nocopy  pkg_os_object_cache.t_object_cache,
+                               io_message_list       in out nocopy  pkg_os_message.t_message_list,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+procedure sp_object_create_validate(in_session_id        in object.object_id%type,
+                               in_transaction_id         in object.object_id%type,
+                               io_object_cache           in out nocopy  pkg_os_object_cache.t_object_cache,
+                               io_message_list           in out nocopy  pkg_os_message.t_message_list,
+                               in_action_id              in        action.action_id%type,
+                               in_action_object_id       in object.object_id%type,
+                               in_action_object_type_id  in             object_type.object_type_id%type,
+                               io_action_outcome_id      in out outcome.outcome_id%type);
+
+ function fn_get_job_batch_time(in_session_id in object.object_id%type,
+                                 in_job_id   in async_job_status.job_id%type,
+                                 in_batch_id async_batch.async_batch_id%type) return varchar2;
+
+ function fn_get_job_start_time(  in_session_id in object.object_id%type,
+                                 in_job_id   in async_job_status.job_id%type,
+                                 in_batch_id async_batch.async_batch_id%type) return varchar2;
+
+ function fn_get_job_end_time(  in_session_id in object.object_id%type,
+                                 in_job_id   in async_job_status.job_id%type,
+                                 in_batch_id async_batch.async_batch_id%type) return varchar2;  
+ function fn_get_job_status(  in_session_id in object.object_id%type,
+                                 in_job_id   in async_job_status.job_id%type,
+                                 in_batch_id async_batch.async_batch_id%type) return varchar2;                                                                
+ function fn_get_upload_table_nm(in_session_id in object.object_id%type,
+                                 in_content_type_id document_content_type.document_content_type_id%type)
+                                 return varchar2;
+
+ procedure sp_schedule_import_init(in_session_id        in object.object_id%type,
+                               in_transaction_id         in object.object_id%type,
+                               in_action_id              in        action.action_id%type,
+                               in_action_object_id       in object.object_id%type,
+                               in_action_object_type_id  in             object_type.object_type_id%type,
+                               io_action_outcome_id      in out outcome.outcome_id%type);
+function fn_add_insured_get_cpp_loc(in_session_id in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_location_id    in number,
+                                    in_asset_state    in varchar2,
+                                    in_ptp_id     in object.object_id%type ,
+                                    in_type_id  in object_type.OBJECT_TYPE_ID%type default null ) return object.object_id%type;
+
+function fn_add_insured_get_gl_loc(in_session_id in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_location_id    in number,
+                                    in_asset_state    in varchar2,
+                                    in_ptp_id     in object.object_id%type ,
+                                    in_type_id  in object_type.OBJECT_TYPE_ID%type default null ) return object.object_id%type;
+
+function fn_get_delivery_pref_addr(in_session_id in object.object_id%type,
+                                   in_transaction_id  in object.object_id%type,
+                                   in_source_object_id in object.object_id%type,
+                                   in_parent_object_id in object.object_id%type,
+                                   in_traget_object_type in object_type.OBJECT_TYPE_ID%type ) return object.object_id%type;
+
+function fn_add_insured_get_vehicle(in_session_id in object.object_id%type,
+                                    in_transaction_id in object.object_id%type,
+                                    in_vehicle_seq    in number,
+                                    in_ptp_id     in object.object_id%type ) return object.object_id%type;
+
+function fn_get_add_int_partner(in_session_id in object.object_id%type,
+                                in_transaction_id in object.object_id%type,
+                                in_partner_name in varchar2) return object.object_id%type;
+
+function fn_get_partner_objusage(in_session_id in object.object_id%type,
+                                  in_transaction_id in object.object_id%type,
+                                  in_transformed_object in object.object_id%type,
+                                  in_partner_name in varchar2) return object.object_id%type;
+								  
+procedure sp_update_obj_insured_dm(in_session_id in object.object_id%type,
+                                  in_transaction_id in object.object_id%type,
+                                  in_action_object_id in object.object_id%type, 
+                                  io_action_outcome_id          in out nocopy  outcome.outcome_id%type);
+								  
+--OSPRODUCT-33434
+procedure sp_list_refer_obj_creation
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+procedure sp_cleanse_mini_tree(in_session_id            in object.object_id%type,
+                               in_transaction_id     in object.object_id%type,
+                               io_object_cache       in out nocopy  pkg_os_object_cache.t_object_cache,
+                               io_message_list       in out nocopy  pkg_os_message.t_message_list,
+                               in_action_id          in        action.action_id%type,
+                               in_action_object_id   in object.object_id%type,
+                               io_action_outcome_id  in out outcome.outcome_id%type);
+
+procedure sp_create_main_tree
+(
+     in_session_id                 in             object.object_id%type,
+     in_transaction_id             in             object.object_id%type,
+     io_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+     io_message_list               in out nocopy  pkg_os_message.t_message_list,
+     in_action_id                  in             action.action_id%type,
+     in_action_object_id           in             object.object_id%type,
+     in_action_object_type_id      in             object_type.object_type_id%type,
+     io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+);
+
+--OSPRODUCT-32391
+
+function fn_get_GL_Propid_seq
+    (
+     In_GL_Prop_id   number
+    )
+return number;
+
+procedure sp_submit_ls_job(in_session_id                 in             object.object_id%type,
+                           in_transaction_id             in             object.object_id%type,
+                           in_object_cache               in out nocopy  pkg_os_object_cache.t_object_cache,
+                           io_message_list               in out nocopy  pkg_os_message.t_message_list,
+                           in_action_id                  in             action.action_id%type,
+                           in_action_object_id           in             object.object_id%type,
+                           io_action_outcome_id          in out nocopy  outcome.outcome_id%type
+                          );
+                          
+procedure sp_GL_Build_create_clone
+(
+  in_session_id     in    object.object_id%type,
+  in_transaction_id   in    object.object_id%type,
+  in_action_object_id   in    object.object_id%type,
+  io_action_outcome_id  in out  outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+
+procedure sp_GL_property_add_peer
+(
+  in_session_id            in        object.object_id%type,
+  in_transaction_id        in        object.object_id%type,
+  io_object_cache          in out    pkg_os_object_cache.t_object_cache,
+  in_action_object_id      in        object.object_id%type,
+  in_action_object_type_id in        object_type.object_type_id%type,
+  io_action_outcome_id     in out    outcome.outcome_id%type
+);
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_object_child_GL_Building
+(
+	in_session_id			in		object.object_id%type,
+	in_transaction_id		in		object.object_id%type,
+	in_action_object_id		in		object.object_id%type,
+	in_action_object_type_id	in		object_type.object_type_id%type,
+	io_action_outcome_id	in out	outcome.outcome_id%type
+);
+
+
+------------------------------------------------------------------------------------------------------------------------
+procedure sp_GL_property_add_location
+(
+  in_session_id            in        object.object_id%type,
+  in_transaction_id        in        object.object_id%type,
+  io_object_cache          in out    pkg_os_object_cache.t_object_cache,
+  in_action_object_id      in        object.object_id%type,
+  in_action_object_type_id in        object_type.object_type_id%type,
+  io_action_outcome_id     in out    outcome.outcome_id%type
+);
+
+function fn_get_class_code(in_session_id object.object_id%type, 
+                           in_transaction_id  object.object_id%type,
+                           in_class_code_id in cpp_us_0_property_class.id%type) return cpp_us_0_property_class.property_class_code%type;
+                           
+function fn_get_class_code_desc(in_session_id object.object_id%type, 
+                           in_transaction_id  object.object_id%type,
+                           in_class_code_id in cpp_us_0_property_class.id%type) return cpp_us_0_property_class.property_class_description%type;
+
+
+procedure sp_set_export_doc_parent(
+  in_session_id      in   object.object_id%type,
+  in_transaction_id  in   object.object_id%type   ,
+  in_action_object_id       in  object.object_id%type ,
+  io_action_outcome_id  in out outcome.outcome_id%type);														
+END PKG_PC_LARGE_SCHEDULE;
+/

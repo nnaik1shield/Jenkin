@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dashboard>
+<title>Partner Management Dashboard</title>
+<heading>Partner Management Dashboard</heading>
+<enableWidgetPrinting>false</enableWidgetPrinting>
+<documentation>
+<author>joe</author>
+<description/>
+<icon/>
+</documentation>
+<template-ref>xul/03-2-over-1.xul</template-ref>
+<theme-ref>00-Onyx</theme-ref>
+<layout>
+<overlay xmlns:pho="http://www.pentaho.com">
+<box id="Panel_1" pho:title="Partner Activity" type="titled-panel" flex="1" collapsed="false"/>
+<box id="Panel_2" pho:title="Agreements by Jurisdiction" type="titled-panel" flex="1" collapsed="false"/>
+<box id="Panel_3" pho:title="Licenses by Effective Date" type="titled-panel" flex="1" collapsed="false"/>
+<box id="Panel_4" pho:title="Untitled 4"/>
+<box id="Panel_5" pho:title="Untitled 5"/>
+<box id="Panel_6" pho:title="Untitled 6"/>
+<box id="Panel_7" pho:title="Untitled 7"/>
+<box id="Panel_8" pho:title="Untitled 8"/>
+<box id="Panel_9" pho:title="Untitled 9"/>
+<box id="Panel_10" pho:title="Untitled 10"/>
+<box id="titlebar" title="" height="23" hidden="false" width="0" type="pagetitle" collapsed="false"/><box id="widget-area" type="scrollarea"/><box id="widget-area" flex="1"/><box id="FilterPanel" title="" height="100" hidden="true" width="0" type="povpanel" collapsed="false"/><box id="hbox1" type="layout"/><box id="hbox1" flex="1"/><box id="hbox2" type="layout"/><box id="hbox2" flex="1"/><box id="widget-area" type="scrollarea"/><box id="widget-area" flex="1"/><box id="hbox1" type="layout"/><box id="hbox1" flex="1"/><box id="hbox2" type="layout"/><box id="hbox2" flex="1"/><box id="widget-area" type="scrollarea"/><box id="widget-area" flex="1"/><box id="hbox1" type="layout"/><box id="hbox1" flex="1"/><box id="hbox2" type="layout"/><box id="hbox2" flex="1"/><box id="widget-area" flex="1"/><box id="widget-area" type="scrollarea"/><box id="hbox1" flex="1"/><box id="hbox1" type="layout"/><box id="hbox2" flex="1"/><box id="hbox2" type="layout"/></overlay>
+</layout>
+<parameters>
+<parameter>
+  <name>70210$70210$[Time (License Effective Date)].[License Effective Year]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>70210$70210$[Time (License Effective Date)].[License Effective Month]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>16186$16186$[Agency_Jurisdiction].[Agency Jurisdiction]</name>
+  <defaultValue/>
+</parameter>
+<parameter>
+  <name>22815$22815$[Activity_Change_Type].[Activity Change Type]</name>
+  <defaultValue/>
+</parameter>
+</parameters>
+
+
+
+<widgetJavascript><![CDATA[%5B%7B%22localizedName%22%3A%22Agency%20Activity.xanalyzer%22%2C%22GUID%22%3A%2296518%22%2C%22type%22%3A%22AnalyzerComponent%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5D%2C%22outputParameters%22%3A%5B%5B%22Agency%22%2Cfalse%2C%2296518%24%5BProducer%5D.%5BAgency%5D%22%5D%5D%2C%22name%22%3A%22widget1%22%2C%22htmlObject%22%3A%22content-area-Panel_1%22%2C%22xactionPath%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FAgency%20Activity.xanalyzer%22%2C%22solution%22%3A%22%22%2C%22path%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FAgency%20Activity.xanalyzer%22%2C%22action%22%3A%22Agency%20Activity.xanalyzer%22%2C%22staticParameters%22%3Atrue%2C%22isDirty%22%3Afalse%2C%22listeners%22%3A%5B%5D%2C%22refreshPeriod%22%3A0%2C%22cl%22%3A%22%22%7D%2C%7B%22localizedName%22%3A%22Partner%20Agreements%20by%20State%20Graph.xanalyzer%22%2C%22GUID%22%3A%2285883%22%2C%22type%22%3A%22AnalyzerComponent%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5D%2C%22outputParameters%22%3A%5B%5B%22Agency%20Jurisdiction%22%2Cfalse%2C%2285883%24%5BAgency_Jurisdiction%5D.%5BAgency%20Jurisdiction%5D%22%5D%5D%2C%22name%22%3A%22widget2%22%2C%22htmlObject%22%3A%22content-area-Panel_2%22%2C%22xactionPath%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FPartner%20Agreements%20by%20State%20Graph.xanalyzer%22%2C%22solution%22%3A%22%22%2C%22path%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FPartner%20Agreements%20by%20State%20Graph.xanalyzer%22%2C%22action%22%3A%22Partner%20Agreements%20by%20State%20Graph.xanalyzer%22%2C%22staticParameters%22%3Atrue%2C%22isDirty%22%3Afalse%2C%22listeners%22%3A%5B%5D%2C%22refreshPeriod%22%3A0%2C%22cl%22%3A%22%22%7D%2C%7B%22localizedName%22%3A%22Partner%20Licenses%20by%20Eff%20Date%20Graph.xanalyzer%22%2C%22GUID%22%3A%2286856%22%2C%22type%22%3A%22AnalyzerComponent%22%2C%22iframe%22%3Atrue%2C%22parameters%22%3A%5B%5D%2C%22outputParameters%22%3A%5B%5B%22License%20Effective%20Year%22%2Cfalse%2C%2286856%24%5BTime%20(License%20Effective%20Date)%5D.%5BLicense%20Effective%20Year%5D%22%5D%2C%5B%22License%20Effective%20Month%22%2Cfalse%2C%2286856%24%5BTime%20(License%20Effective%20Date)%5D.%5BLicense%20Effective%20Month%5D%22%5D%5D%2C%22name%22%3A%22widget3%22%2C%22htmlObject%22%3A%22content-area-Panel_3%22%2C%22xactionPath%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FPartner%20Licenses%20by%20Eff%20Date%20Graph.xanalyzer%22%2C%22solution%22%3A%22%22%2C%22path%22%3A%22%2FOneShield%2FDashboards%2FPartner%2FPartner%20Licenses%20by%20Eff%20Date%20Graph.xanalyzer%22%2C%22action%22%3A%22Partner%20Licenses%20by%20Eff%20Date%20Graph.xanalyzer%22%2C%22staticParameters%22%3Atrue%2C%22isDirty%22%3Afalse%2C%22listeners%22%3A%5B%5D%2C%22refreshPeriod%22%3A0%2C%22cl%22%3A%22%22%7D%5D]]></widgetJavascript>
+<widgets><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Partner/Agency Activity.xanalyzer</xactionPath><localizedName jsonType="string">Agency Activity.xanalyzer</localizedName><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">96518</GUID><cl jsonType="string"/><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><path jsonType="string">/home/OneShield/Dashboards/Partner/Agency Activity.xanalyzer</path><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_1</htmlObject><solution jsonType="string"/><name jsonType="string">widget1</name><action jsonType="string">Agency Activity.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"/><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Agency</name><id jsonType="string">96518__dollar_[Producer].[Agency]</id><enabled jsonType="string">false</enabled></parameter0></outputParameters></widget><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Partner/Partner Agreements by State Graph.xanalyzer</xactionPath><localizedName jsonType="string">Partner Agreements by State Graph.xanalyzer</localizedName><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">85883</GUID><cl jsonType="string"/><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><path jsonType="string">/home/OneShield/Dashboards/Partner/Partner Agreements by State Graph.xanalyzer</path><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_2</htmlObject><solution jsonType="string"/><name jsonType="string">widget2</name><action jsonType="string">Partner Agreements by State Graph.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"/><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">Agency Jurisdiction</name><id jsonType="string">85883__dollar_[Agency_Jurisdiction].[Agency Jurisdiction]</id><enabled jsonType="string">false</enabled></parameter0></outputParameters></widget><widget jsonType="object"><xactionPath jsonType="string">/home/OneShield/Dashboards/Partner/Partner Licenses by Eff Date Graph.xanalyzer</xactionPath><localizedName jsonType="string">Partner Licenses by Eff Date Graph.xanalyzer</localizedName><refreshPeriod jsonType="string">0</refreshPeriod><GUID jsonType="string">86856</GUID><cl jsonType="string"/><staticParameters jsonType="string">true</staticParameters><type jsonType="string">AnalyzerComponent</type><path jsonType="string">/home/OneShield/Dashboards/Partner/Partner Licenses by Eff Date Graph.xanalyzer</path><isDirty jsonType="string">false</isDirty><htmlObject jsonType="string">content-area-Panel_3</htmlObject><solution jsonType="string"/><name jsonType="string">widget3</name><action jsonType="string">Partner Licenses by Eff Date Graph.xanalyzer</action><iframe jsonType="string">true</iframe><parameters jsonType="object"/><outputParameters jsonType="object"><parameter0 jsonType="object"><name jsonType="string">License Effective Year</name><id jsonType="string">86856__dollar_[Time (License Effective Date)].[License Effective Year]</id><enabled jsonType="string">false</enabled></parameter0><parameter1 jsonType="object"><name jsonType="string">License Effective Month</name><id jsonType="string">86856__dollar_[Time (License Effective Date)].[License Effective Month]</id><enabled jsonType="string">false</enabled></parameter1></outputParameters></widget></widgets></dashboard>

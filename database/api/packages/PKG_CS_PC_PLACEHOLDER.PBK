@@ -1,0 +1,59 @@
+CREATE OR REPLACE PACKAGE BODY PKG_CS_PC_PLACEHOLDER
+
+-------------
+-- $Workfile:   BASE_API.PKG_CS_PC_PLACEHOLDER.PBK  $
+-- $Revision:   1.0  $
+-- $Author:   amkaur  $
+-- $Date:   20 Aug 2023 $
+-------------
+ AS
+  ------------------------------------------------------------------------------------------------
+  --  Package Body Constants ...
+  ------------------------------------------------------------------------------------------------
+
+  pkg_name constant system_log.program_name%type := 'pkg_cs_pc_placeholder.';
+
+  ------------------------------------------------------------------------------------------------
+
+  procedure show_version is
+  begin
+  
+    dbms_output.put_line('$Workfile:   BASE_API.PKG_CS_PC_PLACEHOLDER.PBK  $');
+    dbms_output.put_line('$Revision:   1.0  $');
+    dbms_output.put_line('$Author:   amkaur  $');
+    dbms_output.put_line('$Date:   20 Aug 2023 $');
+  
+  exception
+    when others then
+      dbms_output.put_line(sqlerrm(sqlcode));
+  end show_version;
+
+ 
+  procedure sp_contact_person_setup(in_session_id        in object.object_id%type,
+                                    in_transaction_id    in object.object_id%type,
+                                    in_object_cache      in out pkg_os_object_cache.t_object_cache,
+                                    in_action_object_id  in object.object_id%type,
+                                    in_action_id         in action.action_id%type,
+                                    io_action_outcome_id in out outcome.outcome_id%type) is
+  
+    v_session_control pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,
+                                                                                                       in_transaction_id);
+    v_procedure_name constant system_log.program_name%type := 'sp_contact_person_setup';
+      
+  begin
+  
+  ---
+  --- Placeholder procedure created for the client implementation teams to define 
+  --- the logic of creating a primary contact person when the information for contact person should not be 
+  --- automatically populated from the primary entity's information.
+  --- This will be required if the value for PD property type 
+  --- "Auto-populate primay contact information from primary entity?(120148)" is set as 'F'
+  ---
+  
+   null;
+  
+  end sp_contact_person_setup;
+
+
+END PKG_CS_PC_PLACEHOLDER;
+/

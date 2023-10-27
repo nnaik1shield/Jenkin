@@ -1,0 +1,333 @@
+create or replace package body pkg_or_functions as
+
+
+------------------------------------------------------------------------------------------------------------
+pkg_name constant   system_log.program_name%type  := 'pkg_or_functions.';
+------------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        fn_get_juris_lob_count
+--
+-- %USAGE
+--  Check if the number of user selections made on the the following fields 
+-- 1.Jurisdiction 
+-- 2.Program 
+-- When the count  =1 
+--  Check if the number of user selections made on the the following fields 
+-- Then
+--         Return False
+-- Else 
+--         Return True
+------------------------------------------------------------------------------------------------------------
+
+function fn_get_juris_lob_count
+(
+  in_session_id      in object.object_id%type,
+  in_transaction_id  in object.object_id%type,
+  in_action_object_id  in object.object_id%type
+)
+return varchar2
+as
+    
+  v_lob_set_value_list     varchar2(50);
+  v_juris_set_value_list   varchar2(50);
+
+  v_juris_set_item        pkg_os_token.t_string_table;
+  v_lob_set_item          pkg_os_token.t_string_table;
+   
+   
+  v_procedure_name       constant system_log.program_name%TYPE    := pkg_name ||'fn_get_juris_lob_count';
+  v_session_control      pkg_os_session.r_dragon_session_control  := pkg_os_session.fn_session_control_get(in_session_id,in_transaction_id);
+  
+  
+begin
+
+       --   
+       -- Get the Jurisdiction and Program BVs on ReinsuranceArrangement
+       --  
+       v_juris_set_value_list := pkg_os_object_io.fn_object_bv_get
+                                 (
+                                     in_session_id,
+                                     in_transaction_id,
+                                     in_action_object_id,
+                                     gbv_ReinsuranceArrangementJuris 
+                                  );
+       v_lob_set_value_list := pkg_os_object_io.fn_object_bv_get
+                               (
+                                     in_session_id,
+                                     in_transaction_id,
+                                     in_action_object_id,
+                                     gbv_ArrangementLOB 
+                                );
+ 
+        pkg_os_token.sp_tokenize_string
+        (
+              v_juris_set_value_list,
+              pkg_os_constant.gmt_comma_separator,
+              v_juris_set_item
+        );
+        
+        
+        pkg_os_token.sp_tokenize_string
+        (
+              v_lob_set_value_list,
+              pkg_os_constant.gmt_comma_separator,
+              v_lob_set_item
+        );
+ 
+        if v_session_control.glogging_full 
+        then
+              pkg_os_logging.sp_log
+              (
+                  in_session_id,
+                  in_transaction_id,
+                  v_procedure_name,
+                  'Object Count  : ' || v_juris_set_item.count||
+                  'LOB Object count:'||v_lob_set_item.count
+                );
+        end if;
+        
+        
+        if      v_juris_set_item.count  =  1 
+           and  
+                v_lob_set_item.count  = 1
+        then
+             return 'F';
+             
+        else
+             return 'T';
+             
+        end if;
+ 
+end ;
+
+------------------------------------------------------------------------------------------------------------
+
+function fn_check_valid_values(in_session_id in object.object_id%type,
+                        in_transaction_id in object.object_id%type,
+                        in_action_object_id in object.object_id%type)
+
+return char
+
+as
+v_enum_value varchar2(50);
+v_protection_value number(18);
+v_session_control         pkg_os_session.r_dragon_session_control := pkg_os_session.fn_session_control_get(in_session_id,
+                             in_transaction_id);
+v_procedure_name          CONSTANT system_log.program_name%TYPE := pkg_name ||
+                      'sp_create_reinsurance_arrangement_objects';
+v_result varchar2(10);
+begin
+--get the cession type
+ v_enum_value := pkg_os_object_io.fn_object_bv_get
+                               (
+                                  in_session_id,
+                                  in_transaction_id,
+                                  in_action_object_id,
+                                  gbvCessionType
+                               );
+ v_protection_value := pkg_os_object_io.fn_object_bv_get
+                               (
+                                  in_session_id,
+                                  in_transaction_id,
+                                  in_action_object_id,
+                                  gbvProtectionLevel
+                               );
+                               v_result := pkg_os_token.fn_find_in_set (100,103, v_enum_value);
+     if v_session_control.glogging_full
+  then
+       pkg_os_logging.sp_log(in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'v_enum_value : ' || v_enum_value);
+     end if;
+      if v_session_control.glogging_full
+  then
+       pkg_os_logging.sp_log(in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'v_protection_value : ' || v_protection_value);
+                
+     end if;
+      if v_session_control.glogging_full
+  then
+       pkg_os_logging.sp_log(in_session_id,
+                            in_transaction_id,
+                            v_procedure_name,
+                            'v_result : ' || v_result);
+                            end if;
+if pkg_os_token.fn_find_in_set (100,103, v_enum_value) = 'T' and (v_protection_value = 4)
+then
+return 'T';
+elsif pkg_os_token.fn_find_in_set (101,v_enum_value) = 'T' and (v_protection_value = 1 or v_protection_value=2 or  v_protection_value=3 OR v_protection_value=4)
+then
+return 'T';
+elsif v_enum_value is null
+then 
+return 'T';
+
+else
+return 'F';
+end if;
+end;
+
+function validate_cvr_is_active(in_session_id in object.object_id%type,
+                        in_transaction_id in object.object_id%type,
+                        in_action_object_id in object.object_id%type)
+                        return char
+                        as
+                        
+                          v_cvr_object_list pkg_os_object.t_object_list;
+                          v_cvr_object_list_index number(18);
+                          v_juris_cvr_list pkg_os_object.t_object_list;
+                          v_juris_cvr_list_index number(18);
+                          v_inidicator_value number(18);
+                          v_return_value char;
+                          begin
+                             pkg_os_object_search.sp_object_children_of_type_get(in_session_id,
+                              in_transaction_id,
+                              in_action_object_id,
+                              4196848, --ReinsuranceApplicableJurisdiction (in_objt_type_driven_by_list ...Provide this ID)
+                              v_cvr_object_list);
+                             v_cvr_object_list_index := v_cvr_object_list.first;
+                             while v_cvr_object_list_index is not null
+                               loop
+                              /* v_juris_cvr_list :=  pkg_os_object_search.sp_object_with_attributes_get(in_session_id,
+                         in_transaction_id,
+                         in_action_object_id, --reinurancearrangement
+                         4196748, --ReinsuranceApplicableJurisdiction (in_objt_type_driven_by_list ...Provide this ID)
+                         35814548, --Reinsurance : Applicable Jurisdiction (in_SET_value_list_bv_id, provide this ID)
+                         v_cvr_object_list(v_cvr_object_list_index)
+                         );*/
+                          
+               v_juris_cvr_list_index := v_juris_cvr_list.first;
+               while v_juris_cvr_list_index is not null
+                 loop
+               v_inidicator_value :=    pkg_os_object_io.fn_object_bv_get(in_session_id,
+                                in_transaction_id,
+                                v_juris_cvr_list(v_juris_cvr_list_index),
+                                35812248 -- Reinsurance Arrangement : Jurisdiction (in_SET_value_list_bv_id, provide this ID)
+                                );
+                                
+                                if v_inidicator_value = 1
+                                  then
+                                    v_return_value := 'T';
+                                    else
+                                      v_return_value := 'F';
+                                      end if;
+                            v_juris_cvr_list_index := v_juris_cvr_list.next(v_juris_cvr_list_index);       
+                            
+                             end loop;
+                             
+                              v_cvr_object_list_index := v_cvr_object_list.next(v_cvr_object_list_index);
+                             end loop;
+                             return v_return_value;
+                             end;
+                             
+         
+-----------------------------------------------------------------------------------------------------------------------
+function fn_get_cession_type_name
+  (
+          in_session_id         in object.object_id%type,
+          in_transaction_id     in object.object_id%type,
+          in_cession_id       in varchar2
+   )
+return varchar2 is
+
+       cursor c_cession_type
+       is
+        select regexp_substr(in_cession_id,'[^,]+', 1, level) as Value_id
+           from dual
+           connect BY regexp_substr(in_cession_id, '[^,]+', 1, level) 
+           is not null;
+  
+    v_function_name  system_log.program_name%type := pkg_name || 'fn_get_cession_type_name';
+    v_cession_type_name varchar2(500);
+    v_cession_type_name_final varchar2(500);
+    
+ begin 
+    for r_cession in c_cession_type loop
+
+    begin
+
+    v_cession_type_name := pkg_os_lookup.fn_lookup_list_text_get(5796648,r_cession.Value_id);
+   
+   v_cession_type_name_final := v_cession_type_name_final ||', '|| v_cession_type_name;
+     
+      exception when no_data_found then
+        continue;
+      end ;
+    end loop;
+    
+    v_cession_type_name_final := trim(trim(LEADING ',' fROM v_cession_type_name_final));
+   
+  return v_cession_type_name_final;
+
+exception
+  when others then
+    pkg_os_logging.sp_log_error(in_session_id,
+                                in_transaction_id,
+                                v_function_name,
+                                SQLERRM(SQLCODE)
+              );
+    return null;
+ end fn_get_cession_type_name;
+-----------------------------------------------------------------------------------------------------------------------
+--
+-- %NAME
+--        fn_get_program_main_cvrg_list
+--
+-- %USAGE
+--  This logic will be used to initialize the SET BV 35933248 -: 'Reinsurance : Applicable Program Coverages' on the instance
+--  ObjectType  4196548:ReinsuranceApplicableProgram   
+--
+-- %ALGORITHM
+--        Before opening up the page to user all the valid values associated with the list should be marked as selected.
+--        This function will return a string of enum seperated by comma
+--
+-- %PARAMS
+--        in_session_id                     : Session ID
+--        in_transaction_id                 : Transaction ID
+--        in_program_id                     : Program ID
+--
+-----------------------------------------------------------------------------------------------------------------------
+function fn_get_program_main_cvrg_list
+(
+  in_session_id         in     object.object_id%type,
+  in_transaction_id     in     object.object_id%type,
+  in_program_id         in     object.object_id%type
+)
+return varchar2 
+is
+
+    v_function_name  system_log.program_name%type := pkg_name || 'fn_get_program_main_cvrg_list';
+    v_return_str     varchar2(200);    
+
+begin 
+  
+
+      ---
+      --- Get the emum list seperated by comma from the underlying VLL table
+      ---
+      select   
+             listagg( enum,',')  
+      into
+             v_return_str
+      from     
+             (  select 
+                       unique
+                       enum
+                from 
+                       vw_or_eligible_reinsurance_coverage p
+               where   
+                       p.program_program_id =  in_program_id 
+             )
+      
+      ;
+ 
+       return v_return_str;
+ 
+end fn_get_program_main_cvrg_list;
+---------------------------------------------------------------------------------------------------------------------
+end PKG_OR_FUNCTIONS;
+/

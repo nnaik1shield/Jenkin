@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes createdBy="admin" updatedBy="admin" created="2018-03-19T16:40:48.769+05:30" update="2019-11-26T02:42:25.968-05:00">
+        <path name="ClaimOpenWithOwner" folder="/home/OneShield/Cubes/Claims/ClaimOpenWithOwner.xanalyzer"/>
+    </commonStorageAttributes>
+    <report catalog="OneShield Claims Cubes" cube="CLAIM_CUBE" reportTypeEnum="JSON" showRowGrandTotal="false" showColumnGrandTotal="true" useNonVisualTotals="false" showEmptyCells="false" showEmptyEnum="SHOW_MEASURE" emptyCellDisplay="-" showDrillLinks="false" version="12" autoRefresh="true" freezeColumns="true" freezeRows="true">
+        <measures>
+            <measure formula="[Measures].[Claim_Count]" showSum="true" showAggregate="false" showAverage="false" showCount="false" showMax="false" showMin="false" measureTypeEnum="VALUE" sortOrderEnum="NONE" id="[MEASURE:0]" gembarId="measures" gembarOrdinal="0"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute formula="[Claim Status].[Claim Status]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="0">
+                <link type="FILE" toolTip="Click to open claim details for this status" target="NEW_TAB" filePath="/home/Oneshield/Cubes/ClaimDetails.xanalyzer" fileLabel="ClaimDetails">
+                    <linkParam name="{Claim Status}" value="{Claim Status}"/>
+                </link>
+            </attribute>
+            <attribute formula="[Current Owner].[Current Owner Name]" showSubtotal="false" sortOrderEnum="ASC" gembarId="rows" gembarOrdinal="1"/>
+        </rowAttributes>
+        <filters/>
+        <chartOptions vizApiVersion="3.0" chartType="CUSTOM" customChartType="pentaho/visual/models/Pie" legendPosition="RIGHT" showLegend="true" autoRange="true" displayUnits="UNITS_0" autoRangeSecondary="true" displayUnitsSecondary="UNITS_0" lineWidth="2" lineShape="CIRCLE" maxValues="100" backgroundColor="#ffffff" labelColor="#000000" labelSize="38" backgroundFill="NONE" maxChartsPerRow="3" backgroundColorEnd="#ffffff" labelStyle="PLAIN" legendBackgroundColor="#ffffff" legendSize="38" legendColor="#000000" legendStyle="PLAIN" labelFontFamily="Default" legendFontFamily="Default"/>
+        <selectionFilters/>
+        <selectionItems/>
+        <pageSetup excelPageSize="LETTER" pdfPageSize="LETTER" excelOrientation="LANDSCAPE" pdfOrientation="LANDSCAPE" excelScalingType="PERCENT" excelScalingPercent="100" excelScalingPageWide="1" excelScalingPageTall="1" csvIncludeSubtotals="true" csvFormatNumbers="true"/>
+        <drillColumns/>
+    </report>
+    <uiAttributes showFieldList="true" showFieldLayout="true" showFilterPanel="true" fieldListView="CMDVIEWSCHEMA">
+        <rowFieldWidths actualWidths="101,110">
+            <labelWidth index="2">
+                <width>-85</width>
+            </labelWidth>
+        </rowFieldWidths>
+        <columnDataFieldWidths actualWidths="120">
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+        <pluginData>[{"model":{"labelsOption":"outside"}}]</pluginData>
+    </uiAttributes>
+</reportRecord>

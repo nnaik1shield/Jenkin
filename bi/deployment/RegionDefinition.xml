@@ -1,0 +1,60 @@
+<RegionDefinition>
+	<APPServer>
+		<Nodes />
+	</APPServer>
+	<DAPServer>
+		<Nodes />
+	</DAPServer>
+	<DISServer>
+		<Nodes />
+	</DISServer>
+	<WEBServer>
+		<Nodes />
+	</WEBServer>
+	<DD6Server>
+		<Nodes />
+	</DD6Server>
+	<BIServer>
+		<Nodes>
+			<Node>
+				<HostName>172.20.58.228</HostName>
+				<UserName>bi_deployment</UserName>
+				<Password>Oneshield@2019</Password>
+				<Port/>
+				<URL/>
+				<ServiceName />
+				<ApplicationRoot>/opt/pentaho/server/pentaho-server/tomcat/webapps/pentaho/</ApplicationRoot>
+				<OneShieldHome />
+				<EARName />
+			</Node>
+		</Nodes>
+	</BIServer>
+	<PentahoAPIServer>
+		<Nodes>
+			<Node>
+				<HostName/>
+				<UserName>admin</UserName>
+				<Password>Oneshield2019</Password>
+				<Port/>
+				<URL>http://172.20.58.228:8080/pentaho/</URL>
+				<ServiceName />
+				<ApplicationRoot/>
+				<OneShieldHome />
+				<EARName />
+			</Node>
+		</Nodes>
+	</PentahoAPIServer>
+
+	<DBServer>
+		<Nodes />
+	</DBServer>
+	<DesignerAPP>
+		<UserName>pverma</UserName>
+		<Password></Password>
+		<ServiceName>QBASE3</ServiceName>
+		<URL>https://designerprodindia.oneshield.com/osdd/</URL>
+	</DesignerAPP>
+	<DMSServer>
+		<Nodes />
+	</DMSServer>
+</RegionDefinition>

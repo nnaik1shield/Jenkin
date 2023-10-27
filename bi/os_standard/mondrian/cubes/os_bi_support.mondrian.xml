@@ -1,0 +1,265 @@
+<!--
+	$Modified By : Sachin Singh
+	$Date:   02 December 2023  $
+-->
+<Schema name="Oneshield BI - Support">
+
+  <Cube name="ORP_MONITOR" caption="ORP Monitoring" visible="true" cache="true" enabled="true">
+    <Table name="VW_BI_MON_BATCHES">
+	<SQL dialect="generic">
+         <![CDATA[(VW_BI_MON_BATCHES.ASYNC_BATCH_START_DATE >= add_months(trunc(sysdate), -12))]]>           
+      </SQL>
+    </Table>
+     
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Type" caption="Batch Type">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Type" column="BATCH_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Status" caption="Batch Status">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Status" column="ASYNC_BATCH_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Status">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Description" caption="Batch Description">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Description" column="ASYNC_BATCH_DESCRIPTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Description">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Attrib" caption="Batch Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Id" column="ASYNC_BATCH_ID" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Id">
+        </Level>
+        <Level name="Batch Start Date" column="ASYNC_BATCH_START_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Start Date">
+        </Level>
+        <Level name="Batch End Date" column="ASYNC_BATCH_END_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch End Date">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+    
+    <Dimension type="TimeDimension" visible="true" highCardinality="false" foreignKey="JOB_ID" name="Batch Start Date" caption="Batch Start Date">
+      <Hierarchy visible="true" hasAll="true" allMemberName="All Periods" primaryKey="JOB_ID">
+        <View alias="vw_td_create_dt">
+          <SQL dialect="generic">    
+		   SELECT
+			 job_id,
+			 EXTRACT(YEAR FROM async_batch_start_date)       td_year,
+			 to_number(to_char(async_batch_start_date, 'Q')) td_quarter,
+			 'Q' || to_char(async_batch_start_date, 'Q')     td_quarter_name,
+			 EXTRACT(MONTH FROM async_batch_start_date)      td_month,
+			 to_char(async_batch_start_date, 'Mon')          td_month_name,
+			 to_char(async_batch_start_date,'WW')            td_week,
+			 EXTRACT(DAY FROM async_batch_start_date)        td_day,
+			 async_batch_start_date					    td_date
+		  FROM
+			 vw_bi_mon_batches
+	 </SQL>
+        </View>
+        <Level name="Year" visible="true" column="TD_YEAR" ordinalColumn="TD_YEAR" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never" caption="Creation Year" description="Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Quarter" visible="true" column="TD_QUARTER" nameColumn="TD_QUARTER_NAME" ordinalColumn="TD_QUARTER" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never" caption="Creation Quarter" description="Name or number of the Quarter">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Month" visible="true" column="TD_MONTH" nameColumn="TD_MONTH_NAME" ordinalColumn="TD_MONTH" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never" caption="Creation Month" description="Name of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM]</Annotation>
+          </Annotations>
+        </Level>
+		<Level name="Week" visible="true" column="TD_WEEK" ordinalColumn="TD_WEEK" type="Numeric" uniqueMembers="false" levelType="TimeWeeks" hideMemberIf="Never" caption="Creation Week" description="Week of the Year">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww]</Annotation>
+          </Annotations>
+        </Level>
+        <Level name="Day" visible="true" column="TD_DAY" type="Numeric" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Day" description="Day of the month">
+          <Annotations>
+            <Annotation name="AnalyzerDateFormat">[yyyy].['Q'q].[MMM].[ww].[d]</Annotation>
+          </Annotations>
+        </Level>
+	   <Level name="Date" visible="true" column="TD_DATE" ordinalColumn="TD_DATE" type="Date" uniqueMembers="true" levelType="TimeDays" hideMemberIf="Never" caption="Creation Date" description="Creation Date">
+      </Level>
+      </Hierarchy>
+    </Dimension>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Status" caption="Job Status">
+      <Hierarchy hasAll="true">
+        <Level name="Job Status" column="JOB_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Status">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Description" caption="Job Description">
+      <Hierarchy hasAll="true">
+        <Level name="Job Description" column="JOB_DESCRIPTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Description">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Error_Resolved" caption="Job Error Resolved">
+      <Hierarchy hasAll="true">
+        <Level name="Job Error Resolved" column="JOB_ERROR_RESOLVED_TF" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Error Resolved (Yes/No)">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Error" caption="Job Error">
+      <Hierarchy hasAll="true">
+	   <Level name="Job Error" column="MESSAGE_CONTENT_TEXT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Error">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Attrib" caption="Job Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="Job Id" column="JOB_ID" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Id">
+        </Level>
+        <Level name="Job Date" column="JOB_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Date">
+        </Level>
+        <Level name="Job Start Date" column="JOB_START_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Start Date">
+        </Level>
+	   <Level name="Job End Date" column="JOB_END_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch End Date">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Total_Batches" column="ASYNC_BATCH_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Batches Count" description="Total Batches Count">
+    </Measure>
+    <Measure name="Total_Failed_Batches" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Failed Batches Count" description="Total Failed Batches Count">
+    <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when async_batch_status in ('4', '5', '7', '9', '4.1', '11', '15') then async_batch_id else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total_Jobs" column="JOB_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Jobs Count" description="Total Jobs Count">
+    </Measure>
+    <Measure name="Total_Failed_Jobs" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Failed Jobs Count" description="Total Failed Jobs Count">
+    <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when job_status in ('4', '10', '4.1') then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+
+  </Cube>
+
+  <Cube name="ORP_MONITOR_LAST_24HRS" caption="ORP Monitoring (Last 24 Hours)" visible="true" cache="true" enabled="true">
+    <Table name="VW_BI_MON_BATCHES">
+    <SQL dialect="generic">
+         <![CDATA[(VW_BI_MON_BATCHES.ASYNC_BATCH_START_DATE between TRUNC(SYSDATE-1) AND TRUNC(SYSDATE)+1439.99/1440)]]>           
+      </SQL>
+    </Table>
+     
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Type" caption="Batch Type">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Type" column="BATCH_TYPE_NAME" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Type">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Status" caption="Batch Status">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Status" column="ASYNC_BATCH_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Status">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Description" caption="Batch Description">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Description" column="ASYNC_BATCH_DESCRIPTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Description">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Batch_Attrib" caption="Batch Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="Batch Id" column="ASYNC_BATCH_ID" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Id">
+        </Level>
+        <Level name="Batch Start Date" column="ASYNC_BATCH_START_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch Start Date">
+        </Level>
+        <Level name="Batch End Date" column="ASYNC_BATCH_END_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch End Date">
+        </Level>	   
+      </Hierarchy>
+    </Dimension>
+    
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Status" caption="Job Status">
+      <Hierarchy hasAll="true">
+        <Level name="Job Status" column="JOB_STATUS" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Status">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Description" caption="Job Description">
+      <Hierarchy hasAll="true">
+        <Level name="Job Description" column="JOB_DESCRIPTION" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Description">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Error_Resolved" caption="Job Error Resolved">
+      <Hierarchy hasAll="true">
+        <Level name="Job Error Resolved" column="JOB_ERROR_RESOLVED_TF" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Error Resolved (Yes/No)">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Error" caption="Job Error">
+      <Hierarchy hasAll="true">
+	   <Level name="Job Error" column="MESSAGE_CONTENT_TEXT" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Error">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+    	<Dimension type="StandardDimension" highCardinality="false" name="Job_Attrib" caption="Job Attributes">
+      <Hierarchy hasAll="true">
+        <Level name="Job Id" column="JOB_ID" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Id">
+        </Level>
+        <Level name="Job Date" column="JOB_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Date">
+        </Level>
+        <Level name="Job Start Date" column="JOB_START_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Job Start Date">
+        </Level>
+	   <Level name="Job End Date" column="JOB_END_DATE" type="Date" uniqueMembers="true" levelType="Regular" hideMemberIf="Never" description="Batch End Date">
+        </Level>
+	   
+      </Hierarchy>
+    </Dimension>
+    
+    <Measure name="Total_Batches" column="ASYNC_BATCH_ID" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Batches Count" description="Total Batches Count">
+    </Measure>
+    <Measure name="Total_Failed_Batches" datatype="Numeric" formatString="#,###" aggregator="distinct-count" caption="Total Failed Batches Count" description="Total Failed Batches Count">
+    <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when async_batch_status in ('4', '5', '7', '9', '4.1', '11', '15') then async_batch_id else null end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+    <Measure name="Total_Jobs" column="JOB_ID" datatype="Numeric" formatString="#,###" aggregator="count" caption="Total Jobs Count" description="Total Jobs Count">
+    </Measure>
+    <Measure name="Total_Failed_Jobs" datatype="Numeric" formatString="#,###" aggregator="sum" caption="Total Failed Jobs Count" description="Total Failed Jobs Count">
+    <MeasureExpression>
+        <SQL dialect="oracle">
+          <![CDATA[(case when job_status in ('4', '10', '4.1') then 1 else 0 end)]]>
+        </SQL>
+      </MeasureExpression>
+    </Measure>
+
+  </Cube>
+  
+</Schema>

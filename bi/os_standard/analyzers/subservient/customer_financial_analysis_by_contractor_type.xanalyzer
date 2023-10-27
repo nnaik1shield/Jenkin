@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<reportRecord xmlns="http://www.pentaho.com">
+    <commonStorageAttributes update="2011-12-06T03:23:29" created="2011-11-17T09:23:02" description="" updatedBy="joe" createdBy="joe">
+        <path folder="OneShield/Cubes/Financial Statement/Customer Financial Analysis - By Contractor Type.xanalyzer" name="Customer Financial Analysis - By Contractor Type"/>
+    </commonStorageAttributes>
+    <report freezeRows="true" freezeColumns="true" autoRefresh="true" version="5" showDrillLinks="true" emptyCellDisplay="-" showEmptyCells="false" useNonVisualTotals="false" showColumnGrandTotal="false" showRowGrandTotal="false" reportTypeEnum="PIVOT" cube="CUST_FINANCE_STMT_CUBE" catalog="Surety Financial Statement Cubes">
+        <title></title>
+        <subtitle></subtitle>
+        <measures>
+            <measure id="[MEASURE:2]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Working_Capital]"/>
+            <measure id="[MEASURE:3]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Gross_Profit_Margin]"/>
+            <measure id="[MEASURE:4]" sortOrderEnum="NONE" measureTypeEnum="VALUE" showMin="false" showMax="false" showCount="false" showAverage="false" showAggregate="true" showSum="false" formula="[Measures].[Net_Income_Margin]"/>
+        </measures>
+        <columnAttributes/>
+        <rowAttributes>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Contractor Type].[Contractor Type]">
+                <link fileLabel="Customer Financial Analysis" fileName="Customer Financial Analysis.xanalyzer" filePath="/Cubes/Financial Statement" fileSolution="OneShield" target="CURRENT" toolTip="Return to summary view." type="FILE"/>
+            </attribute>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Customer].[Customer]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Time (Statement AsOf Date)].[Statement Asof Date Year]"/>
+            <attribute sortOrderEnum="ASC" showSubtotal="false" formula="[Credit Score].[Credit Score]"/>
+        </rowAttributes>
+        <filters>
+            <filter viewFilterEnum="MULTIPLE" formula="[Contractor Type].[Contractor Type]">
+                <predicates>
+                    <predicate parameterName="Contractor Type" operatorEnum="EQUAL" ordinal="1">
+                        <member pos="0" caption="Bridge" formula="[Contractor Type].[Bridge]"/>
+                        <member pos="0" caption="Carpentry" formula="[Contractor Type].[Carpentry]"/>
+                        <member pos="0" caption="General Building" formula="[Contractor Type].[General Building]"/>
+                    </predicate>
+                </predicates>
+            </filter>
+        </filters>
+        <chartOptions chartType="HORIZONTAL_BAR"/>
+    </report>
+    <uiAttributes>
+        <rowFieldWidths/>
+        <columnDataFieldWidths>
+            <labelWidth index="0">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="1">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="2">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="3">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="4">
+                <width>0</width>
+            </labelWidth>
+            <labelWidth index="5">
+                <width>0</width>
+            </labelWidth>
+        </columnDataFieldWidths>
+    </uiAttributes>
+</reportRecord>
